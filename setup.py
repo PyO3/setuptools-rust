@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 version = '0.2'
 
@@ -15,6 +15,7 @@ setup(
         (open('README.rst').read(), open('CHANGES.rst').read())),
     license='MIT',
     packages=['setuptools_rust'],
+    install_requires=['semver==2.7.6'],
     zip_safe=True,
     classifiers=[
         "Topic :: Software Development :: Version Control",
