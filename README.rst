@@ -15,7 +15,7 @@ setup.py
 
    setup(name='hello-rust',
          version='1.0',
-         rust_extensions=[RustExtension('hello_rust._hello_rust', 'extensions/Cargo.toml')],
+         rust_extensions=[RustExtension('hello_rust._helloworld', 'extensions/Cargo.toml')],
          packages=['hello_rust'],
          # rust extensions are not zip safe, just like C-extensions.
          zip_safe=False
@@ -28,20 +28,20 @@ You can use same commands as for c-extensions. For example::
    running develop
    running egg_info
    writing hello-rust.egg-info/PKG-INFO
-   writing top-level names to hello-rust.egg-info/top_level.txt
-   writing dependency_links to hello-rust.egg-info/dependency_links.txt
-   reading manifest file 'hello-rust.egg-info/SOURCES.txt'
-   writing manifest file 'hello-rust.egg-info/SOURCES.txt'
+   writing top-level names to hello_rust.egg-info/top_level.txt
+   writing dependency_links to hello_rust.egg-info/dependency_links.txt
+   reading manifest file 'hello_rust.egg-info/SOURCES.txt'
+   writing manifest file 'hello_rust.egg-info/SOURCES.txt'
    running build_ext
    running build_rust
    cargo build --manifest-path extensions/Cargo.toml --features python27-sys
        Finished debug [unoptimized + debuginfo] target(s) in 0.0 secs
 
-   Creating /.../lib/python2.7/site-packages/hello-rust.egg-link (link to .)
+   Creating /.../lib/python2.7/site-packages/hello_rust.egg-link (link to .)
 
-   Installed hello-rust
-   Processing dependencies for hello-rust==1.0
-   Finished processing dependencies for hello-rust==1.0
+   Installed hello_rust
+   Processing dependencies for hello_rust==1.0
+   Finished processing dependencies for hello_rust==1.0
 
 
 Or you can use commands like `bdist_wheel` or `bdist_egg`
