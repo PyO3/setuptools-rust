@@ -4,3 +4,6 @@
 /dist
 /build
 /*.egg-info
+Cargo.lock
+/example/extensions/target/
+/example/*.egg-info

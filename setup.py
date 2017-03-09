@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '0.1'
+version = '0.2'
 
 
 setup(
@@ -11,7 +11,8 @@ setup(
     url="https://github.com/fafhrd91/setuptools-rust",
     keywords='distutils setuptools rust',
     description="Setuptools rust extension plugin",
-    long_description=open('README.rst').read(),
+    long_description='\n\n'.join(
+        (open('README.rst').read(), open('CHANGES.rst').read())),
     license='MIT',
     packages=['setuptools_rust'],
     zip_safe=True,

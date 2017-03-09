@@ -9,8 +9,8 @@ from distutils.dist import Distribution
 from distutils.command.build import build as Build
 from distutils.command.build_ext import build_ext
 from distutils.command.install_lib import install_lib
-from setuptools import setup, Extension
-from setuptools.command import develop
+from setuptools import dist, setup, Extension
+from setuptools.command import develop, bdist_egg
 
 __all__ = ('RustExtension', 'build_rust')
 
@@ -18,6 +18,12 @@ __all__ = ('RustExtension', 'build_rust')
 # allow to use 'rust_extensions' parameter for setup() call
 Distribution.rust_extensions = ()
 
+def has_ext_modules(self):
+    return (self.ext_modules and len(self.ext_modules) > 0 or
+            self.rust_extensions and len(self.rust_extensions) > 0)
+
+Distribution.has_ext_modules = has_ext_modules
+#dist.Distribution.has_ext_modules = has_ext_modules
 
 # add support for build_rust sub0command
 def has_rust_extensions(self):
