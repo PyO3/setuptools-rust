@@ -50,10 +50,10 @@ Or you can use commands like `bdist_wheel` or `bdist_egg`
 RustExtension
 -------------
 
-You can define rust extension with `RustExtension` class.
+You can define rust extension with `RustExtension` class:
 
-.. class:: RustExtension(name, path, args=None, features=None, rust_version=None, \
-                         quiet=False, debug=False)
+   *RustExtension*(name, path, args=None, features=None, rust_version=None, \
+                   quiet=False, debug=False)
 
    The class for creating rust extensions.
 
@@ -72,8 +72,3 @@ You can define rust extension with `RustExtension` class.
    :param bool quiet: Does not echo cargo's output. default is False
 
    :param bool debug: Controls whether --debug or --release is passed to cargo.
-
-
-
-
-This package is based on https://github.com/novocaine/rust-python-ext
