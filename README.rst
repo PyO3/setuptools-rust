@@ -52,8 +52,7 @@ RustExtension
 
 You can define rust extension with `RustExtension` class:
 
-   *RustExtension*(name, path, args=None, features=None, rust_version=None, \
-                   quiet=False, debug=False)
+   *RustExtension*(name, path, args=None, features=None, rust_version=None, quiet=False, debug=False)
 
    The class for creating rust extensions.
 
