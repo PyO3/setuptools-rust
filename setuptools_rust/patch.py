@@ -1,7 +1,12 @@
 from distutils.dist import Distribution
 from distutils.command.build import build as Build
 from setuptools.command import develop
-from setuptools.command.py36compat import sdist_add_defaults
+
+try:
+    from setuptools.command.py36compat import sdist_add_defaults
+    has_py36compat = True
+except ImportError:
+    has_py36compat = False
 
 
 # allow to use 'rust_extensions' parameter for setup() call
@@ -49,4 +54,5 @@ def _add_defaults_ext(self):
         self.filelist.extend(build_ext.get_source_files())
 
 
-sdist_add_defaults._add_defaults_ext = _add_defaults_ext
+if has_py36compat:
+    sdist_add_defaults._add_defaults_ext = _add_defaults_ext
