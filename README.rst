@@ -50,6 +50,29 @@ Or you can use commands like `bdist_wheel` or `bdist_egg`
 RustExtension
 -------------
 
+You can define rust extension with `RustExtension` class.
+
+.. class:: RustExtension(name, path, args=None, features=None, rust_version=None, \
+                         quiet=False, debug=False)
+
+   The class for creating rust extensions.
+
+   :param str name: the full name of the extension, including any packages -- ie.
+                    *not* a filename or pathname, but Python dotted name
+
+   :param str path: path to the Cargo.toml manifest file
+
+   :param [str] args: a list of extra argumenents to be passed to cargo.
+
+   :param [str] features: a list of features to also build
+
+   :param str rust_version: sematic version of rust compiler version -- for example
+                            *>1.14,<1.16*, default is None
+
+   :param bool quiet: Does not echo cargo's output. default is False
+
+   :param bool debug: Controls whether --debug or --release is passed to cargo.
+
 
 
 

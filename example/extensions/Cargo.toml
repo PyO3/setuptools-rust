@@ -9,4 +9,4 @@ default-features = false
 
 [lib]
 name = "helloworld"
-crate-type = ["dylib"]
+crate-type = ["cdylib"]

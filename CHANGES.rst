@@ -8,6 +8,8 @@ CHANGES
 
 - Add rust version check for extension.
 
+- Cleanup example project
+
 
 0.2 (2017-03-08)
 ----------------

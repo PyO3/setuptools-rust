@@ -6,10 +6,10 @@ import sys
 import subprocess
 from distutils.cmd import Command
 from distutils.errors import (
-    CompileError,
-    DistutilsExecError, DistutilsFileError, DistutilsPlatformError)
+    CompileError, DistutilsExecError, DistutilsFileError,
+    DistutilsPlatformError, DistutilsSetupError)
 
-import semver
+import semantic_version
 
 from . import patch  # noqa
 
@@ -25,7 +25,7 @@ class RustExtension:
         the full name of the extension, including any packages -- ie.
         *not* a filename or pathname, but Python dotted name
       path : string
-        path to the cargo.toml manifest
+        path to the cargo.toml manifest file
       args : [string]
         a list of extra argumenents to be passed to cargo.
       features : [string]
@@ -53,26 +53,31 @@ class RustExtension:
 
         self.features = [s.strip() for s in features]
 
-    @staticmethod
-    def get_rust_version():
-        env = os.environ.copy()
+    def get_rust_version(self):
+        if self.rust_version is None:
+            return None
         try:
-            output = subprocess.check_output(["rustc", "-V"], env=env)
-            return output.split(' ')[1]
-        except subprocess.CalledProcessError:
-            return None
-        except OSError:
-            return None
+            return semantic_version.Spec(self.rust_version)
+        except:
+            raise DistutilsSetupError(
+                'Can not parse rust compiler version: %s', self.rust_version)
+
+
+def get_rust_version():
+    try:
+        output = subprocess.check_output(["rustc", "-V"])
+        if isinstance(output, bytes):
+            output = output.decode('latin-1')
+        return semantic_version.Version(output.split(' ')[1], partial=True)
+    except (subprocess.CalledProcessError, OSError):
+        raise DistutilsPlatformError('Can not find Rust compiler')
+    except Exception as exc:
+        raise DistutilsPlatformError(
+            'Can not get rustc version: %s' % str(exc))
 
 
 class build_rust(Command):
-    """
-    Command for building rust crates via cargo.
-
-    Don't use this directly; use the build_rust_cmdclass
-    factory method.
-    """
-    description = "build rust crates into Python extensions"
+    """ Command for building rust crates via cargo. """
 
     user_options = [
         ('inplace', 'i',
@@ -140,7 +145,7 @@ class build_rust(Command):
             print(output, file=sys.stderr)
 
         # Find the shared library that cargo hopefully produced and copy
-        # it into the build directory as if it were produced by build_cext.
+        # it into the build directory as if it were produced by build_ext.
         if ext.debug:
             suffix = "debug"
         else:
@@ -179,15 +184,16 @@ class build_rust(Command):
         shutil.copyfile(dylib_path, ext_path)
 
     def run(self):
-        version = RustExtension.get_rust_version()
-        if self.extensions and version is None:
-            raise DistutilsPlatformError('Can not find Rust compiler')
+        if not self.extensions:
+            return
+
+        version = get_rust_version()
 
         for ext in self.extensions:
-            if ext.rust_version is not None:
-                if not semver.match(version, ext.rust_version):
-                    raise DistutilsPlatformError(
-                        "Rust %s does not match extension requirenment %s" % (
-                            version, ext.rust_version))
+            rust_version = ext.get_rust_version()
+            if rust_version is not None and version not in rust_version:
+                raise DistutilsPlatformError(
+                    "Rust %s does not match extension requirenment %s" % (
+                        version, ext.rust_version))
 
             self.build_extension(ext)

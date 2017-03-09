@@ -4,7 +4,7 @@
 
 use cpython::{PyObject, PyResult, Python, PyTuple, PyDict};
 
-py_module_initializer!(_helloworld, init_helloworld, PyInit_helloworld, |py, m| {
+py_module_initializer!(_helloworld, init_helloworld, PyInit__helloworld, |py, m| {
     try!(m.add(py, "__doc__", "Module documentation string"));
     try!(m.add(py, "run", py_fn!(py, run(*args, **kwargs))));
     try!(m.add(py, "val", py_fn!(py, val())));
