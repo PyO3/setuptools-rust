@@ -96,9 +96,9 @@ class build_rust(Command):
     def _cpython_feature(self):
         version = sys.version_info
         if (2, 7) < version < (2, 8):
-            return "cpython/python27-sys"
+            return ("cpython/python27-sys", "cpython/extension-module-2-7")
         elif (3, 3) < version:
-            return "cpython/python3-sys"
+            return ("cpython/python3-sys", "cpython/extension-module")
         else:
             raise DistutilsPlatformError(
                 "Unsupported python version: %s" % sys.version)
@@ -122,17 +122,28 @@ class build_rust(Command):
                 "Can not file rust extension project file: %s" % ext.path)
 
         features = set(ext.features)
-        features.add(self._cpython_feature())
+        features.update(self._cpython_feature())
 
-        # Execute cargo.
+        # build cargo command
+        args = (["cargo", "rustc", "--lib", "--manifest-path", ext.path,
+                 "--features", " ".join(features)]
+                + list(ext.args or []))
+        if not ext.debug:
+            args.append("--release")
+
+        args.extend(["--", '--crate-type', 'cdylib'])
+
+        # OSX requires special linker argument
+        if sys.platform == "darwin":
+            args.extend(["-C", "link-arg=-undefined",
+                         "-C", "link-arg=dynamic_lookup"])
+
+        if not ext.quiet:
+            print(" ".join(args), file=sys.stderr)
+
+        # Execute cargo
         try:
-            args = (["cargo", "build", "--manifest-path", ext.path,
-                     "--features", " ".join(features)] + list(ext.args or []))
-            if not ext.debug:
-                args.append("--release")
-            if not ext.quiet:
-                print(" ".join(args), file=sys.stderr)
-                output = subprocess.check_output(args, env=env)
+            output = subprocess.check_output(args, env=env)
         except subprocess.CalledProcessError as e:
             raise CompileError(
                 "cargo failed with code: %d\n%s" % (e.returncode, e.output))
@@ -142,6 +153,8 @@ class build_rust(Command):
                 "requires rust to be installed and cargo to be on the PATH")
 
         if not ext.quiet:
+            if isinstance(output, bytes):
+                output = output.decode('latin-1')
             print(output, file=sys.stderr)
 
         # Find the shared library that cargo hopefully produced and copy

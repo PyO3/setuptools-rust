@@ -4,9 +4,11 @@ CHANGES
 0.3 (2017-04-09)
 ----------------
 
-- Use distutils exceptions for errors.
+- Fixed OSX extension compilation
 
-- Add rust version check for extension.
+- Use distutils exceptions for errors
+
+- Add rust version check for extension
 
 - Cleanup example project
 

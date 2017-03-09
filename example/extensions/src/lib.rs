@@ -1,5 +1,3 @@
-#![crate_type = "dylib"]
-
 #[macro_use] extern crate cpython;
 
 use cpython::{PyObject, PyResult, Python, PyTuple, PyDict};

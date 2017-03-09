@@ -30,10 +30,8 @@ orig_run_command = develop.develop.run_command
 
 
 def monkey_run_command(self, cmd):
-    print(cmd)
     orig_run_command(self, cmd)
 
-    print(cmd)
     if cmd == 'build_ext':
         self.reinitialize_command('build_rust', inplace=1)
         orig_run_command(self, 'build_rust')
