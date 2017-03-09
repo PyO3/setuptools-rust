@@ -46,4 +46,11 @@ You can use same commands as for c-extensions. For example::
 
 Or you can use commands like `bdist_wheel` or `bdist_egg`
 
+
+RustExtension
+-------------
+
+
+
+
 This package is based on https://github.com/novocaine/rust-python-ext

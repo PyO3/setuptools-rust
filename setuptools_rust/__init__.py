@@ -1,56 +1,19 @@
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 import glob
 import os
 import shutil
 import sys
 import subprocess
 from distutils.cmd import Command
-from distutils.dist import Distribution
-from distutils.command.build import build as Build
 from distutils.errors import (
+    CompileError,
     DistutilsExecError, DistutilsFileError, DistutilsPlatformError)
-from setuptools.command import develop
 
 import semver
 
+from . import patch  # noqa
+
 __all__ = ('RustExtension', 'build_rust')
-
-
-# allow to use 'rust_extensions' parameter for setup() call
-Distribution.rust_extensions = ()
-
-
-def has_ext_modules(self):
-    return (self.ext_modules and len(self.ext_modules) > 0 or
-            self.rust_extensions and len(self.rust_extensions) > 0)
-
-
-Distribution.has_ext_modules = has_ext_modules
-
-
-# add support for build_rust sub-command
-def has_rust_extensions(self):
-    exts = [ext for ext in self.distribution.rust_extensions
-            if isinstance(ext, RustExtension)]
-    return bool(exts)
-
-
-Build.has_rust_extensions = has_rust_extensions
-Build.sub_commands.append(('build_rust', Build.has_rust_extensions))
-
-# monkey patch "develop" command
-orig_run_command = develop.develop.run_command
-
-
-def monkey_run_command(self, cmd):
-    orig_run_command(self, cmd)
-
-    if cmd == 'build_ext':
-        self.reinitialize_command('build_rust', inplace=1)
-        orig_run_command(self, 'build_rust')
-
-
-develop.develop.run_command = monkey_run_command
 
 
 class RustExtension:
@@ -63,9 +26,11 @@ class RustExtension:
         *not* a filename or pathname, but Python dotted name
       path : string
         path to the cargo.toml manifest
-      args : [stirng]
+      args : [string]
         a list of extra argumenents to be passed to cargo.
-      version : string
+      features : [string]
+        a list of features to also build
+      rust_version : string
         rust compiler version
       quiet : bool
         If True, doesn't echo cargo's output.
@@ -74,16 +39,22 @@ class RustExtension:
     """
 
     def __init__(self, name, path,
-                 args=None, version=None, quiet=False, debug=False):
+                 args=None, features=None, rust_version=None,
+                 quiet=False, debug=False):
         self.name = name
         self.path = path
         self.args = args
-        self.version = version
+        self.rust_version = rust_version
         self.quiet = quiet
         self.debug = debug
 
+        if features is None:
+            features = []
+
+        self.features = [s.strip() for s in features]
+
     @staticmethod
-    def get_version():
+    def get_rust_version():
         env = os.environ.copy()
         try:
             output = subprocess.check_output(["rustc", "-V"], env=env)
@@ -117,12 +88,12 @@ class build_rust(Command):
         self.extensions = [ext for ext in self.distribution.rust_extensions
                            if isinstance(ext, RustExtension)]
 
-    def features(self):
+    def _cpython_feature(self):
         version = sys.version_info
         if (2, 7) < version < (2, 8):
-            return "python27-sys"
+            return "cpython/python27-sys"
         elif (3, 3) < version:
-            return "python3-sys"
+            return "cpython/python3-sys"
         else:
             raise DistutilsPlatformError(
                 "Unsupported python version: %s" % sys.version)
@@ -145,17 +116,20 @@ class build_rust(Command):
             raise DistutilsFileError(
                 "Can not file rust extension project file: %s" % ext.path)
 
+        features = set(ext.features)
+        features.add(self._cpython_feature())
+
         # Execute cargo.
         try:
             args = (["cargo", "build", "--manifest-path", ext.path,
-                     "--features", self.features()] + list(ext.args or []))
+                     "--features", " ".join(features)] + list(ext.args or []))
             if not ext.debug:
                 args.append("--release")
             if not ext.quiet:
                 print(" ".join(args), file=sys.stderr)
                 output = subprocess.check_output(args, env=env)
         except subprocess.CalledProcessError as e:
-            raise DistutilsExecError(
+            raise CompileError(
                 "cargo failed with code: %d\n%s" % (e.returncode, e.output))
         except OSError:
             raise DistutilsExecError(
@@ -205,15 +179,15 @@ class build_rust(Command):
         shutil.copyfile(dylib_path, ext_path)
 
     def run(self):
-        version = RustExtension.get_version()
+        version = RustExtension.get_rust_version()
         if self.extensions and version is None:
             raise DistutilsPlatformError('Can not find Rust compiler')
 
         for ext in self.extensions:
-            if ext.version is not None:
-                if not semver.match(version, ext.version):
+            if ext.rust_version is not None:
+                if not semver.match(version, ext.rust_version):
                     raise DistutilsPlatformError(
                         "Rust %s does not match extension requirenment %s" % (
-                            version, ext.version))
+                            version, ext.rust_version))
 
             self.build_extension(ext)

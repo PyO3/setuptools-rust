@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.3 (2017-xx-xx)
+0.3 (2017-04-09)
 ----------------
 
 - Use distutils exceptions for errors.
