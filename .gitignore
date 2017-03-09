@@ -5,5 +5,7 @@
 /build
 /*.egg-info
 Cargo.lock
+/example/build/
+/example/dist/
 /example/extensions/target/
 /example/*.egg-info

@@ -1,9 +1,10 @@
 CHANGES
 =======
 
-0.4 (2017-xx-xx)
-----------------
+0.3.1 (2017-03-09)
+------------------
 
+- Fix compatibility with some old versions of setuptools
 
 
 0.3 (2017-03-09)
