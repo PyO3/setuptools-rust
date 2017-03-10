@@ -1,10 +1,12 @@
 CHANGES
 =======
 
-0.4 (2017-03-xx)
+0.4 (2017-03-10)
 ----------------
 
 - Fixed bdist_egg and bdist_wheel support
+
+- setuptool's clean command cleans rust project as well
 
 - Use absolute path to cargo manifest
 

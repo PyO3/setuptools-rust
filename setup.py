@@ -33,6 +33,7 @@ setup(
     ],
     entry_points="""
     [distutils.commands]
+    clean_rust=setuptools_rust:clean_rust
     build_ext=setuptools_rust:build_ext
     build_rust=setuptools_rust:build_rust
     """

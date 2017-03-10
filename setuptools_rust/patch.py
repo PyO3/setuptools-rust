@@ -1,3 +1,4 @@
+from distutils.command.clean import clean
 from distutils.command.install import install
 from distutils.dist import Distribution as DistDistribution
 from setuptools.dist import Distribution
@@ -50,3 +51,13 @@ def monkey_patch_dist(build_ext):
         self.distribution.ext_modules = ext_modules
 
     install.finalize_options = finalize_options
+
+    # clean rust project
+    def run_clean(self):
+        self.orig_run()
+
+        if not self.dry_run:
+            self.run_command("clean_rust")
+
+    clean.orig_run = clean.run
+    clean.run = run_clean
