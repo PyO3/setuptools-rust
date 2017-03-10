@@ -61,10 +61,11 @@ class RustExtension:
         file = sys._getframe(1).f_globals.get('__file__')
         if file:
             dirname = os.path.dirname(file)
-            cwd = os.getcwd()
-            os.chdir(dirname)
-            path = os.path.abspath(path)
-            os.chdir(cwd)
+            if dirname:
+                cwd = os.getcwd()
+                os.chdir(dirname)
+                path = os.path.abspath(path)
+                os.chdir(cwd)
 
         self.path = path
 

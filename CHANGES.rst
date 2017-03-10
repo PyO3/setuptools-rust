@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.4.1 (2017-03-10)
+------------------
+
+- Fixed cargo manifest absolute path detection
+
+
 0.4 (2017-03-10)
 ----------------
 
