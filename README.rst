@@ -52,7 +52,7 @@ RustExtension
 
 You can define rust extension with `RustExtension` class:
 
-   *RustExtension*(name, path, args=None, features=None, rust_version=None, quiet=False, debug=False)
+   RustExtension(name, path, args=None, features=None, rust_version=None, quiet=False, debug=False)
 
    The class for creating rust extensions.
 
@@ -70,4 +70,6 @@ You can define rust extension with `RustExtension` class:
 
    :param bool quiet: Does not echo cargo's output. default is False
 
-   :param bool debug: Controls whether --debug or --release is passed to cargo.
+   :param bool debug: Controls whether --debug or --release is passed to cargo. If set to
+                      None then build type is auto-detect. Inplace build is debug build
+                      otherwise release. Default: None

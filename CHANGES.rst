@@ -4,6 +4,8 @@ CHANGES
 0.4 (2017-03-xx)
 ----------------
 
+- Fixed bdist_egg and bdist_wheel support
+
 - Use absolute path to cargo manifest
 
 - Enable debug builds for inplace builds, otherwise build release
