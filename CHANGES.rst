@@ -1,6 +1,16 @@
 CHANGES
 =======
 
+0.4 (2017-03-xx)
+----------------
+
+- Use absolute path to cargo manifest
+
+- Enable debug builds for inplace builds, otherwise build release
+
+- Simplify monkey patches
+
+
 0.3.1 (2017-03-09)
 ------------------
 

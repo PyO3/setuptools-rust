@@ -12,8 +12,11 @@ from distutils.errors import (
 import semantic_version
 
 from . import patch  # noqa
+from .build_ext import build_ext
 
-__all__ = ('RustExtension', 'build_rust')
+__all__ = ('RustExtension', 'build_ext', 'build_rust')
+
+patch.monkey_patch_dist(build_ext)
 
 
 class RustExtension:
@@ -35,14 +38,15 @@ class RustExtension:
       quiet : bool
         If True, doesn't echo cargo's output.
       debug : bool
-        Controls whether --debug or --release is passed to cargo.
+        Controls whether --debug or --release is passed to cargo. If set to
+        None then build type is auto-detect. Inplace build is debug build
+        otherwise release. Default: None
     """
 
     def __init__(self, name, path,
                  args=None, features=None, rust_version=None,
-                 quiet=False, debug=False):
+                 quiet=False, debug=None):
         self.name = name
-        self.path = path
         self.args = args
         self.rust_version = rust_version
         self.quiet = quiet
@@ -52,6 +56,17 @@ class RustExtension:
             features = []
 
         self.features = [s.strip() for s in features]
+
+        # get absolute path to Cargo manifest file
+        file = sys._getframe(1).f_globals.get('__file__')
+        if file:
+            dirname = os.path.dirname(file)
+            cwd = os.getcwd()
+            os.chdir(dirname)
+            path = os.path.abspath(path)
+            os.chdir(cwd)
+
+        self.path = path
 
     def get_rust_version(self):
         if self.rust_version is None:
@@ -78,6 +93,8 @@ def get_rust_version():
 
 class build_rust(Command):
     """ Command for building rust crates via cargo. """
+
+    description = "build Rust extensions (compile/link to build directory)"
 
     user_options = [
         ('inplace', 'i',
@@ -124,11 +141,16 @@ class build_rust(Command):
         features = set(ext.features)
         features.update(self._cpython_feature())
 
+        if ext.debug is None:
+            debug_build = self.inplace
+        else:
+            debug_build = ext.debug
+
         # build cargo command
         args = (["cargo", "rustc", "--lib", "--manifest-path", ext.path,
                  "--features", " ".join(features)]
                 + list(ext.args or []))
-        if not ext.debug:
+        if not debug_build:
             args.append("--release")
 
         args.extend(["--", '--crate-type', 'cdylib'])
@@ -159,7 +181,7 @@ class build_rust(Command):
 
         # Find the shared library that cargo hopefully produced and copy
         # it into the build directory as if it were produced by build_ext.
-        if ext.debug:
+        if debug_build:
             suffix = "debug"
         else:
             suffix = "release"
@@ -186,10 +208,10 @@ class build_rust(Command):
         build_ext.inplace = self.inplace
         target_fname = ext.name
         if target_fname is None:
-            target_fname = os.path.splitext(
-                os.path.basename(dylib_path)[3:])[0]
+            target_fname = os.path.basename(os.path.splitext(
+                os.path.basename(dylib_path)[3:])[0])
 
-        ext_path = build_ext.get_ext_fullpath(os.path.basename(target_fname))
+        ext_path = build_ext.get_ext_fullpath(target_fname)
         try:
             os.makedirs(os.path.dirname(ext_path))
         except OSError:

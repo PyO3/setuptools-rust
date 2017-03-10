@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = '0.3.1'
+version = '0.4'
 
 
 setup(
@@ -33,6 +33,7 @@ setup(
     ],
     entry_points="""
     [distutils.commands]
+    build_ext=setuptools_rust:build_ext
     build_rust=setuptools_rust:build_rust
     """
 )
