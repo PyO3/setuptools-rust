@@ -1,6 +1,15 @@
 CHANGES
 =======
 
+0.4.2 (2017-03-15)
+------------------
+
+- Added "--qbuild" option for "build_rust" command.
+  Set "quiet" mode for all extensions.
+
+- Added "--debug" and "--release" options for "build_rust" command.
+
+
 0.4.1 (2017-03-10)
 ------------------
 

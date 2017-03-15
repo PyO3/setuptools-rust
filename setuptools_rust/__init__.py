@@ -101,11 +101,21 @@ class build_rust(Command):
         ('inplace', 'i',
          "ignore build-lib and put compiled extensions into the source " +
          "directory alongside your pure Python modules"),
+        ('debug', 'd',
+         "Force debug to true for all rust extensions "),
+        ('release', 'r',
+         "Force debug to false for all rust extensions "),
+        ('qbuild', None,
+         "Force enable quiet option for all rust extensions "),
     ]
+    boolean_options = ['inplace', 'debug', 'release', 'qbuild']
 
     def initialize_options(self):
         self.extensions = ()
-        self.inplace = False
+        self.inplace = None
+        self.debug = None
+        self.release = None
+        self.qbuild = None
 
     def finalize_options(self):
         self.extensions = [ext for ext in self.distribution.rust_extensions
@@ -147,12 +157,20 @@ class build_rust(Command):
         else:
             debug_build = ext.debug
 
+        debug_build = self.debug if self.debug is not None else debug_build
+        if self.release:
+            debug_build = False
+
+        quiet = self.qbuild or ext.quiet
+
         # build cargo command
         args = (["cargo", "rustc", "--lib", "--manifest-path", ext.path,
                  "--features", " ".join(features)]
                 + list(ext.args or []))
         if not debug_build:
             args.append("--release")
+        if quiet:
+            args.append("-q")
 
         args.extend(["--", '--crate-type', 'cdylib'])
 
@@ -161,7 +179,7 @@ class build_rust(Command):
             args.extend(["-C", "link-arg=-undefined",
                          "-C", "link-arg=dynamic_lookup"])
 
-        if not ext.quiet:
+        if not quiet:
             print(" ".join(args), file=sys.stderr)
 
         # Execute cargo
@@ -175,7 +193,7 @@ class build_rust(Command):
                 "Unable to execute 'cargo' - this package "
                 "requires rust to be installed and cargo to be on the PATH")
 
-        if not ext.quiet:
+        if not quiet:
             if isinstance(output, bytes):
                 output = output.decode('latin-1')
             print(output, file=sys.stderr)
