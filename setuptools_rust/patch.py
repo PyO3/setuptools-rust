@@ -1,4 +1,5 @@
 from distutils.command.clean import clean
+from distutils.command.check import check
 from distutils.command.install import install
 from distutils.dist import Distribution as DistDistribution
 from setuptools.dist import Distribution
@@ -61,3 +62,11 @@ def monkey_patch_dist(build_ext):
 
     clean.orig_run = clean.run
     clean.run = run_clean
+
+    # check rust project
+    def run_check(self):
+        self.orig_run()
+        self.run_command("check_rust")
+
+    check.orig_run = check.run
+    check.run = run_check

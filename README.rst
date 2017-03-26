@@ -73,3 +73,13 @@ You can define rust extension with `RustExtension` class:
    :param bool debug: Controls whether --debug or --release is passed to cargo. If set to
                       None then build type is auto-detect. Inplace build is debug build
                       otherwise release. Default: None
+
+
+Commands
+--------
+
+* `build` - Standard `build` command builds all rust extensions.
+
+* `clean` - Standard `clean` command executes `cargo clean` for all rust extensions.
+
+* `check` - Standard `checl` command executes `cargo check` for all rust extensions.

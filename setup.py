@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = '0.4.2'
+version = '0.5.0'
 
 
 setup(
@@ -15,7 +15,7 @@ setup(
         (open('README.rst').read(), open('CHANGES.rst').read())),
     license='MIT',
     packages=['setuptools_rust'],
-    install_requires=['semantic_version==2.6.0'],
+    install_requires=['semantic_version>=2.6.0'],
     zip_safe=True,
     classifiers=[
         "Topic :: Software Development :: Version Control",
@@ -33,6 +33,7 @@ setup(
     ],
     entry_points="""
     [distutils.commands]
+    check_rust=setuptools_rust.check:check_rust
     clean_rust=setuptools_rust:clean_rust
     build_ext=setuptools_rust:build_ext
     build_rust=setuptools_rust:build_rust
