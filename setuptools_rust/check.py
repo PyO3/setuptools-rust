@@ -11,7 +11,7 @@ import semantic_version
 from .extension import RustExtension
 from .utils import cpython_feature, get_rust_version
 
-MIN_VERSION = semantic_version.Spec('1.16')
+MIN_VERSION = semantic_version.Spec('>=1.16')
 
 
 class check_rust(Command):
@@ -32,6 +32,8 @@ class check_rust(Command):
 
         version = get_rust_version()
         if version not in MIN_VERSION:
+            print('Rust version mismatch: required rust%s got rust%s' % (
+                MIN_VERSION,  version))
             return
 
         # Make sure that if pythonXX-sys is used, it builds against the current
@@ -70,6 +72,7 @@ class check_rust(Command):
             except OSError:
                 raise DistutilsExecError(
                     "Unable to execute 'cargo' - this package "
-                    "requires rust to be installed and cargo to be on the PATH")
+                    "requires rust to be installed and "
+                    "cargo to be on the PATH")
             else:
                 print("Extension '%s' checked" % ext.name)
