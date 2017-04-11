@@ -13,7 +13,7 @@ class build_ext(_build_ext):
 
     def check_extensions_list(self, extensions):
         if extensions:
-            _build_ext.check_extensions_list(extensions)
+            _build_ext.check_extensions_list(self, extensions)
 
     def run(self):
         """Run build_rust sub command """

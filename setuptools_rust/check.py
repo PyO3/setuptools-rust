@@ -3,7 +3,8 @@ import os
 import sys
 import subprocess
 from distutils.cmd import Command
-from distutils.errors import CompileError, DistutilsExecError
+from distutils.errors import (
+    CompileError, DistutilsFileError, DistutilsExecError)
 
 import semantic_version
 
@@ -61,10 +62,11 @@ class check_rust(Command):
 
             # Execute cargo command
             try:
-                output = subprocess.check_output(args)
+                subprocess.check_output(args)
             except subprocess.CalledProcessError as e:
                 raise CompileError(
-                    "cargo failed with code: %d\n%s" % (e.returncode, e.output))
+                    "cargo failed with code: %d\n%s" % (
+                        e.returncode, e.output.decode("utf-8")))
             except OSError:
                 raise DistutilsExecError(
                     "Unable to execute 'cargo' - this package "
