@@ -8,7 +8,7 @@ setup(
     version=version,
     author='Nikolay Kim',
     author_email='fafhrd91@gmail.com',
-    url="https://github.com/fafhrd91/setuptools-rust",
+    url="https://github.com/PyO3/setuptools-rust",
     keywords='distutils setuptools rust',
     description="Setuptools rust extension plugin",
     long_description='\n\n'.join(
