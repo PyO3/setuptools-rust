@@ -1,8 +1,10 @@
 CHANGES
 =======
 
-0.5.1 (2017-04-xx)
+0.5.1 (2017-05-xx)
 ------------------
+
+- Added support for "cargo test"
 
 - Fixed unbound method type error #4
 
