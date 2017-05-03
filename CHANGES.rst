@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.5.1 (2017-05-xx)
+0.5.1 (2017-05-03)
 ------------------
 
 - Added support for "cargo test"
