@@ -57,11 +57,11 @@ class test_rust(Command):
                     "Can not file rust extension project file: %s" % ext.path)
 
             features = set(ext.features)
-            features.update(cpython_feature(ext=False))
+            features.update(cpython_feature(ext=False, pyo3=ext.pyo3))
 
             # build cargo command
-            args = (["cargo", "test", "--manifest-path", ext.path,
-                     "--features", " ".join(features)]
+            args = (["cargo", "test", '--color', 'always', "--manifest-path",
+                     ext.path, "--features", " ".join(features)]
                     + list(ext.args or []))
 
             # Execute cargo command

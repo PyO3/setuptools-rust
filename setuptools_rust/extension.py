@@ -28,13 +28,17 @@ class RustExtension:
         Controls whether --debug or --release is passed to cargo. If set to
         None then build type is auto-detect. Inplace build is debug build
         otherwise release. Default: None
+      pyo3 : bool
+        Controls wich python binding is in use. `pyo3=True` uses PyO3 binding,
+        `pyo3=False` uses rust-cpython binding,
     """
 
     def __init__(self, name, path,
                  args=None, features=None, rust_version=None,
-                 quiet=False, debug=None):
+                 quiet=False, debug=None, pyo3=False):
         self.name = name
         self.args = args
+        self.pyo3 = pyo3
         self.rust_version = rust_version
         self.quiet = quiet
         self.debug = debug

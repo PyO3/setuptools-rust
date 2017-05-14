@@ -6,21 +6,28 @@ from distutils.errors import DistutilsPlatformError
 import semantic_version
 
 
-def cpython_feature(ext=True):
+def cpython_feature(ext=True, pyo3=False):
     version = sys.version_info
-    if (2, 7) < version < (2, 8):
+
+    if pyo3:
         if ext:
-            return ("cpython/python27-sys", "cpython/extension-module-2-7")
+            return ("pyo3/extension-module",)
         else:
-            return ("cpython/python27-sys",)
-    elif (3, 3) < version:
-        if ext:
-            return ("cpython/python3-sys", "cpython/extension-module")
-        else:
-            return ("cpython/python3-sys",)
+            return ()
     else:
-        raise DistutilsPlatformError(
-            "Unsupported python version: %s" % sys.version)
+        if (2, 7) < version < (2, 8):
+            if ext:
+                return ("cpython/python27-sys", "cpython/extension-module-2-7")
+            else:
+                return ("cpython/python27-sys",)
+        elif (3, 3) < version:
+            if ext:
+                return ("cpython/python3-sys", "cpython/extension-module")
+            else:
+                return ("cpython/python3-sys",)
+
+    raise DistutilsPlatformError(
+        "Unsupported python version: %s" % sys.version)
 
 
 def get_rust_version():

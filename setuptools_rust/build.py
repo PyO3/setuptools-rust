@@ -52,7 +52,6 @@ class build_rust(Command):
             # disables rust's pkg-config seeking for specified packages,
             # which causes pythonXX-sys to fall back to detecting the
             # interpreter from the path.
-            "PYTHON_2.7_NO_PKG_CONFIG": "1",
             "PATH":  bindir + os.pathsep + os.environ.get("PATH", "")
         })
 
@@ -61,7 +60,7 @@ class build_rust(Command):
                 "Can not file rust extension project file: %s" % ext.path)
 
         features = set(ext.features)
-        features.update(cpython_feature())
+        features.update(cpython_feature(pyo3=ext.pyo3))
 
         if ext.debug is None:
             debug_build = self.inplace
@@ -107,7 +106,8 @@ class build_rust(Command):
         if not quiet:
             if isinstance(output, bytes):
                 output = output.decode('latin-1')
-                print(output, file=sys.stderr)
+                if output:
+                    print(output, file=sys.stderr)
 
         # Find the shared library that cargo hopefully produced and copy
         # it into the build directory as if it were produced by build_ext.

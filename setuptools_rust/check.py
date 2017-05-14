@@ -55,7 +55,7 @@ class check_rust(Command):
                     "Can not file rust extension project file: %s" % ext.path)
 
             features = set(ext.features)
-            features.update(cpython_feature())
+            features.update(cpython_feature(pyo3=ext.pyo3))
 
             # build cargo command
             args = (["cargo", "check", "--lib", "--manifest-path", ext.path,
