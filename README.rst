@@ -73,7 +73,8 @@ You can define rust extension with `RustExtension` class:
    :param bool debug: Controls whether --debug or --release is passed to cargo. If set to
                       None then build type is auto-detect. Inplace build is debug build
                       otherwise release. Default: None
-
+   :param bool no_binding: If you don't want to run `pyo3` or `rust-cpython`, set this to True.
+                           Useful if you want to use a different interface like CFFI.
 
 Commands
 --------

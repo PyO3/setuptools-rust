@@ -6,7 +6,9 @@ from distutils.errors import DistutilsPlatformError
 import semantic_version
 
 
-def cpython_feature(ext=True, pyo3=False):
+def cpython_feature(ext=True, pyo3=False, no_binding=False):
+    if no_binding:
+        return ()
     version = sys.version_info
 
     if pyo3:
