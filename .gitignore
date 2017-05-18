@@ -10,3 +10,5 @@ Cargo.lock
 /example/dist/
 /example/extensions/target/
 /example/*.egg-info
+.idea/
+
