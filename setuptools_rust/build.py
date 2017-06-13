@@ -60,7 +60,7 @@ class build_rust(Command):
                 "Can not file rust extension project file: %s" % ext.path)
 
         features = set(ext.features)
-        features.update(cpython_feature(pyo3=ext.pyo3))
+        features.update(cpython_feature(binding=ext.binding))
 
         if ext.debug is None:
             debug_build = self.inplace
@@ -74,8 +74,9 @@ class build_rust(Command):
         quiet = self.qbuild or ext.quiet
 
         # build cargo command
-        args = (["cargo", "rustc", "--lib", "--manifest-path", ext.path,
-                 "--features", " ".join(features)]
+        feature_args = ["--features " + " ".join(features)] if features else []
+        args = (["cargo", "rustc", "--lib", "--manifest-path", ext.path]
+                + feature_args
                 + list(ext.args or []))
         if not debug_build:
             args.append("--release")
@@ -158,7 +159,7 @@ class build_rust(Command):
             rust_version = ext.get_rust_version()
             if rust_version is not None and version not in rust_version:
                 raise DistutilsPlatformError(
-                    "Rust %s does not match extension requirenment %s" % (
+                    "Rust %s does not match extension requirement %s" % (
                         version, ext.rust_version))
 
             self.build_extension(ext)

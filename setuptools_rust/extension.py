@@ -2,6 +2,8 @@ from __future__ import print_function, absolute_import
 import os
 import sys
 from distutils.errors import DistutilsSetupError
+from .utils import Binding
+
 
 import semantic_version
 
@@ -28,17 +30,19 @@ class RustExtension:
         Controls whether --debug or --release is passed to cargo. If set to
         None then build type is auto-detect. Inplace build is debug build
         otherwise release. Default: None
-      pyo3 : bool
-        Controls wich python binding is in use. `pyo3=True` uses PyO3 binding,
-        `pyo3=False` uses rust-cpython binding,
+      binding : setuptools_rust.Binding
+        Controls which python binding is in use.
+        Binding.PyO3 uses PyO3
+        Binding.RustCPython uses Rust CPython.
+        Binding.NoBinding uses no binding.
     """
 
     def __init__(self, name, path,
                  args=None, features=None, rust_version=None,
-                 quiet=False, debug=None, pyo3=False):
+                 quiet=False, debug=None, binding=Binding.PyO3):
         self.name = name
         self.args = args
-        self.pyo3 = pyo3
+        self.binding = binding
         self.rust_version = rust_version
         self.quiet = quiet
         self.debug = debug

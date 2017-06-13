@@ -6,15 +6,29 @@ from distutils.errors import DistutilsPlatformError
 import semantic_version
 
 
-def cpython_feature(ext=True, pyo3=False):
+class Binding:
+    """
+    Binding Options
+    """
+    #  https://github.com/PyO3/PyO3
+    PyO3 = 0
+    #  https://github.com/dgrunwald/rust-cpython
+    RustCPython = 1
+    #  Bring your own binding
+    NoBinding = 2
+
+
+def cpython_feature(ext=True, binding=Binding.PyO3):
     version = sys.version_info
 
-    if pyo3:
+    if binding is Binding.NoBinding:
+        return ()
+    elif binding is Binding.PyO3:
         if ext:
             return ("pyo3/extension-module",)
         else:
             return ()
-    else:
+    elif binding is Binding.RustCPython:
         if (2, 7) < version < (2, 8):
             if ext:
                 return ("cpython/python27-sys", "cpython/extension-module-2-7")
@@ -25,10 +39,11 @@ def cpython_feature(ext=True, pyo3=False):
                 return ("cpython/python3-sys", "cpython/extension-module")
             else:
                 return ("cpython/python3-sys",)
-
-    raise DistutilsPlatformError(
-        "Unsupported python version: %s" % sys.version)
-
+        else:
+            raise DistutilsPlatformError(
+                "Unsupported python version: %s" % sys.version)
+    else:
+        raise DistutilsPlatformError('Unknown Binding: "{}" '.format(binding))
 
 def get_rust_version():
     try:
