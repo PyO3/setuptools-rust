@@ -97,8 +97,12 @@ class build_rust(Command):
         try:
             output = subprocess.check_output(args, env=env)
         except subprocess.CalledProcessError as e:
+            output = e.output
+            if isinstance(output, bytes):
+                output = e.output.decode('latin-1').strip()
             raise CompileError(
-                "cargo failed with code: %d\n%s" % (e.returncode, e.output))
+                "cargo failed with code: %d\n%s" % (e.returncode, output))
+
         except OSError:
             raise DistutilsExecError(
                 "Unable to execute 'cargo' - this package "
@@ -107,8 +111,8 @@ class build_rust(Command):
         if not quiet:
             if isinstance(output, bytes):
                 output = output.decode('latin-1')
-                if output:
-                    print(output, file=sys.stderr)
+            if output:
+                print(output, file=sys.stderr)
 
         # Find the shared library that cargo hopefully produced and copy
         # it into the build directory as if it were produced by build_ext.
