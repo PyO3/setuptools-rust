@@ -6,6 +6,8 @@ CHANGES
 
 - Add support for PyO3 project https://github.com/PyO3/PyO3
 
+- Add support for no-binding mode
+
 
 0.5.1 (2017-05-03)
 ------------------

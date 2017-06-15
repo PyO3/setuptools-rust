@@ -74,6 +74,10 @@ You can define rust extension with `RustExtension` class:
                       None then build type is auto-detect. Inplace build is debug build
                       otherwise release. Default: None
 
+   :param int binding: Controls which python binding is in use.
+                       `Binding.PyO3` uses PyO3
+                       `Binding.RustCPython` uses rust-cpython
+                       `Binding.NoBinding` uses no binding.
 
 Commands
 --------

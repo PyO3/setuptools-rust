@@ -74,7 +74,7 @@ class build_rust(Command):
         quiet = self.qbuild or ext.quiet
 
         # build cargo command
-        feature_args = ["--features " + " ".join(features)] if features else []
+        feature_args = ["--features", " ".join(features)] if features else []
         args = (["cargo", "rustc", "--lib", "--manifest-path", ext.path]
                 + feature_args
                 + list(ext.args or []))

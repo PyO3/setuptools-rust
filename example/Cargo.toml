@@ -3,8 +3,8 @@ name = "hello-world"
 version = "0.1.0"
 authors = ["Nikolay Kim <fafhrd91@gmail.com>"]
 
-[dependencies.cpython]
-git = "https://github.com/dgrunwald/rust-cpython.git"
+[dependencies.pyo3]
+git = "https://github.com/PyO3/PyO3.git"
 default-features = false
 
 [lib]
