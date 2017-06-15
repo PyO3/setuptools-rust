@@ -57,17 +57,18 @@ class test_rust(Command):
                     "Can not file rust extension project file: %s" % ext.path)
 
             features = set(ext.features)
-            features.update(cpython_feature(ext=False, pyo3=ext.pyo3))
+            features.update(cpython_feature(ext=False, binding=ext.binding))
 
             # build cargo command
-            args = (["cargo", "test", '--color', 'always', "--manifest-path",
-                     ext.path, "--features", " ".join(features)]
+            feature_args = ["--features " + " ".join(features)] if features else []
+            args = (["cargo", "rustc", "--lib", "--manifest-path", ext.path]
+                    + feature_args
                     + list(ext.args or []))
 
             # Execute cargo command
             print(' '.join(args))
             try:
-                subprocess.check_output(args)
+                subprocess.check_output(args, env=env)
             except subprocess.CalledProcessError as e:
                 raise CompileError(
                     "cargo failed with code: %d\n%s" % (
