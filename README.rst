@@ -11,11 +11,12 @@ setup.py
 .. code-block:: python
 
    from setuptools import setup
-   from setuptools_rust import RustExtension
+   from setuptools_rust import Binding, RustExtension
 
    setup(name='hello-rust',
          version='1.0',
-         rust_extensions=[RustExtension('hello_rust._helloworld', 'extensions/Cargo.toml')],
+         rust_extensions=[RustExtension('hello_rust._helloworld',
+                                        'Cargo.toml', binding=Binding.PyO3)],
          packages=['hello_rust'],
          # rust extensions are not zip safe, just like C-extensions.
          zip_safe=False
@@ -34,10 +35,10 @@ You can use same commands as for c-extensions. For example::
    writing manifest file 'hello_rust.egg-info/SOURCES.txt'
    running build_ext
    running build_rust
-   cargo build --manifest-path extensions/Cargo.toml --features python27-sys
+   cargo build --manifest-path extensions/Cargo.toml --features python3
        Finished debug [unoptimized + debuginfo] target(s) in 0.0 secs
 
-   Creating /.../lib/python2.7/site-packages/hello_rust.egg-link (link to .)
+   Creating /.../lib/python3.6/site-packages/hello_rust.egg-link (link to .)
 
    Installed hello_rust
    Processing dependencies for hello_rust==1.0
