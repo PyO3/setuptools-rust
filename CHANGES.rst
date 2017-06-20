@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.6.0 (2017-05-14)
+0.6.0 (2017-06-20)
 ------------------
 
 - Add support for PyO3 project https://github.com/PyO3/PyO3
