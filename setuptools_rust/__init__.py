@@ -9,7 +9,7 @@ from .test import test_rust
 from .extension import RustExtension
 from .utils import Binding
 
-__all__ = ('RustExtension',
+__all__ = ('RustExtension', 'Binding',
            'check_rust', 'clean_rust', 'build_ext', 'build_rust', 'test_rust')
 
 

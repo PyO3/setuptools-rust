@@ -58,7 +58,8 @@ class check_rust(Command):
             features.update(cpython_feature(binding=ext.binding))
 
             # check cargo command
-            feature_args = ["--features", " ".join(features)] if features else []
+            feature_args = [
+                "--features", " ".join(features)] if features else []
             args = (["cargo", "check", "--lib", "--manifest-path", ext.path]
                     + feature_args
                     + list(ext.args or []))

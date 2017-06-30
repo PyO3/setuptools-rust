@@ -60,7 +60,8 @@ class test_rust(Command):
             features.update(cpython_feature(ext=False, binding=ext.binding))
 
             # test cargo command
-            feature_args = ["--features", " ".join(features)] if features else []
+            feature_args = [
+                "--features", " ".join(features)] if features else []
             args = (["cargo", "test", "--lib", "--manifest-path", ext.path]
                     + feature_args
                     + list(ext.args or []))
