@@ -121,7 +121,13 @@ class build_rust(Command):
         else:
             suffix = "release"
 
-        target_dir = os.path.join(os.path.dirname(ext.path), "target/", suffix)
+        # location of files
+        dir = os.environ.get('CARGO_TARGET_DIR', '').strip()
+        if dir:
+            target_dir = os.path.join(dir, suffix)
+        else:
+            target_dir = os.path.join(
+                os.path.dirname(ext.path), "target/", suffix)
 
         if sys.platform == "win32":
             wildcard_so = "*.dll"
