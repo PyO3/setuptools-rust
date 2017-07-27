@@ -85,7 +85,7 @@ Commands
 
 * `build` - Standard `build` command builds all rust extensions.
 
-* `build_ext` - Command builds all rust extensions.
+* `build_rust` - Command builds all rust extensions.
 
 * `clean` - Standard `clean` command executes `cargo clean` for all rust extensions.
 
