@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.6.4
+-------
+
+- `check` command respects `optional` option
+- Don't fail when Rust isn't installed while all extensions are optional
+
 0.6.3 (2017-07-31)
 ------------------
 
