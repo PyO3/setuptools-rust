@@ -7,7 +7,7 @@ import subprocess
 from distutils.cmd import Command
 from distutils.errors import (
     CompileError, DistutilsExecError, DistutilsFileError,
-    DistutilsPlatformError)
+    DistutilsPlatformError, DistutilsSetupError)
 
 from .extension import RustExtension
 from .utils import cpython_feature, get_rust_version
@@ -166,10 +166,18 @@ class build_rust(Command):
         version = get_rust_version()
 
         for ext in self.extensions:
-            rust_version = ext.get_rust_version()
-            if rust_version is not None and version not in rust_version:
-                raise DistutilsPlatformError(
-                    "Rust %s does not match extension requirement %s" % (
-                        version, ext.rust_version))
+            try:
+                rust_version = ext.get_rust_version()
+                if rust_version is not None and version not in rust_version:
+                    raise DistutilsPlatformError(
+                        "Rust %s does not match extension requirement %s" % (
+                            version, ext.rust_version))
 
-            self.build_extension(ext)
+                self.build_extension(ext)
+            except (DistutilsSetupError, DistutilsFileError, DistutilsExecError,
+                    DistutilsPlatformError, CompileError) as e:
+                if not ext.optional:
+                    raise
+                else:
+                    print('Build optional Rust extension %s failed.' % ext.name)
+                    print(str(e))
