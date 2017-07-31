@@ -35,17 +35,22 @@ class RustExtension:
         Binding.PyO3 uses PyO3
         Binding.RustCPython uses Rust CPython.
         Binding.NoBinding uses no binding.
+      optional : bool
+        if it is true, a build failure in the extension will not abort the build process,
+        but instead simply not install the failing extension.
     """
 
     def __init__(self, name, path,
                  args=None, features=None, rust_version=None,
-                 quiet=False, debug=None, binding=Binding.PyO3):
+                 quiet=False, debug=None, binding=Binding.PyO3,
+                 optional=False):
         self.name = name
         self.args = args
         self.binding = binding
         self.rust_version = rust_version
         self.quiet = quiet
         self.debug = debug
+        self.optional = optional
 
         if features is None:
             features = []

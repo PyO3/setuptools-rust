@@ -80,6 +80,9 @@ You can define rust extension with `RustExtension` class:
                        `Binding.RustCPython` uses rust-cpython
                        `Binding.NoBinding` uses no binding.
 
+    :param bool optional: if it is true, a build failure in the extension will not abort the build process,
+                          but instead simply not install the failing extension.
+
 Commands
 --------
 
