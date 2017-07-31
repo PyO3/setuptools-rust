@@ -163,7 +163,15 @@ class build_rust(Command):
         if not self.extensions:
             return
 
-        version = get_rust_version()
+        all_optional = all(ext.optional for ext in self.extensions)
+        try:
+            version = get_rust_version()
+        except DistutilsPlatformError as e:
+            if not all_optional:
+                raise
+            else:
+                print(str(e))
+                return
 
         for ext in self.extensions:
             try:
