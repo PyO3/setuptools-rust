@@ -4,9 +4,8 @@ version = "0.1.0"
 authors = ["Nikolay Kim <fafhrd91@gmail.com>"]
 
 [dependencies.pyo3]
-git = "https://github.com/PyO3/PyO3.git"
+version = "0.1.0"
 default-features = false
 
 [lib]
 name = "helloworld"
-crate-type = ["cdylib"]
