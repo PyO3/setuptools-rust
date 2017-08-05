@@ -8,4 +8,5 @@ version = "0.1.0"
 default-features = false
 
 [lib]
+crate-type = ["cdylib"]
 name = "helloworld"
