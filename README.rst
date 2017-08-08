@@ -45,8 +45,16 @@ You can use same commands as for c-extensions. For example::
    Finished processing dependencies for hello_rust==1.0
 
 
-Or you can use commands like `bdist_wheel` or `bdist_egg`
+Or you can use commands like `bdist_wheel` or `bdist_egg`.
 
+You can build `manylinux1` binary wheels using Docker:
+
+.. code-block:: bash
+
+    docker run --rm -v `pwd`:/io quay.io/pypa/manylinux1_x86_64 /io/build-wheels.sh
+
+`build-wheels.sh` example can be found here: 
+https://github.com/PyO3/setuptools-rust/blob/master/example/build-wheels.sh
 
 RustExtension
 -------------
