@@ -62,7 +62,8 @@ class check_rust(Command):
             try:
                 if not os.path.exists(ext.path):
                     raise DistutilsFileError(
-                        "Can not file rust extension project file: %s" % ext.path)
+                        "Can not file rust extension project file: %s" %
+                        ext.path)
 
                 features = set(ext.features)
                 features.update(cpython_feature(binding=ext.binding))
@@ -70,7 +71,7 @@ class check_rust(Command):
                 # check cargo command
                 feature_args = [
                     "--features", " ".join(features)] if features else []
-                args = (["cargo", "check", "--lib", "--manifest-path", ext.path]
+                args = (["cargo", "check", "--manifest-path", ext.path]
                         + feature_args
                         + list(ext.args or []))
 
@@ -92,5 +93,6 @@ class check_rust(Command):
                 if not ext.optional:
                     raise
                 else:
-                    print('Check optional Rust extension %s failed.' % ext.name)
+                    print('Check optional Rust extension %s failed.' %
+                          ext.name)
                     print(str(e))

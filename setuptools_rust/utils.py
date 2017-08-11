@@ -10,18 +10,20 @@ class Binding:
     """
     Binding Options
     """
-    #  https://github.com/PyO3/PyO3
+    # https://github.com/PyO3/PyO3
     PyO3 = 0
-    #  https://github.com/dgrunwald/rust-cpython
+    # https://github.com/dgrunwald/rust-cpython
     RustCPython = 1
-    #  Bring your own binding
+    # Bring your own binding
     NoBinding = 2
+    # Build executable
+    Exec = 3
 
 
 def cpython_feature(ext=True, binding=Binding.PyO3):
     version = sys.version_info
 
-    if binding is Binding.NoBinding:
+    if binding in (Binding.NoBinding, Binding.Exec):
         return ()
     elif binding is Binding.PyO3:
         if (2, 7) < version < (2, 8):

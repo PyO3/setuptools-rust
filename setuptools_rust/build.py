@@ -10,7 +10,7 @@ from distutils.errors import (
     DistutilsPlatformError, DistutilsSetupError)
 
 from .extension import RustExtension
-from .utils import cpython_feature, get_rust_version
+from .utils import Binding, cpython_feature, get_rust_version
 
 
 class build_rust(Command):
@@ -43,6 +43,8 @@ class build_rust(Command):
                            if isinstance(ext, RustExtension)]
 
     def build_extension(self, ext):
+        executable = ext.binding == Binding.Exec
+
         # Make sure that if pythonXX-sys is used, it builds against the current
         # executing python interpreter.
         bindir = os.path.dirname(sys.executable)
@@ -75,20 +77,30 @@ class build_rust(Command):
 
         # build cargo command
         feature_args = ["--features", " ".join(features)] if features else []
-        args = (["cargo", "rustc", "--lib", "--manifest-path", ext.path]
-                + feature_args
-                + list(ext.args or []))
-        if not debug_build:
-            args.append("--release")
-        if quiet:
-            args.append("-q")
 
-        args.extend(["--", '--crate-type', 'cdylib'])
+        if executable:
+            args = (["cargo", "build", "--manifest-path", ext.path]
+                    + feature_args
+                    + list(ext.args or []))
+            if not debug_build:
+                args.append("--release")
+            if quiet:
+                args.append("-q")
+        else:
+            args = (["cargo", "rustc", "--lib", "--manifest-path", ext.path]
+                    + feature_args
+                    + list(ext.args or []))
+            if not debug_build:
+                args.append("--release")
+            if quiet:
+                args.append("-q")
 
-        # OSX requires special linker argument
-        if sys.platform == "darwin":
-            args.extend(["-C", "link-arg=-undefined",
-                         "-C", "link-arg=dynamic_lookup"])
+            args.extend(["--", '--crate-type', 'cdylib'])
+
+            # OSX requires special linker argument
+            if sys.platform == "darwin":
+                args.extend(["-C", "link-arg=-undefined",
+                             "-C", "link-arg=dynamic_lookup"])
 
         if not quiet:
             print(" ".join(args), file=sys.stderr)
@@ -129,19 +141,37 @@ class build_rust(Command):
             target_dir = os.path.join(
                 os.path.dirname(ext.path), "target/", suffix)
 
-        if sys.platform == "win32":
-            wildcard_so = "*.dll"
-        elif sys.platform == "darwin":
-            wildcard_so = "*.dylib"
-        else:
-            wildcard_so = "*.so"
+        if executable:
+            # search executable
+            dylib_path = None
+            for name in os.listdir(target_dir):
+                path = os.path.join(target_dir, name)
+                if name.startswith(".") or not os.path.isfile(path):
+                    continue
 
-        try:
-            dylib_path = glob.glob(os.path.join(target_dir, wildcard_so))[0]
-        except IndexError:
-            raise DistutilsExecError(
-                "rust build failed; unable to find any %s in %s" %
-                (wildcard_so, target_dir))
+                if os.access(path, os.X_OK):
+                    dylib_path = path
+                    break
+
+            if dylib_path is None:
+                raise DistutilsExecError(
+                    "rust build failed; unable to find executable in %s" %
+                    target_dir)
+        else:
+            if sys.platform == "win32":
+                wildcard_so = "*.dll"
+            elif sys.platform == "darwin":
+                wildcard_so = "*.dylib"
+            else:
+                wildcard_so = "*.so"
+
+            try:
+                dylib_path = glob.glob(
+                    os.path.join(target_dir, wildcard_so))[0]
+            except IndexError:
+                raise DistutilsExecError(
+                    "rust build failed; unable to find any %s in %s" %
+                    (wildcard_so, target_dir))
 
         # Ask build_ext where the shared library would go if it had built it,
         # then copy it there.
@@ -152,12 +182,22 @@ class build_rust(Command):
             target_fname = os.path.basename(os.path.splitext(
                 os.path.basename(dylib_path)[3:])[0])
 
-        ext_path = build_ext.get_ext_fullpath(target_fname)
+        if executable:
+            ext_path = build_ext.get_ext_fullpath(target_fname)
+            ext_path, _ = os.path.splitext(ext_path)
+        else:
+            ext_path = build_ext.get_ext_fullpath(target_fname)
+
         try:
             os.makedirs(os.path.dirname(ext_path))
         except OSError:
             pass
         shutil.copyfile(dylib_path, ext_path)
+
+        if executable:
+            mode = os.stat(ext_path).st_mode
+            mode |= (mode & 0o444) >> 2    # copy R bits to X
+            os.chmod(ext_path, mode)
 
     def run(self):
         if not self.extensions:
@@ -182,10 +222,12 @@ class build_rust(Command):
                             version, ext.rust_version))
 
                 self.build_extension(ext)
-            except (DistutilsSetupError, DistutilsFileError, DistutilsExecError,
-                    DistutilsPlatformError, CompileError) as e:
+            except (DistutilsSetupError, DistutilsFileError,
+                    DistutilsExecError, DistutilsPlatformError,
+                    CompileError) as e:
                 if not ext.optional:
                     raise
                 else:
-                    print('Build optional Rust extension %s failed.' % ext.name)
+                    print('Build optional Rust extension %s failed.' %
+                          ext.name)
                     print(str(e))

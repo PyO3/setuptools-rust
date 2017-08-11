@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+
+0.7.0 (2017-08-11)
+------------------
+
+- Allow to build executable and pack with python package.
+
 - Use PyO3 0.1 for example.
 
 
