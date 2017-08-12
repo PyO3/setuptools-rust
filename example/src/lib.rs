@@ -2,15 +2,15 @@
 
 extern crate pyo3;
 
-use pyo3::*;
+use pyo3::prelude::*;
 
 /// Module documentation string
 #[py::modinit(_helloworld)]
 fn init(py: Python, m: &PyModule) -> PyResult<()> {
 
     #[pyfn(m, "run", args="*", kwargs="**")]
-    fn run_fn(py: Python, args: &PyTuple, kwargs: Option<&PyDict>) -> PyResult<()> {
-        run(py, args, kwargs)
+    fn run_fn(_py: Python, args: &PyTuple, kwargs: Option<&PyDict>) -> PyResult<()> {
+        run(args, kwargs)
     }
 
     #[pyfn(m, "val")]
@@ -21,14 +21,14 @@ fn init(py: Python, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
-fn run(py: Python, args: &PyTuple, kwargs: Option<&PyDict>) -> PyResult<()> {
+fn run(args: &PyTuple, kwargs: Option<&PyDict>) -> PyResult<()> {
     println!("Rust says: Hello Python!");
     for arg in args.iter() {
-        println!("Rust got {}", arg.as_ref(py));
+        println!("Rust got {}", arg);
     }
     if let Some(kwargs) = kwargs {
-        for (key, val) in kwargs.items_vec() {
-            println!("{} = {}", key.as_ref(py), val.as_ref(py));
+        for (key, val) in kwargs.iter() {
+            println!("{} = {}", key, val);
         }
     }
     Ok(())
