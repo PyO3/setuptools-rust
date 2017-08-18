@@ -10,7 +10,7 @@ from distutils.errors import (
     DistutilsPlatformError, DistutilsSetupError)
 
 from .extension import RustExtension
-from .utils import Binding, cpython_feature, get_rust_version
+from .utils import Binding, Strip, cpython_feature, get_rust_version
 
 
 class build_rust(Command):
@@ -193,6 +193,21 @@ class build_rust(Command):
         except OSError:
             pass
         shutil.copyfile(dylib_path, ext_path)
+
+        if not debug_build:
+            args = []
+            if ext.strip == Strip.All:
+                args.append('-x')
+            elif ext.strip == Strip.Debug:
+                args.append('-S')
+
+            if args:
+                args.insert(0, 'strip')
+                args.append(ext_path)
+                try:
+                    output = subprocess.check_output(args, env=env)
+                except subprocess.CalledProcessError as e:
+                    pass
 
         if executable:
             mode = os.stat(ext_path).st_mode

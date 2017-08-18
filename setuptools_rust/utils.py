@@ -20,6 +20,18 @@ class Binding:
     Exec = 3
 
 
+class Strip:
+    """
+    Strip Options
+    """
+    # do not strip symbols
+    No = 0
+    # strip debug symbols
+    Debug = 1
+    # strip all symbos
+    All = 2
+
+
 def cpython_feature(ext=True, binding=Binding.PyO3):
     version = sys.version_info
 

@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+0.7.1 (2017-08-18)
+------------------
+
+- Allow to strip symbols from executable or dynamic library.
+
+- Use PyO3 0.2 for example.
+
 
 0.7.0 (2017-08-11)
 ------------------

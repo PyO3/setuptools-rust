@@ -2,7 +2,7 @@ from __future__ import print_function, absolute_import
 import os
 import sys
 from distutils.errors import DistutilsSetupError
-from .utils import Binding
+from .utils import Binding, Strip
 
 
 import semantic_version
@@ -36,6 +36,11 @@ class RustExtension:
         Binding.RustCPython uses Rust CPython.
         Binding.NoBinding uses no binding.
         Binding.Exec build executable.
+      strip : setuptools_rust.Binding
+        Strip symbols from final file. Does nothing for debug build.
+        * Strip.No - do not strip symbols
+        * Strip.Debug - strip debug symbols
+        * Strip.All - strip all symbols
       optional : bool
         if it is true, a build failure in the extension will not abort the
         build process, but instead simply not install the failing extension.
@@ -43,7 +48,7 @@ class RustExtension:
 
     def __init__(self, name, path,
                  args=None, features=None, rust_version=None,
-                 quiet=False, debug=None, binding=Binding.PyO3,
+                 quiet=False, debug=None, binding=Binding.PyO3, strip=Strip.No,
                  optional=False):
         self.name = name
         self.args = args
@@ -51,6 +56,7 @@ class RustExtension:
         self.rust_version = rust_version
         self.quiet = quiet
         self.debug = debug
+        self.strip = strip
         self.optional = optional
 
         if features is None:
