@@ -1,3 +1,7 @@
+=============================================
+Setuptools plugin for Rust extensions support
+=============================================
+
 Setuptools helpers for rust Python extensions implemented with `PyO3 python binding <https://github.com/PyO3/pyo3>`_.
 
 Compile and distribute Python extensions written in rust as easily as if they were written in C.
