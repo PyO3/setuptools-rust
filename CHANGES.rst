@@ -6,6 +6,8 @@ CHANGES
 
 - Generate console-script for Binding.Exec #22
 
+- Do not run `cargo check` for `sdist` command #18
+
 - Remove extra python3 file extension for executables.
 
 

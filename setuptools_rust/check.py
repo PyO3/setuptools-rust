@@ -28,6 +28,9 @@ class check_rust(Command):
                            if isinstance(ext, RustExtension)]
 
     def run(self):
+        if 'sdist' in self.distribution.commands:
+            return
+
         if not self.extensions:
             return
 
