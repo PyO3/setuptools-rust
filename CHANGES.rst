@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.7.2 (2017-09-01)
+------------------
+
+- Remove extra python3 file extension for executables.
+
+
 0.7.1 (2017-08-18)
 ------------------
 

@@ -184,6 +184,9 @@ class build_rust(Command):
 
         if executable:
             ext_path = build_ext.get_ext_fullpath(target_fname)
+            # remove .so extension
+            ext_path, _ = os.path.splitext(ext_path)
+            # remove python3 extension (i.e. cpython-36m)
             ext_path, _ = os.path.splitext(ext_path)
         else:
             ext_path = build_ext.get_ext_fullpath(target_fname)
