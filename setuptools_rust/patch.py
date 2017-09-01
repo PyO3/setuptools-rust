@@ -44,6 +44,26 @@ def monkey_patch_dist(build_ext):
         if self.distribution.rust_extensions:
             mods.extend(self.distribution.rust_extensions)
 
+            scripts = []
+            for ext in self.distribution.rust_extensions:
+                scripts.extend(ext.entry_points())
+
+            if scripts:
+                if not self.distribution.entry_points:
+                    self.distribution.entry_points = {
+                        'console_scripts': scripts,
+                    }
+                else:
+                    ep_scripts = self.distribution.entry_points.get(
+                        'console_scripts')
+                    if ep_scripts:
+                        ep_scripts.extend(scripts)
+                    else:
+                        ep_scripts = scripts
+
+                    self.distribution.entry_points[
+                        'console_scripts'] = ep_scripts
+
         self.distribution.ext_modules = mods
 
         self.orig_finalize_options()

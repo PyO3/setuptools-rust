@@ -4,6 +4,8 @@ CHANGES
 0.7.2 (2017-09-01)
 ------------------
 
+- Generate console-script for Binding.Exec #22
+
 - Remove extra python3 file extension for executables.
 
 

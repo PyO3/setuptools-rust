@@ -188,6 +188,8 @@ class build_rust(Command):
             ext_path, _ = os.path.splitext(ext_path)
             # remove python3 extension (i.e. cpython-36m)
             ext_path, _ = os.path.splitext(ext_path)
+
+            ext.install_script(ext_path)
         else:
             ext_path = build_ext.get_ext_fullpath(target_fname)
 

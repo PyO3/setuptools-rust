@@ -1,5 +1,6 @@
 from __future__ import print_function, absolute_import
 import os
+import os.path
 import sys
 from distutils.errors import DistutilsSetupError
 from .utils import Binding, Strip
@@ -41,6 +42,8 @@ class RustExtension:
         * Strip.No - do not strip symbols
         * Strip.Debug - strip debug symbols
         * Strip.All - strip all symbols
+      script : bool
+        Generate console script for executable if `Binding.Exec` is used.
       optional : bool
         if it is true, a build failure in the extension will not abort the
         build process, but instead simply not install the failing extension.
@@ -48,8 +51,8 @@ class RustExtension:
 
     def __init__(self, name, path,
                  args=None, features=None, rust_version=None,
-                 quiet=False, debug=None, binding=Binding.PyO3, strip=Strip.No,
-                 optional=False):
+                 quiet=False, debug=None, binding=Binding.PyO3,
+                 strip=Strip.No, script=False, optional=False):
         self.name = name
         self.args = args
         self.binding = binding
@@ -57,6 +60,7 @@ class RustExtension:
         self.quiet = quiet
         self.debug = debug
         self.strip = strip
+        self.script = script
         self.optional = optional
 
         if features is None:
@@ -84,3 +88,36 @@ class RustExtension:
         except:
             raise DistutilsSetupError(
                 'Can not parse rust compiler version: %s', self.rust_version)
+
+    def entry_points(self):
+        entry_points = []
+        if self.script and self.binding == Binding.Exec:
+            base_mod, name = self.name.rsplit('.')
+            script = '%s=%s.%s:run' % (name, base_mod, '_gen_%s' % name)
+            entry_points.append(script)
+
+        return entry_points
+
+    def install_script(self, ext_path):
+        if self.script and self.binding == Binding.Exec:
+            dirname, name = os.path.split(ext_path)
+            file = os.path.join(dirname, '_gen_%s.py' % name)
+            with open(file, 'w') as f:
+                f.write(TMPL.format({'name': name}))
+
+
+TMPL = """from __future__ import absolute_import, print_function
+
+import os
+import sys
+
+
+def run():
+    path = os.path.split(__file__)[0]
+    file = os.path.join(path, "%(name)")
+    if os.path.isfile(file):
+        os.execv(file, sys.argv)
+    else:
+        print("Can not execute %(name)")
+
+"""
