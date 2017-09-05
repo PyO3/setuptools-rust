@@ -6,6 +6,10 @@ Setuptools plugin for Rust extensions support
    :target:  https://travis-ci.org/PyO3/setuptools-rust
    :align: right
 
+.. image:: https://badge.fury.io/py/setuptools-rust.svg
+   :target: https://badge.fury.io/py/setuptools-rust
+
+
 Setuptools helpers for rust Python extensions implemented with `PyO3 python binding <https://github.com/PyO3/pyo3>`_.
 
 Compile and distribute Python extensions written in rust as easily as if they were written in C.
