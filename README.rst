@@ -70,7 +70,11 @@ You can define rust extension with `RustExtension` class:
    The class for creating rust extensions.
 
    :param str name: the full name of the extension, including any packages -- ie.
-                    *not* a filename or pathname, but Python dotted name
+      *not* a filename or pathname, but Python dotted name.
+      It is possible to specify multiple binaries, if extension uses
+      `Binsing.Exec` binding mode. In that case first argument has to be dictionary.
+      Keys of the dictionary corresponds to compiled rust binaries and values are
+      full name of the executable inside python package.
 
    :param str path: path to the Cargo.toml manifest file
 
@@ -91,6 +95,12 @@ You can define rust extension with `RustExtension` class:
                        `Binding.PyO3` uses PyO3
                        `Binding.RustCPython` uses rust-cpython
                        `Binding.NoBinding` uses no binding.
+                       `Binding.Exec` build executable.
+
+   :param int strip: Strip symbols from final file. Does nothing for debug build.
+                     `Strip.No` - do not strip symbols (default)
+                     `Strip.Debug` - strip debug symbols
+                     `Strip.All` - strip all symbols
 
    :param bool script: Generate console script for executable
                        if `Binding.Exec` is used.

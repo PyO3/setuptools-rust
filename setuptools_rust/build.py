@@ -141,19 +141,32 @@ class build_rust(Command):
             target_dir = os.path.join(
                 os.path.dirname(ext.path), "target/", suffix)
 
+        dylib_paths = []
+
         if executable:
-            # search executable
-            dylib_path = None
-            for name in os.listdir(target_dir):
-                path = os.path.join(target_dir, name)
-                if name.startswith(".") or not os.path.isfile(path):
-                    continue
+            for name, dest in ext.target.items():
+                if name:
+                    path = os.path.join(target_dir, name)
+                    if os.access(path, os.X_OK):
+                        dylib_paths.append((dest, path))
+                        continue
+                    else:
+                        raise DistutilsExecError(
+                            'rust build failed; '
+                            'unable to find executable "%s" in %s' % (
+                                name, target_dir))
+                else:
+                    # search executable
+                    for name in os.listdir(target_dir):
+                        path = os.path.join(target_dir, name)
+                        if name.startswith(".") or not os.path.isfile(path):
+                            continue
 
-                if os.access(path, os.X_OK):
-                    dylib_path = path
-                    break
+                        if os.access(path, os.X_OK):
+                            dylib_paths.append((ext.name, path))
+                            break
 
-            if dylib_path is None:
+            if not dylib_paths:
                 raise DistutilsExecError(
                     "rust build failed; unable to find executable in %s" %
                     target_dir)
@@ -166,8 +179,9 @@ class build_rust(Command):
                 wildcard_so = "*.so"
 
             try:
-                dylib_path = glob.glob(
-                    os.path.join(target_dir, wildcard_so))[0]
+                dylib_paths.append(
+                    (ext.name, glob.glob(
+                        os.path.join(target_dir, wildcard_so))[0]))
             except IndexError:
                 raise DistutilsExecError(
                     "rust build failed; unable to find any %s in %s" %
@@ -177,47 +191,49 @@ class build_rust(Command):
         # then copy it there.
         build_ext = self.get_finalized_command('build_ext')
         build_ext.inplace = self.inplace
-        target_fname = ext.name
-        if target_fname is None:
-            target_fname = os.path.basename(os.path.splitext(
-                os.path.basename(dylib_path)[3:])[0])
 
-        if executable:
-            ext_path = build_ext.get_ext_fullpath(target_fname)
-            # remove .so extension
-            ext_path, _ = os.path.splitext(ext_path)
-            # remove python3 extension (i.e. cpython-36m)
-            ext_path, _ = os.path.splitext(ext_path)
+        for target_fname, dylib_path in dylib_paths:
+            if not target_fname:
+                target_fname = os.path.basename(os.path.splitext(
+                    os.path.basename(dylib_path)[3:])[0])
 
-            ext.install_script(ext_path)
-        else:
-            ext_path = build_ext.get_ext_fullpath(target_fname)
+            if executable:
+                ext_path = build_ext.get_ext_fullpath(target_fname)
+                # remove .so extension
+                ext_path, _ = os.path.splitext(ext_path)
+                # remove python3 extension (i.e. cpython-36m)
+                ext_path, _ = os.path.splitext(ext_path)
 
-        try:
-            os.makedirs(os.path.dirname(ext_path))
-        except OSError:
-            pass
-        shutil.copyfile(dylib_path, ext_path)
+                ext.install_script(ext_path)
+            else:
+                ext_path = build_ext.get_ext_fullpath(target_fname)
 
-        if not debug_build:
-            args = []
-            if ext.strip == Strip.All:
-                args.append('-x')
-            elif ext.strip == Strip.Debug:
-                args.append('-S')
+            try:
+                os.makedirs(os.path.dirname(ext_path))
+            except OSError:
+                pass
 
-            if args:
-                args.insert(0, 'strip')
-                args.append(ext_path)
-                try:
-                    output = subprocess.check_output(args, env=env)
-                except subprocess.CalledProcessError as e:
-                    pass
+            shutil.copyfile(dylib_path, ext_path)
 
-        if executable:
-            mode = os.stat(ext_path).st_mode
-            mode |= (mode & 0o444) >> 2    # copy R bits to X
-            os.chmod(ext_path, mode)
+            if not debug_build:
+                args = []
+                if ext.strip == Strip.All:
+                    args.append('-x')
+                elif ext.strip == Strip.Debug:
+                    args.append('-S')
+
+                if args:
+                    args.insert(0, 'strip')
+                    args.append(ext_path)
+                    try:
+                        output = subprocess.check_output(args, env=env)
+                    except subprocess.CalledProcessError as e:
+                        pass
+
+            if executable:
+                mode = os.stat(ext_path).st_mode
+                mode |= (mode & 0o444) >> 2    # copy R bits to X
+                os.chmod(ext_path, mode)
 
     def run(self):
         if not self.extensions:

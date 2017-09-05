@@ -37,7 +37,7 @@ class RustExtension:
         Binding.RustCPython uses Rust CPython.
         Binding.NoBinding uses no binding.
         Binding.Exec build executable.
-      strip : setuptools_rust.Binding
+      strip : setuptools_rust.Strip
         Strip symbols from final file. Does nothing for debug build.
         * Strip.No - do not strip symbols
         * Strip.Debug - strip debug symbols
@@ -49,11 +49,19 @@ class RustExtension:
         build process, but instead simply not install the failing extension.
     """
 
-    def __init__(self, name, path,
+    def __init__(self, target, path,
                  args=None, features=None, rust_version=None,
                  quiet=False, debug=None, binding=Binding.PyO3,
                  strip=Strip.No, script=False, optional=False):
+        if isinstance(target, dict):
+            name = '; '.join('%s=%s' % (key, val)
+                             for key, val in target.items())
+        else:
+            name = target
+            target = {'': target}
+
         self.name = name
+        self.target = target
         self.args = args
         self.binding = binding
         self.rust_version = rust_version
@@ -92,9 +100,10 @@ class RustExtension:
     def entry_points(self):
         entry_points = []
         if self.script and self.binding == Binding.Exec:
-            base_mod, name = self.name.rsplit('.')
-            script = '%s=%s.%s:run' % (name, base_mod, '_gen_%s' % name)
-            entry_points.append(script)
+            for name, mod in self.target.items():
+                base_mod, name = mod.rsplit('.')
+                script = '%s=%s.%s:run' % (name, base_mod, '_gen_%s' % name)
+                entry_points.append(script)
 
         return entry_points
 
