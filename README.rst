@@ -113,6 +113,8 @@ You can define rust extension with `RustExtension` class:
    :param bool script: Generate console script for executable
                        if `Binding.Exec` is used.
 
+   :param bool native: Build extension or executable with "-C target-cpu=native"
+
    :param bool optional: if it is true, a build failure in the extension will not abort the build process,
                          but instead simply not install the failing extension.
 

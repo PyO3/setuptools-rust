@@ -4,6 +4,8 @@ CHANGES
 0.8.1 (2017-09-08)
 ------------------
 
+- Added `native` parameter
+
 - Fix script generation for executables
 
 

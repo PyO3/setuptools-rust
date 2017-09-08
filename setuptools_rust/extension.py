@@ -44,6 +44,8 @@ class RustExtension:
         * Strip.All - strip all symbols
       script : bool
         Generate console script for executable if `Binding.Exec` is used.
+      native : bool
+        Build extension or executable with "target-cpu=native"
       optional : bool
         if it is true, a build failure in the extension will not abort the
         build process, but instead simply not install the failing extension.
@@ -52,7 +54,7 @@ class RustExtension:
     def __init__(self, target, path,
                  args=None, features=None, rust_version=None,
                  quiet=False, debug=None, binding=Binding.PyO3,
-                 strip=Strip.No, script=False, optional=False):
+                 strip=Strip.No, script=False, native=False, optional=False):
         if isinstance(target, dict):
             name = '; '.join('%s=%s' % (key, val)
                              for key, val in target.items())
@@ -69,6 +71,7 @@ class RustExtension:
         self.debug = debug
         self.strip = strip
         self.script = script
+        self.native = native
         self.optional = optional
 
         if features is None:

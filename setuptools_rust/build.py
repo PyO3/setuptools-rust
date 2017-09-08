@@ -105,6 +105,9 @@ class build_rust(Command):
         if not quiet:
             print(" ".join(args), file=sys.stderr)
 
+        if ext.native:
+            env["RUSTFLAGS"] = "-C target-cpu=native"
+
         # Execute cargo
         try:
             output = subprocess.check_output(args, env=env)
