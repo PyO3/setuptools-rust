@@ -4,6 +4,12 @@ from distutils.command.install import install
 from distutils.dist import Distribution as DistDistribution
 from setuptools.dist import Distribution
 
+try:
+    from wheel.bdist_wheel import bdist_wheel
+    wheel = True
+except:
+    wheel = False
+
 
 def monkey_patch_dist(build_ext):
     # allow to use 'rust_extensions' parameter for setup() call
@@ -57,7 +63,9 @@ def monkey_patch_dist(build_ext):
                     ep_scripts = self.distribution.entry_points.get(
                         'console_scripts')
                     if ep_scripts:
-                        ep_scripts.extend(scripts)
+                        for script in scripts:
+                            if script not in ep_scripts:
+                                ep_scripts.append(scripts)
                     else:
                         ep_scripts = scripts
 
@@ -72,6 +80,37 @@ def monkey_patch_dist(build_ext):
         self.distribution.ext_modules = ext_modules
 
     install.finalize_options = finalize_options
+
+    if wheel:
+        # this is for console entries
+        bdist_wheel.orig_finalize_options = bdist_wheel.finalize_options
+
+        def finalize_options(self):
+            scripts = []
+            for ext in self.distribution.rust_extensions:
+                scripts.extend(ext.entry_points())
+
+            if scripts:
+                if not self.distribution.entry_points:
+                    self.distribution.entry_points = {
+                        'console_scripts': scripts,
+                    }
+                else:
+                    ep_scripts = self.distribution.entry_points.get(
+                        'console_scripts')
+                    if ep_scripts:
+                        for script in scripts:
+                            if script not in ep_scripts:
+                                ep_scripts.append(scripts)
+                    else:
+                        ep_scripts = scripts
+
+                    self.distribution.entry_points[
+                        'console_scripts'] = ep_scripts
+
+            self.orig_finalize_options()
+
+        bdist_wheel.finalize_options = finalize_options
 
     # clean rust project
     def run_clean(self):
