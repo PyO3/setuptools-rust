@@ -218,20 +218,21 @@ class build_rust(Command):
 
             shutil.copyfile(dylib_path, ext_path)
 
-            if not debug_build:
-                args = []
-                if ext.strip == Strip.All:
-                    args.append('-x')
-                elif ext.strip == Strip.Debug:
-                    args.append('-S')
+            if sys.platform != "win32":
+                if not debug_build:
+                    args = []
+                    if ext.strip == Strip.All:
+                        args.append('-x')
+                    elif ext.strip == Strip.Debug:
+                        args.append('-S')
 
-                if args:
-                    args.insert(0, 'strip')
-                    args.append(ext_path)
-                    try:
-                        output = subprocess.check_output(args, env=env)
-                    except subprocess.CalledProcessError as e:
-                        pass
+                    if args:
+                        args.insert(0, 'strip')
+                        args.append(ext_path)
+                        try:
+                            output = subprocess.check_output(args, env=env)
+                        except subprocess.CalledProcessError as e:
+                            pass
 
             if executable:
                 mode = os.stat(ext_path).st_mode
