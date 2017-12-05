@@ -218,7 +218,7 @@ class build_rust(Command):
 
             shutil.copyfile(dylib_path, ext_path)
 
-            if not debug_build:
+            if sys.platform != "win32" and not debug_build:
                 args = []
                 if ext.strip == Strip.All:
                     args.append('-x')
