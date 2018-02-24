@@ -28,6 +28,8 @@ class build_rust(Command):
          "Force debug to false for all rust extensions "),
         ('qbuild', None,
          "Force enable quiet option for all rust extensions "),
+         ('build-temp', 't',
+          "directory for temporary files (cargo 'target' directory) "),
     ]
     boolean_options = ['inplace', 'debug', 'release', 'qbuild']
 
@@ -37,10 +39,18 @@ class build_rust(Command):
         self.debug = None
         self.release = None
         self.qbuild = None
+        self.build_temp = None
 
     def finalize_options(self):
         self.extensions = [ext for ext in self.distribution.rust_extensions
                            if isinstance(ext, RustExtension)]
+
+        # Inherit settings from the `build_ext` command
+        self.set_undefined_options('build_ext',
+            ('build_temp', 'build_temp'),
+            ('debug', 'debug'),
+            ('inplace', 'inplace'),
+        )
 
     def build_extension(self, ext):
         executable = ext.binding == Binding.Exec
@@ -49,12 +59,18 @@ class build_rust(Command):
         # executing python interpreter.
         bindir = os.path.dirname(sys.executable)
 
+        # Find where to put the temporary build files created by `cargo`
+        targetdir = os.environ.get('CARGO_TARGET_DIR') \
+            or os.path.join(self.build_temp, self.distribution.get_name())
+
         env = os.environ.copy()
         env.update({
+            'CARGO_TARGET_DIR': targetdir,
+
             # disables rust's pkg-config seeking for specified packages,
             # which causes pythonXX-sys to fall back to detecting the
             # interpreter from the path.
-            "PATH":  bindir + os.pathsep + os.environ.get("PATH", "")
+            "PATH":  os.path.join(bindir, os.environ.get("PATH", "")),
         })
 
         if not os.path.exists(ext.path):
@@ -64,11 +80,7 @@ class build_rust(Command):
         features = set(ext.features)
         features.update(cpython_feature(binding=ext.binding))
 
-        if ext.debug is None:
-            debug_build = self.inplace
-        else:
-            debug_build = ext.debug
-
+        debug_build = ext.debug if ext.debug is not None else self.inplace
         debug_build = self.debug if self.debug is not None else debug_build
         if self.release:
             debug_build = False
@@ -136,20 +148,14 @@ class build_rust(Command):
         else:
             suffix = "release"
 
-        # location of files
-        dir = os.environ.get('CARGO_TARGET_DIR', '').strip()
-        if dir:
-            target_dir = os.path.join(dir, suffix)
-        else:
-            target_dir = os.path.join(
-                os.path.dirname(ext.path), "target/", suffix)
-
+        # location of cargo compiled files
+        artifactsdir = os.path.join(targetdir, suffix)
         dylib_paths = []
 
         if executable:
             for name, dest in ext.target.items():
                 if name:
-                    path = os.path.join(target_dir, name)
+                    path = os.path.join(artifactsdir, name)
                     if os.access(path, os.X_OK):
                         dylib_paths.append((dest, path))
                         continue
@@ -160,8 +166,8 @@ class build_rust(Command):
                                 name, target_dir))
                 else:
                     # search executable
-                    for name in os.listdir(target_dir):
-                        path = os.path.join(target_dir, name)
+                    for name in os.listdir(artifactsdir):
+                        path = os.path.join(artifactsdir, name)
                         if name.startswith(".") or not os.path.isfile(path):
                             continue
 
@@ -184,11 +190,11 @@ class build_rust(Command):
             try:
                 dylib_paths.append(
                     (ext.name, glob.glob(
-                        os.path.join(target_dir, wildcard_so))[0]))
+                        os.path.join(artifactsdir, wildcard_so))[0]))
             except IndexError:
                 raise DistutilsExecError(
                     "rust build failed; unable to find any %s in %s" %
-                    (wildcard_so, target_dir))
+                    (wildcard_so, artifactsdir))
 
         # Ask build_ext where the shared library would go if it had built it,
         # then copy it there.
