@@ -181,17 +181,19 @@ class build_rust(Command):
                     target_dir)
         else:
             if sys.platform == "win32":
-                wildcard_so = "*.dll"
+                dylib_ext = "dll"
             elif sys.platform == "darwin":
-                wildcard_so = "*.dylib"
+                dylib_ext = "dylib"
             else:
-                wildcard_so = "*.so"
+                dylib_ext = "so"
+            wildcard_so = "*{}.{}".format(ext.basename, dylib_ext)
 
             try:
-                dylib_paths.append(
-                    (ext.name, glob.glob(
-                        os.path.join(artifactsdir, wildcard_so))[0]))
-            except IndexError:
+                dylib_paths.append((
+                    ext.name,
+                    next(glob.iglob(os.path.join(artifactsdir, wildcard_so)))
+                ))
+            except StopIteration:
                 raise DistutilsExecError(
                     "rust build failed; unable to find any %s in %s" %
                     (wildcard_so, artifactsdir))
