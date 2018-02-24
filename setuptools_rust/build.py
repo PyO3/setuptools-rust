@@ -186,8 +186,8 @@ class build_rust(Command):
                 dylib_ext = "dylib"
             else:
                 dylib_ext = "so"
-            ext.basename = ext.name.rsplit('.', 1)[-1]
-            wildcard_so = "*{}.{}".format(ext.basename, dylib_ext)
+
+            wildcard_so = "*{}.{}".format(ext.get_lib_name(), dylib_ext)
 
             try:
                 dylib_paths.append((
