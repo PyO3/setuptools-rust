@@ -5,6 +5,11 @@ import sys
 from distutils.errors import DistutilsSetupError
 from .utils import Binding, Strip
 
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+
 
 import semantic_version
 
@@ -90,6 +95,11 @@ class RustExtension:
                 os.chdir(cwd)
 
         self.path = path
+
+    def get_lib_name(self):
+        cfg = configparser.ConfigParser()
+        cfg.read(self.path)
+        return cfg.get('lib', 'name').strip('"')
 
     def get_rust_version(self):
         if self.rust_version is None:
