@@ -1,6 +1,12 @@
 CHANGES
 ^^^^^^^
 
+0.8.4 (2018-02-27)
+------------------
+
+- Improve compatibility of `build_rust` with `build_ext` #28
+
+
 0.8.3 (2017-12-05)
 ------------------
 
