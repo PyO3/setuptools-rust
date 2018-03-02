@@ -56,8 +56,9 @@ class tomlgen_rust(setuptools.Command):
 
         # Build list of authors
         if self.authors is not None:
+            sep = '\n' if '\n' in self.authors.strip() else ','
             self.authors = "[{}]".format(
-                ", ".join(author.strip() for author in self.authors.split('\n')))
+                ", ".join(author.strip() for author in self.authors.split(sep)))
         else:
             self.authors = '["{} <{}>"]'.format(
                 self.distribution.get_author(),
@@ -139,8 +140,11 @@ class tomlgen_rust(setuptools.Command):
     def iter_dependencies(self, ext=None):
 
         command = self.get_command_name()
+
+        # global dependencies
         sections = ['{}.dependencies'.format(command)]
 
+        # extension-specific dependencies
         if ext is not None:
             sections.append('{}.dependencies.{}'.format(command, ext.name))
 
@@ -194,9 +198,7 @@ def find_rust_extensions(*directories, libfile="lib.rs", **kwargs):
                      └  Cargo.toml
             setup.py
 
-        The only extension can be found in the ``lib`` module:
-
-        .. code-block:: python
+        The only extension can be found in the ``lib`` module::
 
             >>> import setuptools_rust as rust
             >>> for ext in rust.find_rust_extensions("lib"):
