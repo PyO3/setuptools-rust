@@ -80,6 +80,10 @@ project (next to the ``setup.py`` file) which registers all of the extensions.
 This way, generic ``cargo`` commands can be run without leaving the root of
 the project.
 
+If ``--create-workspace`` is enable, a `.cargo/config` file will also be
+created to force ``cargo`` to build to the temporary build directory. Use
+``--no-config`` to disable.
+
 
 Dependencies
 ------------
@@ -95,7 +99,7 @@ complete Python path to the extension (e.g. ``hello.english``). Extension
 specific dependencies are added *after* global dependencies.
 
 *Note that, since all projects are built in the same directory, you can also
-declare all dependencies in the ``[tomlgen_rust.dependencies]``, as they will
+declare all dependencies in the* ``[tomlgen_rust.dependencies]``, *as they will
 be built only once anyway*.
 
 
