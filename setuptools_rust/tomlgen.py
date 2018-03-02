@@ -128,6 +128,11 @@ class tomlgen_rust(setuptools.Command):
         # The directory where the extension's manifest is located
         tomldir = os.path.dirname(ext.path)
 
+        # If the RustExtension was not created by `find_rust_extensions`
+        # the `lib.rs` file is expected to be located near `Cargo.toml`
+        if not hasattr(ext, 'libfile'):
+            ext.libfile = ext.path.replace('Cargo.toml', 'lib.rs')
+
         # Create a small package section
         toml.add_section("package")
         toml.set("package", "name", quote(ext.name))
