@@ -26,10 +26,12 @@ class tomlgen_rust(setuptools.Command):
     description = "Generate `Cargo.toml` for rust extensions"
 
     user_options = [
+        ("force", 'f',
+        "overwrite existing files if any"),
         ("create-workspace", 'w',
          "create a workspace file at the root of the project"),
-        ("force", 'f',
-         "overwrite existing files if any")
+        ("no-config", "C",
+         "do not create a `.cargo/config` file when generating a workspace")
     ]
 
     boolean_options = ['create_workspace', 'force']
@@ -39,7 +41,11 @@ class tomlgen_rust(setuptools.Command):
         self.dependencies = None
         self.authors = None
         self.create_workspace = None
+        self.no_config = None
         self.force = None
+
+        # use the build command to find build directories
+        self.build = build(self.distribution)
 
         # parse config files
         self.cfg = configparser.ConfigParser()
@@ -49,6 +55,7 @@ class tomlgen_rust(setuptools.Command):
 
         # Finalize previous commands
         self.distribution.finalize_options()
+        self.build.ensure_finalized()
 
         # Shortcuts
         self.extensions = self.distribution.rust_extensions
@@ -86,6 +93,28 @@ class tomlgen_rust(setuptools.Command):
                     toml.write(manifest)
             else:
                 log.warn("skipping 'Cargo.toml' for workspace -- already exists")
+
+        if self.create_workspace and self.extensions and not self.no_config:
+
+            dist = self.distribution
+            targetdir = os.path.join(self.build.build_temp, dist.get_name())
+            cfgdir = os.path.abspath(
+                os.path.join(os.getcwd(), dist.script_name, "..", ".cargo")
+            )
+
+            if not os.path.exists(os.path.join(cfgdir, "config")) or self.force:
+                os.makedirs(cfgdir, exist_ok=True)
+                with open(os.path.join(cfgdir, 'config'), 'w') as config:
+                    log.info("creating '.cargo/config' for workspace")
+
+                    config.write("[build]\n")
+                    config.write('target-dir = "{}"\n'.format(
+                        os.path.relpath(targetdir, cfgdir)
+                    ))
+
+            else:
+                log.warn("skipping '.cargo/config' -- already exists")
+
 
     def build_cargo_toml(self, ext):
 
