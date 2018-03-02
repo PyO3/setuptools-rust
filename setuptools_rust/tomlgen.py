@@ -159,7 +159,7 @@ def _slugify(name):
     slug = [char if char in allowed else '_' for char in name]
     return ''.join(slug)
 
-def find_rust_extensions(*directories, libfile="lib.rs", **kwargs):
+def find_rust_extensions(*directories, **kwargs):
     """Attempt to find Rust extensions in given directories.
 
     This function will recurse through the directories in the given
@@ -206,9 +206,13 @@ def find_rust_extensions(*directories, libfile="lib.rs", **kwargs):
             lib.mylib.rustext => lib/mylib/rustext/Cargo.toml
     """
 
-    directories = directories or [os.getcwd()]
-    extensions = []
+    # Get the file used to mark a Rust extension
+    libfile = kwargs.get('libfile', 'lib.rs')
 
+    # Get the directories to explore
+    directories = directories or [os.getcwd()]
+
+    extensions = []
     for directory in directories:
         for base, dirs, files in os.walk(directory):
             if libfile in files:

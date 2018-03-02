@@ -55,7 +55,7 @@ The authors list is generated after the ``author`` and ``author_email`` options
 from ``setup.py`` / ``setup.cfg``, but can also be overriden using the
 ``authors`` key in the ``[tomlgen_rust]`` section of ``setup.cfg``:
 
-.. code-block:: toml
+.. code-block:: ini
 
     [tomlgen_rust]
     authors =
@@ -108,7 +108,7 @@ add ``Cargo.toml`` and ``Cargo.lock`` to your ``.gitignore`` file.
 Then, make sure ``tomlgen_rust`` is run before ``build_rust`` everytime by
 adding aliases to your ``setup.cfg`` file:
 
-.. code-block:: toml
+.. code-block:: ini
 
     [aliases]
     build_rust = tomlgen_rust -f build_rust
