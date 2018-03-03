@@ -94,6 +94,7 @@ class tomlgen_rust(setuptools.Command):
             else:
                 log.warn("skipping 'Cargo.toml' for workspace -- already exists")
 
+        # Create a `.cargo/config` file 
         if self.create_workspace and self.extensions and not self.no_config:
 
             dist = self.distribution
@@ -218,7 +219,10 @@ def find_rust_extensions(*directories, **kwargs):
         All other keyword arguments will be directly passed to the
         `RustExtension` instance created when an extension is found.
         One may be interested in passing ``bindings`` and ``strip``
-        options.
+        options::
+
+            >>> import setuptools_rust as rust
+            >>> rust.find_rust_extensions(binding=rust.Binding.PyO3)
 
     Example:
 
@@ -232,7 +236,8 @@ def find_rust_extensions(*directories, **kwargs):
                      └  Cargo.toml
             setup.py
 
-        The only extension can be found in the ``lib`` module::
+        There is only one extension that can be found in the ``lib``
+        module::
 
             >>> import setuptools_rust as rust
             >>> for ext in rust.find_rust_extensions("lib"):
