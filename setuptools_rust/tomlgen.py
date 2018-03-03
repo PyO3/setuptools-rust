@@ -86,9 +86,9 @@ class tomlgen_rust(setuptools.Command):
         # Create a `Cargo.toml` for the project workspace
         if self.create_workspace and self.extensions:
             toml = self.build_workspace_toml()
-            if not os.path.exists(ext.path) or self.force:
+            toml_path = os.path.join(self.workspace, "Cargo.toml")
+            if not os.path.exists(toml_path) or self.force:
                 log.info("creating 'Cargo.toml' for workspace")
-                toml_path = os.path.join(self.workspace, "Cargo.toml")
                 with open(toml_path, 'w') as manifest:
                     toml.write(manifest)
             else:
