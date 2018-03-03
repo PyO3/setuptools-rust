@@ -85,14 +85,16 @@ class RustExtension:
         self.features = [s.strip() for s in features]
 
         # get absolute path to Cargo manifest file
-        file = sys._getframe(1).f_globals.get('__file__')
-        if file:
-            dirname = os.path.dirname(file)
-            if dirname:
-                cwd = os.getcwd()
-                os.chdir(dirname)
-                path = os.path.abspath(path)
-                os.chdir(cwd)
+        path = os.path.relpath(path)
+        # file = sys._getframe(1).f_globals.get('__file__')
+        # if file:
+        #     dirname = os.path.dirname(file)
+        #     print(dirname)
+        #     if dirname:
+        #         cwd = os.getcwd()
+        #         os.chdir(dirname)
+        #         path = os.path.abspath(path)
+        #         os.chdir(cwd)
 
         self.path = path
 
