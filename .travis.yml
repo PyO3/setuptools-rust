@@ -22,3 +22,4 @@ install:
 
 script:
   - cd example && python setup.py develop
+  - cd example_tomlgen && python setup.py tomlgen_rust && cat **.toml
