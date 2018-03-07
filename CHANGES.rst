@@ -1,6 +1,12 @@
 CHANGES
 ^^^^^^^
 
+0.9.0 (2018-03-07)
+------------------
+
+- Find inplace extensions and automatically generate ``Cargo.toml`` manifests #29
+
+
 0.8.4 (2018-02-27)
 ------------------
 

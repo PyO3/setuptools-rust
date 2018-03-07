@@ -38,5 +38,6 @@ setup(
     build_ext=setuptools_rust:build_ext
     build_rust=setuptools_rust:build_rust
     test_rust=setuptools_rust:test_rust
+    tomlgen_rust=setuptools_rust:tomlgen_rust
     """
 )
