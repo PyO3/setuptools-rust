@@ -105,7 +105,8 @@ class tomlgen_rust(setuptools.Command):
             )
 
             if not os.path.exists(os.path.join(cfgdir, "config")) or self.force:
-                os.makedirs(cfgdir, exist_ok=True)
+                if not os.path.exists(cfgdir):
+                    os.makedirs(cfgdir)
                 with open(os.path.join(cfgdir, 'config'), 'w') as config:
                     log.info("creating '.cargo/config' for workspace")
 
