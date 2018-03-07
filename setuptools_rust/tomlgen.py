@@ -26,15 +26,15 @@ class tomlgen_rust(setuptools.Command):
     description = "Generate `Cargo.toml` for rust extensions"
 
     user_options = [
-        ("force", 'f',
-        "overwrite existing files if any"),
-        ("create-workspace", 'w',
-         "create a workspace file at the root of the project"),
-        ("no-config", "C",
-         "do not create a `.cargo/config` file when generating a workspace")
+        (str("force"), str('f'),
+         str("overwrite existing files if any")),
+        (str("create-workspace"), str('w'),
+         str("create a workspace file at the root of the project")),
+        (str("no-config"), str("C"),
+         str("do not create a `.cargo/config` file when generating a workspace"))
     ]
 
-    boolean_options = ['create_workspace', 'force']
+    boolean_options = [str('create_workspace'), str('force')]
 
     def initialize_options(self):
 
@@ -70,6 +70,7 @@ class tomlgen_rust(setuptools.Command):
             self.authors = '["{} <{}>"]'.format(
                 self.distribution.get_author(),
                 self.distribution.get_author_email().strip('"\''))
+
 
     def run(self):
 
