@@ -1,6 +1,12 @@
 CHANGES
 ^^^^^^^
 
+0.9.1 (2018-03-22)
+------------------
+
+Remove unicode_literals future as it does not exists in Python 2
+
+
 0.9.0 (2018-03-07)
 ------------------
 
