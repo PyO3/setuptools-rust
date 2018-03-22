@@ -1,7 +1,7 @@
 `example_tomlgen`
 =================
 
-An example extensions with automatically generated ``Cargo.toml`` manifest
+An example extension with automatically generated ``Cargo.toml`` manifest
 files. Simply run ``python setup.py tomlgen_rust`` to generate the following
 files:
 
@@ -80,7 +80,7 @@ project (next to the ``setup.py`` file) which registers all of the extensions.
 This way, generic ``cargo`` commands can be run without leaving the root of
 the project.
 
-If ``--create-workspace`` is enable, a `.cargo/config` file will also be
+If ``--create-workspace`` is enabled, a `.cargo/config` file will also be
 created to force ``cargo`` to build to the temporary build directory. Use
 ``--no-config`` to disable.
 

@@ -128,3 +128,7 @@ Commands
 * `clean` - Standard `clean` command executes `cargo clean` for all rust extensions.
 
 * `check` - Standard `check` command executes `cargo check` for all rust extensions.
+
+* `tomlgen_rust` - Automatically generate a `Cargo.toml` manifest based on Python package metadata.
+  See the `example project <https://github.com/PyO3/setuptools-rust/tree/master/example_tomlgen>`_
+  on GitHub for more information about this command.
