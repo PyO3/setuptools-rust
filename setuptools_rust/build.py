@@ -75,7 +75,7 @@ class build_rust(Command):
 
         if not os.path.exists(ext.path):
             raise DistutilsFileError(
-                "Can not file rust extension project file: %s" % ext.path)
+                "Can not find rust extension project file: %s" % ext.path)
 
         features = set(ext.features)
         features.update(cpython_feature(binding=ext.binding))
