@@ -1,10 +1,16 @@
 CHANGES
 ^^^^^^^
 
+0.9.2 (2018-03-22)
+------------------
+
+- Fix `build_rust` crashing on `Cargo.toml` manifests without a `name` key in the `[lib]` section
+
+
 0.9.1 (2018-03-22)
 ------------------
 
-Remove unicode_literals future as it does not exists in Python 2
+- Remove unicode_literals import as Python 2 ``distutils`` does not support Unicode
 
 
 0.9.0 (2018-03-07)
