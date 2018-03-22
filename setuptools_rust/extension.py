@@ -101,7 +101,9 @@ class RustExtension:
     def get_lib_name(self):
         cfg = configparser.ConfigParser()
         cfg.read(self.path)
-        return cfg.get('lib', 'name').strip('"')
+        section = 'lib' if cfg.has_option('lib', 'name') else 'package'
+        name = cfg.get(section, 'name').strip('"')
+        return name.replace('-', '_').replace('.', '_')
 
     def get_rust_version(self):
         if self.rust_version is None:
