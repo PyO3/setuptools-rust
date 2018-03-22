@@ -22,4 +22,4 @@ install:
 
 script:
   - cd example && python setup.py develop && cd ..
-  - cd example_tomlgen && python setup.py tomlgen_rust -w && cd ..
+  - cd example_tomlgen && python setup.py tomlgen_rust -w build && cd ..
