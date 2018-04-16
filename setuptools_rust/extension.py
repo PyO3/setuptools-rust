@@ -1,6 +1,6 @@
 from __future__ import print_function, absolute_import
 import os
-import os.path
+import re
 import sys
 from distutils.errors import DistutilsSetupError
 from .utils import Binding, Strip
@@ -102,8 +102,8 @@ class RustExtension:
         cfg = configparser.ConfigParser()
         cfg.read(self.path)
         section = 'lib' if cfg.has_option('lib', 'name') else 'package'
-        name = cfg.get(section, 'name').strip('"')
-        return name.replace('-', '_').replace('.', '_')
+        name = cfg.get(section, 'name').strip('\'\"').strip()
+        return re.sub(r"[./\\_]", "_", name)
 
     def get_rust_version(self):
         if self.rust_version is None:
