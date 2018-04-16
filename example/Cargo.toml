@@ -1,5 +1,5 @@
 [package]
-name = "hello-world"
+name = 'hello-world'
 version = "0.1.0"
 authors = ["Nikolay Kim <fafhrd91@gmail.com>"]
 
@@ -9,4 +9,3 @@ default-features = false
 
 [lib]
 crate-type = ["cdylib"]
-name = "helloworld"
