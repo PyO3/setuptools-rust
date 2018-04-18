@@ -1,6 +1,6 @@
 from __future__ import print_function, absolute_import
 import os
-import os.path
+import re
 import sys
 from distutils.errors import DistutilsSetupError
 from .utils import Binding, Strip
@@ -84,7 +84,7 @@ class RustExtension:
 
         self.features = [s.strip() for s in features]
 
-        # get absolute path to Cargo manifest file
+        # get relative path to Cargo manifest file
         path = os.path.relpath(path)
         # file = sys._getframe(1).f_globals.get('__file__')
         # if file:
@@ -102,8 +102,8 @@ class RustExtension:
         cfg = configparser.ConfigParser()
         cfg.read(self.path)
         section = 'lib' if cfg.has_option('lib', 'name') else 'package'
-        name = cfg.get(section, 'name').strip('"')
-        return name.replace('-', '_').replace('.', '_')
+        name = cfg.get(section, 'name').strip('\'\"').strip()
+        return re.sub(r"[./\\-]", "_", name)
 
     def get_rust_version(self):
         if self.rust_version is None:
