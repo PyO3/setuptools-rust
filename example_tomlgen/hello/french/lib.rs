@@ -3,9 +3,10 @@
 extern crate pyo3;
 
 use pyo3::prelude::*;
+use pyo3::py::modinit;
 
 /// Module documentation string
-#[py::modinit(french)]
+#[modinit("french")]
 fn init(py: Python, m: &PyModule) -> PyResult<()> {
 
     #[pyfn(m, "hello")]
