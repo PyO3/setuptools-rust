@@ -1,10 +1,11 @@
 CHANGES
 ^^^^^^^
 
-0.9.2 (2018-03-22)
+0.9.2 (2018-05-11)
 ------------------
 
 - Fix `build_rust` crashing on `Cargo.toml` manifests without a `name` key in the `[lib]` section
+- Fix single quotes not being handled when parsing `Cargo.toml`
 
 
 0.9.1 (2018-03-22)
