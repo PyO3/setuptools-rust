@@ -6,7 +6,7 @@ use pyo3::prelude::*;
 use pyo3::py::modinit;
 
 /// Module documentation string
-#[modinit("english")]
+#[modinit(english)]
 fn init(py: Python, m: &PyModule) -> PyResult<()> {
 
     #[pyfn(m, "hello")]
