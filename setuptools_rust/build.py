@@ -1,5 +1,6 @@
 from __future__ import print_function, absolute_import
 import glob
+import json
 import os
 import shutil
 import sys
@@ -8,6 +9,7 @@ from distutils.cmd import Command
 from distutils.errors import (
     CompileError, DistutilsExecError, DistutilsFileError,
     DistutilsPlatformError, DistutilsSetupError)
+from subprocess import check_output
 
 from .extension import RustExtension
 from .utils import Binding, Strip, cpython_feature, get_rust_version
@@ -59,19 +61,19 @@ class build_rust(Command):
         # executing python interpreter.
         bindir = os.path.dirname(sys.executable)
 
-        # Find where to put the temporary build files created by `cargo`
-        targetdir = os.environ.get('CARGO_TARGET_DIR') \
-            or os.path.join(self.build_temp, self.distribution.get_name())
-
         env = os.environ.copy()
         env.update({
-            'CARGO_TARGET_DIR': targetdir,
-
             # disables rust's pkg-config seeking for specified packages,
             # which causes pythonXX-sys to fall back to detecting the
             # interpreter from the path.
             "PATH":  os.path.join(bindir, os.environ.get("PATH", "")),
         })
+
+        # Find where to put the temporary build files created by `cargo`
+        metadata_command = ["cargo", "metadata", "--manifest-path", ext.path, "--format-version", "1"]
+        # The decoding is needed for python 3.5 compatibility
+        metadata = json.loads(check_output(metadata_command).decode("utf-8"))
+        target_dir = metadata["target_directory"]
 
         if not os.path.exists(ext.path):
             raise DistutilsFileError(
@@ -149,7 +151,7 @@ class build_rust(Command):
             suffix = "release"
 
         # location of cargo compiled files
-        artifactsdir = os.path.join(targetdir, suffix)
+        artifactsdir = os.path.join(target_dir, suffix)
         dylib_paths = []
 
         if executable:
