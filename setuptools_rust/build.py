@@ -72,7 +72,7 @@ class build_rust(Command):
         # Find where to put the temporary build files created by `cargo`
         metadata_command = ["cargo", "metadata", "--manifest-path", ext.path, "--format-version", "1"]
         # The decoding is needed for python 3.5 compatibility
-        metadata = json.loads(check_output(metadata_command).decode())
+        metadata = json.loads(check_output(metadata_command).decode("utf-8"))
         target_dir = metadata["target_directory"]
 
         if not os.path.exists(ext.path):
