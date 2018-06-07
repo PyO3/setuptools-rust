@@ -1,8 +1,13 @@
 CHANGES
 ^^^^^^^
 
+0.10.1 (2018-05-07)
+-------------------
+
+- Fix project description rendering on pypi
+
 0.10.0 (2018-05-06)
-------------------
+-------------------
 
 - This release significantly improves performance
 
