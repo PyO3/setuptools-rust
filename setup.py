@@ -15,7 +15,7 @@ setup(
         (open('README.rst').read(), open('CHANGES.rst').read())),
     license='MIT',
     packages=['setuptools_rust'],
-    install_requires=['semantic_version>=2.6.0'],
+    install_requires=['semantic_version>=2.6.0', 'toml>=0.9.0'],
     zip_safe=True,
     classifiers=[
         "Topic :: Software Development :: Version Control",
