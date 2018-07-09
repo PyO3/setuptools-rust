@@ -1,5 +1,5 @@
-from . import _helloworld
+from . import helloworld
 
 
 def hello():
-    _helloworld.run(_helloworld.val())
+    helloworld.run(helloworld.val())

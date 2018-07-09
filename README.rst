@@ -27,7 +27,7 @@ setup.py
 
    setup(name='hello-rust',
          version='1.0',
-         rust_extensions=[RustExtension('hello_rust._helloworld',
+         rust_extensions=[RustExtension('hello_rust.helloworld',
                                         'Cargo.toml', binding=Binding.PyO3)],
          packages=['hello_rust'],
          # rust extensions are not zip safe, just like C-extensions.
