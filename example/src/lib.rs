@@ -1,13 +1,12 @@
-#![feature(proc_macro)]
+#![feature(use_extern_macros)]
 
 extern crate pyo3;
 
 use pyo3::prelude::*;
-use pyo3::py::modinit;
 
 /// Module documentation string
-#[modinit(helloworld)]
-fn init(py: Python, m: &PyModule) -> PyResult<()> {
+#[pymodinit]
+fn helloworld(py: Python, m: &PyModule) -> PyResult<()> {
 
     #[pyfn(m, "run", args="*", kwargs="**")]
     fn run_fn(_py: Python, args: &PyTuple, kwargs: Option<&PyDict>) -> PyResult<()> {
