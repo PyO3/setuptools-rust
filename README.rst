@@ -4,11 +4,9 @@ Setuptools plugin for Rust extensions support
 
 .. image:: https://travis-ci.org/PyO3/setuptools-rust.svg?branch=master
    :target:  https://travis-ci.org/PyO3/setuptools-rust
-   :align: right
 
 .. image:: https://badge.fury.io/py/setuptools-rust.svg
    :target: https://badge.fury.io/py/setuptools-rust
-
 
 Setuptools helpers for rust Python extensions implemented with `PyO3 python binding <https://github.com/PyO3/pyo3>`_.
 
@@ -16,6 +14,8 @@ Compile and distribute Python extensions written in rust as easily as if they we
 
 Example
 -------
+
+For a complete example, see `word-count <https://github.com/PyO3/pyo3/tree/master/examples/word-count>`_.
 
 setup.py
 ^^^^^^^^
@@ -57,16 +57,13 @@ You can use same commands as for c-extensions. For example::
    Finished processing dependencies for hello_rust==1.0
 
 
-Or you can use commands like `bdist_wheel` or `bdist_egg`.
+Or you can use commands like `bdist_wheel` (after installing `wheel`) or `bdist_egg`.
 
-You can build `manylinux1` binary wheels using Docker:
+You can build `manylinux1` binary wheels using Docker, e.g. with the `build-wheels.sh` script:
 
 .. code-block:: bash
 
     docker run --rm -v `pwd`:/io quay.io/pypa/manylinux1_x86_64 /io/build-wheels.sh
-
-`build-wheels.sh` example can be found here: 
-https://github.com/PyO3/setuptools-rust/blob/master/example/build-wheels.sh
 
 RustExtension
 -------------

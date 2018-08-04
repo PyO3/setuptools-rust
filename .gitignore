@@ -4,10 +4,5 @@
 .eggs
 /dist
 /build
-/*.egg-info
+*.egg-info
 Cargo.lock
-/example/build/
-/example/dist/
-/example/target/
-/example/*.egg-info
-.idea/
