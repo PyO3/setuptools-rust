@@ -1,15 +1,8 @@
 from __future__ import print_function, absolute_import
 import os
 import re
-import sys
 from distutils.errors import DistutilsSetupError
 from .utils import Binding, Strip
-
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
-
 
 import semantic_version
 
@@ -99,18 +92,28 @@ class RustExtension:
         self.path = path
 
     def get_lib_name(self):
-        cfg = configparser.ConfigParser()
-        cfg.read(self.path)
-        section = 'lib' if cfg.has_option('lib', 'name') else 'package'
-        name = cfg.get(section, 'name').strip('\'\"').strip()
-        return re.sub(r"[./\\-]", "_", name)
+        """ Parse Cargo.toml to get the name of the shared library. """
+        # We import in here to make sure the the setup_requires are already installed
+        import toml
+
+        cfg = toml.load(self.path)
+        name = cfg.get('lib', {}).get('name')
+        if name is None:
+            name = cfg.get('package', {}).get('name')
+        if name is None:
+            raise Exception(
+                "Can not parse library name from Cargo.toml. "
+                "Cargo.toml missing value for 'name' key "
+                "in both the [package] section and the [lib] section")
+        name = re.sub(r"[./\\-]", "_", name)
+        return name
 
     def get_rust_version(self):
         if self.rust_version is None:
             return None
         try:
             return semantic_version.Spec(self.rust_version)
-        except:
+        except ValueError:
             raise DistutilsSetupError(
                 'Can not parse rust compiler version: %s', self.rust_version)
 
