@@ -1,30 +1,30 @@
-sudo: required
 language: python
 
-matrix:
-  include:
-  - python: "2.7"
-  - python: "3.5"
-  - python: "3.6"
-  - python: "3.7-dev"
-  allow_failures:
-  - python: "3.7-dev"
+cache:
+  directories:
+    - ~/.rustup
 
-env:
-  - RUST_VERSION=nightly
+matrix:
+  fast_finish: true
+  include:
+    - python: "2.7"
+    - python: "3.5"
+    - python: "3.6"
+    - python: "3.7-dev"
+  allow_failures:
+    - python: "3.7-dev"
 
 install:
-  - python -c "import sysconfig; print('\n'.join(map(repr,sorted(sysconfig.get_config_vars().items()))))"
-  - mkdir ~/rust-installer
-  - curl -sL https://static.rust-lang.org/rustup.sh -o ~/rust-installer/rustup.sh
-  - sh ~/rust-installer/rustup.sh --prefix=~/rust --spec=$RUST_VERSION -y
-  - export PATH="$HOME/rust/bin:$PATH"
+  - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
+  - source $HOME/.cargo/env
+  - rustc -V
+  - cargo -V
   - export PYTHON_LIB=$(python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
   - export LIBRARY_PATH="$LIBRARY_PATH:$PYTHON_LIB"
   - export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PYTHON_LIB:$HOME/rust/lib"
-  - rustc -V
   - pip install -e .
 
 script:
-  - cd example && python setup.py develop && cd ..
-  - cd example_tomlgen && python setup.py tomlgen_rust -w build && cd ..
+  - cd example_tomlgen
+  - python setup.py tomlgen_rust -w build
+  - cd ..
