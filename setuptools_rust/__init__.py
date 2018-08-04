@@ -10,8 +10,16 @@ from .test import test_rust
 from .tomlgen import tomlgen_rust, find_rust_extensions
 from .utils import Binding, Strip
 
-__all__ = ('RustExtension', 'Binding', 'Strip',
-           'check_rust', 'clean_rust', 'build_ext', 'build_rust', 'test_rust')
+__all__ = (
+    "RustExtension",
+    "Binding",
+    "Strip",
+    "check_rust",
+    "clean_rust",
+    "build_ext",
+    "build_rust",
+    "test_rust",
+)
 
 
 patch.monkey_patch_dist(build_ext)

@@ -3,15 +3,14 @@ import os
 import sys
 import subprocess
 from distutils.cmd import Command
-from distutils.errors import (
-    CompileError, DistutilsFileError, DistutilsExecError)
+from distutils.errors import CompileError, DistutilsFileError, DistutilsExecError
 
 import semantic_version
 
 from .extension import RustExtension
 from .utils import cpython_feature, get_rust_version
 
-MIN_VERSION = semantic_version.Spec('>=1.15')
+MIN_VERSION = semantic_version.Spec(">=1.15")
 
 
 class test_rust(Command):
@@ -25,8 +24,11 @@ class test_rust(Command):
         self.extensions = ()
 
     def finalize_options(self):
-        self.extensions = [ext for ext in self.distribution.rust_extensions
-                           if isinstance(ext, RustExtension)]
+        self.extensions = [
+            ext
+            for ext in self.distribution.rust_extensions
+            if isinstance(ext, RustExtension)
+        ]
 
     def run(self):
         if not self.extensions:
@@ -34,8 +36,10 @@ class test_rust(Command):
 
         version = get_rust_version()
         if version not in MIN_VERSION:
-            print('Rust version mismatch: required rust%s got rust%s' % (
-                MIN_VERSION,  version))
+            print(
+                "Rust version mismatch: required rust%s got rust%s"
+                % (MIN_VERSION, version)
+            )
             return
 
         # Make sure that if pythonXX-sys is used, it builds against the current
@@ -43,41 +47,47 @@ class test_rust(Command):
         bindir = os.path.dirname(sys.executable)
 
         env = os.environ.copy()
-        env.update({
-            # disables rust's pkg-config seeking for specified packages,
-            # which causes pythonXX-sys to fall back to detecting the
-            # interpreter from the path.
-            "PYTHON_2.7_NO_PKG_CONFIG": "1",
-            "PATH":  bindir + os.pathsep + os.environ.get("PATH", "")
-        })
+        env.update(
+            {
+                # disables rust's pkg-config seeking for specified packages,
+                # which causes pythonXX-sys to fall back to detecting the
+                # interpreter from the path.
+                "PYTHON_2.7_NO_PKG_CONFIG": "1",
+                "PATH": bindir + os.pathsep + os.environ.get("PATH", ""),
+            }
+        )
 
         for ext in self.extensions:
             if not os.path.exists(ext.path):
                 raise DistutilsFileError(
-                    "Can not file rust extension project file: %s" % ext.path)
+                    "Can not file rust extension project file: %s" % ext.path
+                )
 
             features = set(ext.features)
             features.update(cpython_feature(ext=False, binding=ext.binding))
 
             # test cargo command
-            feature_args = [
-                "--features", " ".join(features)] if features else []
-            args = (["cargo", "test", "--manifest-path", ext.path]
-                    + feature_args
-                    + list(ext.args or []))
+            feature_args = ["--features", " ".join(features)] if features else []
+            args = (
+                ["cargo", "test", "--manifest-path", ext.path]
+                + feature_args
+                + list(ext.args or [])
+            )
 
             # Execute cargo command
-            print(' '.join(args))
+            print(" ".join(args))
             try:
                 subprocess.check_output(args, env=env)
             except subprocess.CalledProcessError as e:
                 raise CompileError(
-                    "cargo failed with code: %d\n%s" % (
-                        e.returncode, e.output.decode("utf-8")))
+                    "cargo failed with code: %d\n%s"
+                    % (e.returncode, e.output.decode("utf-8"))
+                )
             except OSError:
                 raise DistutilsExecError(
                     "Unable to execute 'cargo' - this package "
                     "requires rust to be installed and "
-                    "cargo to be on the PATH")
+                    "cargo to be on the PATH"
+                )
             else:
                 print("Test has been completed for '%s' extension" % ext.name)

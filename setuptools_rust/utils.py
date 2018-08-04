@@ -49,8 +49,7 @@ def cpython_feature(ext=True, binding=Binding.PyO3):
             else:
                 return ("pyo3/python3",)
         else:
-            raise DistutilsPlatformError(
-                "Unsupported python version: %s" % sys.version)
+            raise DistutilsPlatformError("Unsupported python version: %s" % sys.version)
     elif binding is Binding.RustCPython:
         if (2, 7) < version < (2, 8):
             if ext:
@@ -63,8 +62,7 @@ def cpython_feature(ext=True, binding=Binding.PyO3):
             else:
                 return ("cpython/python3-sys",)
         else:
-            raise DistutilsPlatformError(
-                "Unsupported python version: %s" % sys.version)
+            raise DistutilsPlatformError("Unsupported python version: %s" % sys.version)
     else:
         raise DistutilsPlatformError('Unknown Binding: "{}" '.format(binding))
 
@@ -73,10 +71,9 @@ def get_rust_version():
     try:
         output = subprocess.check_output(["rustc", "-V"])
         if isinstance(output, bytes):
-            output = output.decode('latin-1')
-        return semantic_version.Version(output.split(' ')[1], partial=True)
+            output = output.decode("latin-1")
+        return semantic_version.Version(output.split(" ")[1], partial=True)
     except (subprocess.CalledProcessError, OSError):
-        raise DistutilsPlatformError('Can not find Rust compiler')
+        raise DistutilsPlatformError("Can not find Rust compiler")
     except Exception as exc:
-        raise DistutilsPlatformError(
-            'Can not get rustc version: %s' % str(exc))
+        raise DistutilsPlatformError("Can not get rustc version: %s" % str(exc))

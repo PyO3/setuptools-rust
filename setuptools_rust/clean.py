@@ -16,8 +16,11 @@ class clean_rust(Command):
         self.inplace = False
 
     def finalize_options(self):
-        self.extensions = [ext for ext in self.distribution.rust_extensions
-                           if isinstance(ext, RustExtension)]
+        self.extensions = [
+            ext
+            for ext in self.distribution.rust_extensions
+            if isinstance(ext, RustExtension)
+        ]
 
     def run(self):
         if not self.extensions:
@@ -25,7 +28,7 @@ class clean_rust(Command):
 
         for ext in self.extensions:
             # build cargo command
-            args = (["cargo", "clean", "--manifest-path", ext.path])
+            args = ["cargo", "clean", "--manifest-path", ext.path]
 
             if not ext.quiet:
                 print(" ".join(args), file=sys.stderr)

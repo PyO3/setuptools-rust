@@ -49,16 +49,26 @@ class RustExtension:
         build process, but instead simply not install the failing extension.
     """
 
-    def __init__(self, target, path,
-                 args=None, features=None, rust_version=None,
-                 quiet=False, debug=None, binding=Binding.PyO3,
-                 strip=Strip.No, script=False, native=False, optional=False):
+    def __init__(
+        self,
+        target,
+        path,
+        args=None,
+        features=None,
+        rust_version=None,
+        quiet=False,
+        debug=None,
+        binding=Binding.PyO3,
+        strip=Strip.No,
+        script=False,
+        native=False,
+        optional=False,
+    ):
         if isinstance(target, dict):
-            name = '; '.join('%s=%s' % (key, val)
-                             for key, val in target.items())
+            name = "; ".join("%s=%s" % (key, val) for key, val in target.items())
         else:
             name = target
-            target = {'': target}
+            target = {"": target}
 
         self.name = name
         self.target = target
@@ -97,14 +107,15 @@ class RustExtension:
         import toml
 
         cfg = toml.load(self.path)
-        name = cfg.get('lib', {}).get('name')
+        name = cfg.get("lib", {}).get("name")
         if name is None:
-            name = cfg.get('package', {}).get('name')
+            name = cfg.get("package", {}).get("name")
         if name is None:
             raise Exception(
                 "Can not parse library name from Cargo.toml. "
                 "Cargo.toml missing value for 'name' key "
-                "in both the [package] section and the [lib] section")
+                "in both the [package] section and the [lib] section"
+            )
         name = re.sub(r"[./\\-]", "_", name)
         return name
 
@@ -115,14 +126,15 @@ class RustExtension:
             return semantic_version.Spec(self.rust_version)
         except ValueError:
             raise DistutilsSetupError(
-                'Can not parse rust compiler version: %s', self.rust_version)
+                "Can not parse rust compiler version: %s", self.rust_version
+            )
 
     def entry_points(self):
         entry_points = []
         if self.script and self.binding == Binding.Exec:
             for name, mod in self.target.items():
-                base_mod, name = mod.rsplit('.')
-                script = '%s=%s.%s:run' % (name, base_mod, '_gen_%s' % name)
+                base_mod, name = mod.rsplit(".")
+                script = "%s=%s.%s:run" % (name, base_mod, "_gen_%s" % name)
                 entry_points.append(script)
 
         return entry_points
@@ -130,9 +142,9 @@ class RustExtension:
     def install_script(self, ext_path):
         if self.script and self.binding == Binding.Exec:
             dirname, name = os.path.split(ext_path)
-            file = os.path.join(dirname, '_gen_%s.py' % name)
-            with open(file, 'w') as f:
-                f.write(TMPL.format({'name': name}))
+            file = os.path.join(dirname, "_gen_%s.py" % name)
+            with open(file, "w") as f:
+                f.write(TMPL.format({"name": name}))
 
 
 TMPL = """from __future__ import absolute_import, print_function

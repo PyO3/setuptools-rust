@@ -24,15 +24,20 @@ class tomlgen_rust(setuptools.Command):
     description = "Generate `Cargo.toml` for rust extensions"
 
     user_options = [
-        (str("force"), str('f'),
-         str("overwrite existing files if any")),
-        (str("create-workspace"), str('w'),
-         str("create a workspace file at the root of the project")),
-        (str("no-config"), str("C"),
-         str("do not create a `.cargo/config` file when generating a workspace"))
+        (str("force"), str("f"), str("overwrite existing files if any")),
+        (
+            str("create-workspace"),
+            str("w"),
+            str("create a workspace file at the root of the project"),
+        ),
+        (
+            str("no-config"),
+            str("C"),
+            str("do not create a `.cargo/config` file when generating a workspace"),
+        ),
     ]
 
-    boolean_options = [str('create_workspace'), str('force')]
+    boolean_options = [str("create_workspace"), str("force")]
 
     def initialize_options(self):
 
@@ -57,18 +62,21 @@ class tomlgen_rust(setuptools.Command):
 
         # Shortcuts
         self.extensions = self.distribution.rust_extensions
-        self.workspace = os.path.abspath(os.path.dirname(self.distribution.script_name) or '.')
+        self.workspace = os.path.abspath(
+            os.path.dirname(self.distribution.script_name) or "."
+        )
 
         # Build list of authors
         if self.authors is not None:
-            sep = '\n' if '\n' in self.authors.strip() else ','
+            sep = "\n" if "\n" in self.authors.strip() else ","
             self.authors = "[{}]".format(
-                ", ".join(author.strip() for author in self.authors.split(sep)))
+                ", ".join(author.strip() for author in self.authors.split(sep))
+            )
         else:
             self.authors = '["{} <{}>"]'.format(
                 self.distribution.get_author(),
-                self.distribution.get_author_email().strip('"\''))
-
+                self.distribution.get_author_email().strip("\"'"),
+            )
 
     def run(self):
 
@@ -77,7 +85,7 @@ class tomlgen_rust(setuptools.Command):
             toml = self.build_cargo_toml(ext)
             if not os.path.exists(ext.path) or self.force:
                 log.info("creating 'Cargo.toml' for '%s'", ext.name)
-                with open(ext.path, 'w') as manifest:
+                with open(ext.path, "w") as manifest:
                     toml.write(manifest)
             else:
                 log.warn("skipping 'Cargo.toml' for '%s' -- already exists", ext.name)
@@ -88,12 +96,12 @@ class tomlgen_rust(setuptools.Command):
             toml_path = os.path.join(self.workspace, "Cargo.toml")
             if not os.path.exists(toml_path) or self.force:
                 log.info("creating 'Cargo.toml' for workspace")
-                with open(toml_path, 'w') as manifest:
+                with open(toml_path, "w") as manifest:
                     toml.write(manifest)
             else:
                 log.warn("skipping 'Cargo.toml' for workspace -- already exists")
 
-        # Create a `.cargo/config` file 
+        # Create a `.cargo/config` file
         if self.create_workspace and self.extensions and not self.no_config:
 
             dist = self.distribution
@@ -105,17 +113,16 @@ class tomlgen_rust(setuptools.Command):
             if not os.path.exists(os.path.join(cfgdir, "config")) or self.force:
                 if not os.path.exists(cfgdir):
                     os.makedirs(cfgdir)
-                with open(os.path.join(cfgdir, 'config'), 'w') as config:
+                with open(os.path.join(cfgdir, "config"), "w") as config:
                     log.info("creating '.cargo/config' for workspace")
 
                     config.write("[build]\n")
-                    config.write('target-dir = "{}"\n'.format(
-                        os.path.relpath(targetdir, cfgdir)
-                    ))
+                    config.write(
+                        'target-dir = "{}"\n'.format(os.path.relpath(targetdir, cfgdir))
+                    )
 
             else:
                 log.warn("skipping '.cargo/config' -- already exists")
-
 
     def build_cargo_toml(self, ext):
 
@@ -131,8 +138,8 @@ class tomlgen_rust(setuptools.Command):
 
         # If the RustExtension was not created by `find_rust_extensions`
         # the `lib.rs` file is expected to be located near `Cargo.toml`
-        if not hasattr(ext, 'libfile'):
-            ext.libfile = ext.path.replace('Cargo.toml', 'lib.rs')
+        if not hasattr(ext, "libfile"):
+            ext.libfile = ext.path.replace("Cargo.toml", "lib.rs")
 
         # Create a small package section
         toml.add_section("package")
@@ -162,13 +169,15 @@ class tomlgen_rust(setuptools.Command):
     def build_workspace_toml(self):
 
         # Find all members of the workspace
-        members = [os.path.dirname(os.path.relpath(ext.path)) for ext in self.extensions]
+        members = [
+            os.path.dirname(os.path.relpath(ext.path)) for ext in self.extensions
+        ]
         members = ['"{}"'.format(m) for m in members]
 
         # Create the `Cargo.toml` content using a ConfigParser
         toml = configparser.ConfigParser()
-        toml.add_section('workspace')
-        toml.set('workspace', 'members', '[{}]'.format(', '.join(members)))
+        toml.add_section("workspace")
+        toml.set("workspace", "members", "[{}]".format(", ".join(members)))
 
         return toml
 
@@ -177,11 +186,11 @@ class tomlgen_rust(setuptools.Command):
         command = self.get_command_name()
 
         # global dependencies
-        sections = ['{}.dependencies'.format(command)]
+        sections = ["{}.dependencies".format(command)]
 
         # extension-specific dependencies
         if ext is not None:
-            sections.append('{}.dependencies.{}'.format(command, ext.name))
+            sections.append("{}.dependencies.{}".format(command, ext.name))
 
         for section in sections:
             if self.cfg.has_section(section):
@@ -190,9 +199,10 @@ class tomlgen_rust(setuptools.Command):
 
 
 def _slugify(name):
-    allowed = set(string.ascii_letters + string.digits + '_')
-    slug = [char if char in allowed else '_' for char in name]
-    return ''.join(slug)
+    allowed = set(string.ascii_letters + string.digits + "_")
+    slug = [char if char in allowed else "_" for char in name]
+    return "".join(slug)
+
 
 def find_rust_extensions(*directories, **kwargs):
     """Attempt to find Rust extensions in given directories.
@@ -246,7 +256,7 @@ def find_rust_extensions(*directories, **kwargs):
     """
 
     # Get the file used to mark a Rust extension
-    libfile = kwargs.get('libfile', 'lib.rs')
+    libfile = kwargs.get("libfile", "lib.rs")
 
     # Get the directories to explore
     directories = directories or [os.getcwd()]
@@ -255,7 +265,7 @@ def find_rust_extensions(*directories, **kwargs):
     for directory in directories:
         for base, dirs, files in os.walk(directory):
             if libfile in files:
-                dotpath = os.path.relpath(base).replace(os.path.sep, '.')
+                dotpath = os.path.relpath(base).replace(os.path.sep, ".")
                 tomlpath = os.path.join(base, "Cargo.toml")
                 ext = RustExtension(dotpath, tomlpath, **kwargs)
                 ext.libfile = os.path.join(base, libfile)

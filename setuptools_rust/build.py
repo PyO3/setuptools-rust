@@ -7,8 +7,12 @@ import sys
 import subprocess
 from distutils.cmd import Command
 from distutils.errors import (
-    CompileError, DistutilsExecError, DistutilsFileError,
-    DistutilsPlatformError, DistutilsSetupError)
+    CompileError,
+    DistutilsExecError,
+    DistutilsFileError,
+    DistutilsPlatformError,
+    DistutilsSetupError,
+)
 from subprocess import check_output
 
 from .extension import RustExtension
@@ -21,19 +25,22 @@ class build_rust(Command):
     description = "build Rust extensions (compile/link to build directory)"
 
     user_options = [
-        ('inplace', 'i',
-         "ignore build-lib and put compiled extensions into the source " +
-         "directory alongside your pure Python modules"),
-        ('debug', 'd',
-         "Force debug to true for all rust extensions "),
-        ('release', 'r',
-         "Force debug to false for all rust extensions "),
-        ('qbuild', None,
-         "Force enable quiet option for all rust extensions "),
-         ('build-temp', 't',
-          "directory for temporary files (cargo 'target' directory) "),
+        (
+            "inplace",
+            "i",
+            "ignore build-lib and put compiled extensions into the source "
+            + "directory alongside your pure Python modules",
+        ),
+        ("debug", "d", "Force debug to true for all rust extensions "),
+        ("release", "r", "Force debug to false for all rust extensions "),
+        ("qbuild", None, "Force enable quiet option for all rust extensions "),
+        (
+            "build-temp",
+            "t",
+            "directory for temporary files (cargo 'target' directory) ",
+        ),
     ]
-    boolean_options = ['inplace', 'debug', 'release', 'qbuild']
+    boolean_options = ["inplace", "debug", "release", "qbuild"]
 
     def initialize_options(self):
         self.extensions = ()
@@ -44,14 +51,18 @@ class build_rust(Command):
         self.build_temp = None
 
     def finalize_options(self):
-        self.extensions = [ext for ext in self.distribution.rust_extensions
-                           if isinstance(ext, RustExtension)]
+        self.extensions = [
+            ext
+            for ext in self.distribution.rust_extensions
+            if isinstance(ext, RustExtension)
+        ]
 
         # Inherit settings from the `build_ext` command
-        self.set_undefined_options('build_ext',
-            ('build_temp', 'build_temp'),
-            ('debug', 'debug'),
-            ('inplace', 'inplace'),
+        self.set_undefined_options(
+            "build_ext",
+            ("build_temp", "build_temp"),
+            ("debug", "debug"),
+            ("inplace", "inplace"),
         )
 
     def build_extension(self, ext):
@@ -62,22 +73,32 @@ class build_rust(Command):
         bindir = os.path.dirname(sys.executable)
 
         env = os.environ.copy()
-        env.update({
-            # disables rust's pkg-config seeking for specified packages,
-            # which causes pythonXX-sys to fall back to detecting the
-            # interpreter from the path.
-            "PATH":  os.path.join(bindir, os.environ.get("PATH", "")),
-        })
+        env.update(
+            {
+                # disables rust's pkg-config seeking for specified packages,
+                # which causes pythonXX-sys to fall back to detecting the
+                # interpreter from the path.
+                "PATH": os.path.join(bindir, os.environ.get("PATH", ""))
+            }
+        )
 
         # Find where to put the temporary build files created by `cargo`
-        metadata_command = ["cargo", "metadata", "--manifest-path", ext.path, "--format-version", "1"]
+        metadata_command = [
+            "cargo",
+            "metadata",
+            "--manifest-path",
+            ext.path,
+            "--format-version",
+            "1",
+        ]
         # The decoding is needed for python 3.5 compatibility
         metadata = json.loads(check_output(metadata_command).decode("utf-8"))
         target_dir = metadata["target_directory"]
 
         if not os.path.exists(ext.path):
             raise DistutilsFileError(
-                "Can not find rust extension project file: %s" % ext.path)
+                "Can not find rust extension project file: %s" % ext.path
+            )
 
         features = set(ext.features)
         features.update(cpython_feature(binding=ext.binding))
@@ -93,28 +114,33 @@ class build_rust(Command):
         feature_args = ["--features", " ".join(features)] if features else []
 
         if executable:
-            args = (["cargo", "build", "--manifest-path", ext.path]
-                    + feature_args
-                    + list(ext.args or []))
+            args = (
+                ["cargo", "build", "--manifest-path", ext.path]
+                + feature_args
+                + list(ext.args or [])
+            )
             if not debug_build:
                 args.append("--release")
             if quiet:
                 args.append("-q")
         else:
-            args = (["cargo", "rustc", "--lib", "--manifest-path", ext.path]
-                    + feature_args
-                    + list(ext.args or []))
+            args = (
+                ["cargo", "rustc", "--lib", "--manifest-path", ext.path]
+                + feature_args
+                + list(ext.args or [])
+            )
             if not debug_build:
                 args.append("--release")
             if quiet:
                 args.append("-q")
 
-            args.extend(["--", '--crate-type', 'cdylib'])
+            args.extend(["--", "--crate-type", "cdylib"])
 
             # OSX requires special linker argument
             if sys.platform == "darwin":
-                args.extend(["-C", "link-arg=-undefined",
-                             "-C", "link-arg=dynamic_lookup"])
+                args.extend(
+                    ["-C", "link-arg=-undefined", "-C", "link-arg=dynamic_lookup"]
+                )
 
         if not quiet:
             print(" ".join(args), file=sys.stderr)
@@ -128,18 +154,20 @@ class build_rust(Command):
         except subprocess.CalledProcessError as e:
             output = e.output
             if isinstance(output, bytes):
-                output = e.output.decode('latin-1').strip()
+                output = e.output.decode("latin-1").strip()
             raise CompileError(
-                "cargo failed with code: %d\n%s" % (e.returncode, output))
+                "cargo failed with code: %d\n%s" % (e.returncode, output)
+            )
 
         except OSError:
             raise DistutilsExecError(
                 "Unable to execute 'cargo' - this package "
-                "requires rust to be installed and cargo to be on the PATH")
+                "requires rust to be installed and cargo to be on the PATH"
+            )
 
         if not quiet:
             if isinstance(output, bytes):
-                output = output.decode('latin-1')
+                output = output.decode("latin-1")
             if output:
                 print(output, file=sys.stderr)
 
@@ -163,9 +191,9 @@ class build_rust(Command):
                         continue
                     else:
                         raise DistutilsExecError(
-                            'rust build failed; '
-                            'unable to find executable "%s" in %s' % (
-                                name, target_dir))
+                            "rust build failed; "
+                            'unable to find executable "%s" in %s' % (name, target_dir)
+                        )
                 else:
                     # search executable
                     for name in os.listdir(artifactsdir):
@@ -179,8 +207,8 @@ class build_rust(Command):
 
             if not dylib_paths:
                 raise DistutilsExecError(
-                    "rust build failed; unable to find executable in %s" %
-                    target_dir)
+                    "rust build failed; unable to find executable in %s" % target_dir
+                )
         else:
             if sys.platform == "win32":
                 dylib_ext = "dll"
@@ -192,24 +220,28 @@ class build_rust(Command):
             wildcard_so = "*{}.{}".format(ext.get_lib_name(), dylib_ext)
 
             try:
-                dylib_paths.append((
-                    ext.name,
-                    next(glob.iglob(os.path.join(artifactsdir, wildcard_so)))
-                ))
+                dylib_paths.append(
+                    (
+                        ext.name,
+                        next(glob.iglob(os.path.join(artifactsdir, wildcard_so))),
+                    )
+                )
             except StopIteration:
                 raise DistutilsExecError(
-                    "rust build failed; unable to find any %s in %s" %
-                    (wildcard_so, artifactsdir))
+                    "rust build failed; unable to find any %s in %s"
+                    % (wildcard_so, artifactsdir)
+                )
 
         # Ask build_ext where the shared library would go if it had built it,
         # then copy it there.
-        build_ext = self.get_finalized_command('build_ext')
+        build_ext = self.get_finalized_command("build_ext")
         build_ext.inplace = self.inplace
 
         for target_fname, dylib_path in dylib_paths:
             if not target_fname:
-                target_fname = os.path.basename(os.path.splitext(
-                    os.path.basename(dylib_path)[3:])[0])
+                target_fname = os.path.basename(
+                    os.path.splitext(os.path.basename(dylib_path)[3:])[0]
+                )
 
             if executable:
                 ext_path = build_ext.get_ext_fullpath(target_fname)
@@ -232,12 +264,12 @@ class build_rust(Command):
             if sys.platform != "win32" and not debug_build:
                 args = []
                 if ext.strip == Strip.All:
-                    args.append('-x')
+                    args.append("-x")
                 elif ext.strip == Strip.Debug:
-                    args.append('-S')
+                    args.append("-S")
 
                 if args:
-                    args.insert(0, 'strip')
+                    args.insert(0, "strip")
                     args.append(ext_path)
                     try:
                         output = subprocess.check_output(args, env=env)
@@ -246,7 +278,7 @@ class build_rust(Command):
 
             if executable:
                 mode = os.stat(ext_path).st_mode
-                mode |= (mode & 0o444) >> 2    # copy R bits to X
+                mode |= (mode & 0o444) >> 2  # copy R bits to X
                 os.chmod(ext_path, mode)
 
     def run(self):
@@ -268,16 +300,20 @@ class build_rust(Command):
                 rust_version = ext.get_rust_version()
                 if rust_version is not None and version not in rust_version:
                     raise DistutilsPlatformError(
-                        "Rust %s does not match extension requirement %s" % (
-                            version, ext.rust_version))
+                        "Rust %s does not match extension requirement %s"
+                        % (version, ext.rust_version)
+                    )
 
                 self.build_extension(ext)
-            except (DistutilsSetupError, DistutilsFileError,
-                    DistutilsExecError, DistutilsPlatformError,
-                    CompileError) as e:
+            except (
+                DistutilsSetupError,
+                DistutilsFileError,
+                DistutilsExecError,
+                DistutilsPlatformError,
+                CompileError,
+            ) as e:
                 if not ext.optional:
                     raise
                 else:
-                    print('Build optional Rust extension %s failed.' %
-                          ext.name)
+                    print("Build optional Rust extension %s failed." % ext.name)
                     print(str(e))

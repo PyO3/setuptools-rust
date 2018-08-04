@@ -6,6 +6,7 @@ from setuptools.dist import Distribution
 
 try:
     from wheel.bdist_wheel import bdist_wheel
+
     wheel = True
 except:
     wheel = False
@@ -19,7 +20,7 @@ def monkey_patch_dist(build_ext):
     Distribution.orig_get_command_class = Distribution.get_command_class
 
     def get_command_class(self, command):
-        if command == 'build_ext':
+        if command == "build_ext":
             if command not in self.cmdclass:
                 self.cmdclass[command] = build_ext
 
@@ -31,8 +32,12 @@ def monkey_patch_dist(build_ext):
     DistDistribution.orig_has_ext_modules = DistDistribution.has_ext_modules
 
     def has_ext_modules(self):
-        return (self.ext_modules and len(self.ext_modules) > 0 or
-                self.rust_extensions and len(self.rust_extensions) > 0)
+        return (
+            self.ext_modules
+            and len(self.ext_modules) > 0
+            or self.rust_extensions
+            and len(self.rust_extensions) > 0
+        )
 
     DistDistribution.has_ext_modules = has_ext_modules
 
@@ -56,12 +61,9 @@ def monkey_patch_dist(build_ext):
 
             if scripts:
                 if not self.distribution.entry_points:
-                    self.distribution.entry_points = {
-                        'console_scripts': scripts,
-                    }
+                    self.distribution.entry_points = {"console_scripts": scripts}
                 else:
-                    ep_scripts = self.distribution.entry_points.get(
-                        'console_scripts')
+                    ep_scripts = self.distribution.entry_points.get("console_scripts")
                     if ep_scripts:
                         for script in scripts:
                             if script not in ep_scripts:
@@ -69,8 +71,7 @@ def monkey_patch_dist(build_ext):
                     else:
                         ep_scripts = scripts
 
-                    self.distribution.entry_points[
-                        'console_scripts'] = ep_scripts
+                    self.distribution.entry_points["console_scripts"] = ep_scripts
 
         self.distribution.ext_modules = mods
 
@@ -92,12 +93,9 @@ def monkey_patch_dist(build_ext):
 
             if scripts:
                 if not self.distribution.entry_points:
-                    self.distribution.entry_points = {
-                        'console_scripts': scripts,
-                    }
+                    self.distribution.entry_points = {"console_scripts": scripts}
                 else:
-                    ep_scripts = self.distribution.entry_points.get(
-                        'console_scripts')
+                    ep_scripts = self.distribution.entry_points.get("console_scripts")
                     if ep_scripts:
                         for script in scripts:
                             if script not in ep_scripts:
@@ -105,8 +103,7 @@ def monkey_patch_dist(build_ext):
                     else:
                         ep_scripts = scripts
 
-                    self.distribution.entry_points[
-                        'console_scripts'] = ep_scripts
+                    self.distribution.entry_points["console_scripts"] = ep_scripts
 
             self.orig_finalize_options()
 
