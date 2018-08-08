@@ -55,6 +55,7 @@ class RustExtension:
         path,
         args=None,
         features=None,
+        rustc_flags=None,
         rust_version=None,
         quiet=False,
         debug=None,
@@ -73,6 +74,7 @@ class RustExtension:
         self.name = name
         self.target = target
         self.args = args
+        self.rustc_flags = rustc_flags
         self.binding = binding
         self.rust_version = rust_version
         self.quiet = quiet

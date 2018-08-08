@@ -135,6 +135,7 @@ class build_rust(Command):
                 args.append("-q")
 
             args.extend(["--", "--crate-type", "cdylib"])
+            args.extend(ext.rustc_flags or [])
 
             # OSX requires special linker argument
             if sys.platform == "darwin":
