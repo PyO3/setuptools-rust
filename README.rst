@@ -90,6 +90,9 @@ You can define rust extension with `RustExtension` class:
 
    :param [str] features: a list of features to also build
 
+   :param [str] rustc_flags: A list of arguments to pass to `rustc`, e.g.
+                             `cargo rustc --features <features> <args> -- <rustc_flags>`
+
    :param str rust_version: sematic version of rust compiler version -- for example
                             *>1.14,<1.16*, default is None
 
