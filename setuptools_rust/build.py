@@ -123,6 +123,9 @@ class build_rust(Command):
                 args.append("--release")
             if quiet:
                 args.append("-q")
+            elif self.verbose:
+                args.append("--verbose")
+
         else:
             args = (
                 ["cargo", "rustc", "--lib", "--manifest-path", ext.path]
@@ -133,6 +136,8 @@ class build_rust(Command):
                 args.append("--release")
             if quiet:
                 args.append("-q")
+            elif self.verbose:
+                args.append("--verbose")
 
             args.extend(["--", "--crate-type", "cdylib"])
             args.extend(ext.rustc_flags or [])
