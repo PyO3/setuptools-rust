@@ -28,3 +28,8 @@ script:
   - cd example_tomlgen
   - python setup.py tomlgen_rust -w build
   - cd ..
+  - git clone --depth 1 https://github.com/PyO3/pyo3
+  - cd pyo3/examples/word-count
+  - python setup.py install
+  - cd ../../..
+  - python -c "import word_count"

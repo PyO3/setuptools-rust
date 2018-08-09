@@ -6,3 +6,4 @@
 /build
 *.egg-info
 Cargo.lock
+pyo3
