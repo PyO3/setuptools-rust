@@ -11,7 +11,7 @@ setup(
     url="https://github.com/PyO3/setuptools-rust",
     keywords="distutils setuptools rust",
     description="Setuptools rust extension plugin",
-    long_description=open("README.rst").read(),
+    long_description=open("README.md").read(),
     license="MIT",
     packages=["setuptools_rust"],
     install_requires=["semantic_version>=2.6.0", "toml>=0.9.0"],
