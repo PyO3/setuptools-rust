@@ -4,7 +4,7 @@
 [![pypi package](https://badge.fury.io/py/setuptools-rust.svg)](https://badge.fury.io/py/setuptools-rust)
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-** You might want to check out [pyo3-pack](https://github.com/PyO3/pyo3-pack), the successor to this project, which allows to develop, build and upload without any configuration **
+**You might want to check out [pyo3-pack](https://github.com/PyO3/pyo3-pack), the successor to this project, which allows to develop, build and upload without any configuration**
 
 Setuptools helpers for rust Python extensions implemented with [PyO3
 python binding](https://github.com/PyO3/pyo3).
