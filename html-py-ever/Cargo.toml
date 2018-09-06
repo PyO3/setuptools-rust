@@ -1,0 +1,13 @@
+[package]
+name = "html-py-ever"
+version = "0.1.0"
+authors = ["konstin <konstin@mailbox.org>"]
+
+[dependencies]
+kuchiki = "0.7.2"
+pyo3 = {path= "../../pyo3", features = ["extension-module"]}
+tendril = "0.4.0"
+
+[lib]
+name = "html_py_ever"
+crate-type = ["cdylib"]

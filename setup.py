@@ -1,7 +1,8 @@
+#!/usr/bin/env python
+
 from setuptools import setup
 
-version = "0.10.2"
-
+version = "0.10.3"
 
 setup(
     name="setuptools-rust",
@@ -12,6 +13,7 @@ setup(
     keywords="distutils setuptools rust",
     description="Setuptools rust extension plugin",
     long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
     license="MIT",
     packages=["setuptools_rust"],
     install_requires=["semantic_version>=2.6.0", "toml>=0.9.0"],
@@ -25,6 +27,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "Development Status :: 5 - Production/Stable",
         "Operating System :: POSIX",
         "Operating System :: MacOS :: MacOS X",

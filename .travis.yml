@@ -28,8 +28,7 @@ script:
   - cd example_tomlgen
   - python setup.py tomlgen_rust -w build
   - cd ..
-  - git clone --depth 1 https://github.com/PyO3/pyo3
-  - cd pyo3/examples/word-count
+  - cd html-py-ever
+  - pip install -r requirements-dev.txt
   - python setup.py install
-  - cd ../../..
-  - python -c "import word_count"
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then cd test && pytest; fi

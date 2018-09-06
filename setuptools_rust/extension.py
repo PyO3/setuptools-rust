@@ -52,7 +52,7 @@ class RustExtension:
     def __init__(
         self,
         target,
-        path,
+        path="Cargo.toml",
         args=None,
         features=None,
         rustc_flags=None,

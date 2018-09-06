@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.3 (2018-09-06)
+
+ - `path` in `RustExtension` now defaults to `Cargo.toml`
+
 ## 0.10.2 (2018-08-09)
 
  - Add `rustc_flags` and `verbose` as options
