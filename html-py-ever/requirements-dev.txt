@@ -3,4 +3,5 @@ setuptools-rust
 wheel
 pytest-benchmark[historgram]
 pytest
-
+beautifulsoup4
+lxml
