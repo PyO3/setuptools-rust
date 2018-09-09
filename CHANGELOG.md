@@ -1,10 +1,13 @@
 # Changelog
 
 
-## 0.10.3 (2018-09-09)
+## 0.10.5 (2018-09-09)
+
+ - Added license file [#41](https://github.com/PyO3/setuptools-rust/pull/41)
+
+## 0.10.4 (2018-09-09)
 
  - Add `html-py-ever` example
- - Added license file [#41](https://github.com/PyO3/setuptools-rust/pull/41)
 
 ## 0.10.3 (2018-09-06)
 
