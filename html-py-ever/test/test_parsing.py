@@ -13,8 +13,7 @@ def rust(filename: str) -> Document:
 
 def python(filename: str) -> BeautifulSoup:
     with open(filename) as fp:
-        text = fp.read()
-    soup = BeautifulSoup(text, "html.parser")
+        soup = BeautifulSoup(fp, "html.parser")
 
     return soup
 

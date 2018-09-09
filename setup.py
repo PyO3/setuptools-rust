@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-version = "0.10.3"
+version = "0.10.4"
 
 setup(
     name="setuptools-rust",

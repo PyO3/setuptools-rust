@@ -22,8 +22,7 @@ def rust(filename: str) -> Tuple[int, float, float]:
 def python(filename: str, parser: str) -> Tuple[int, float, float]:
     start_load = perf_counter()
     with open(filename) as fp:
-        text = fp.read()
-    soup = BeautifulSoup(text, parser)
+        soup = BeautifulSoup(fp, parser)
 
     end_load = perf_counter()
     start_search = perf_counter()
