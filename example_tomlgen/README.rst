@@ -5,12 +5,12 @@ An example extension with automatically generated ``Cargo.toml`` manifest
 files. Simply run ``python setup.py tomlgen_rust`` to generate the following
 files:
 
-* ``Cargo.toml`` for ``hello.english``
+* ``Cargo.toml`` for ``hello-english``
 
 .. code-block:: toml
 
     [package]
-    name = "hello.english"
+    name = "hello-english"
     version = "0.1.0"
     authors = ["Martin Larralde <martin.larralde@ens-paris-saclay.fr>"]
     publish = false
@@ -95,7 +95,7 @@ probably a good place to add ``pyo3`` as a dependency.
 
 To specify per-extension dependency, create a section for each extension
 (``[tomlgen_rust.dependencies.<DOTTEDPATH>]``, where ``<DOTTEDPATH>`` is the
-complete Python path to the extension (e.g. ``hello.english``). Extension
+complete Python path to the extension (e.g. ``hello-english``). Extension
 specific dependencies are added *after* global dependencies.
 
 *Note that, since all projects are built in the same directory, you can also
