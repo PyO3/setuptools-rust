@@ -17,8 +17,6 @@ matrix:
 install:
   - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
   - source $HOME/.cargo/env
-  - rustc -V
-  - cargo -V
   - export PYTHON_LIB=$(python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
   - export LIBRARY_PATH="$LIBRARY_PATH:$PYTHON_LIB"
   - export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PYTHON_LIB:$HOME/rust/lib"
