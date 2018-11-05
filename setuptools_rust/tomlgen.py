@@ -143,7 +143,7 @@ class tomlgen_rust(setuptools.Command):
 
         # Create a small package section
         toml.add_section("package")
-        toml.set("package", "name", quote(ext.name))
+        toml.set("package", "name", quote(ext.name.replace('.', '-')))
         toml.set("package", "version", quote(dist.get_version()))
         toml.set("package", "authors", self.authors)
         toml.set("package", "publish", "false")
