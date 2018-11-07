@@ -118,7 +118,7 @@ class tomlgen_rust(setuptools.Command):
 
                     config.write("[build]\n")
                     config.write(
-                        'target-dir = "{}"\n'.format(os.path.relpath(targetdir, cfgdir))
+                        'target-dir = "{}"\n'.format(os.path.relpath(targetdir))
                     )
 
             else:
