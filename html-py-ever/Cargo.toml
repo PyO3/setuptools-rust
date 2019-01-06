@@ -5,7 +5,7 @@ authors = ["konstin <konstin@mailbox.org>"]
 
 [dependencies]
 kuchiki = "0.7.2"
-pyo3 = {git = "https://github.com/PyO3/pyo3", features = ["extension-module"]}
+pyo3 = { version = "0.6.0-alpha", features = ["extension-module"]}
 tendril = "0.4.0"
 
 [lib]

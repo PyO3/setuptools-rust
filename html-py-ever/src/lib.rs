@@ -55,10 +55,10 @@ fn parse_text(text: &str) -> PyResult<Document> {
     Ok(document)
 }
 
-#[pymodinit]
+#[pymodule]
 fn html_py_ever(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_function!(parse_file))?;
-    m.add_function(wrap_function!(parse_text))?;
+    m.add_wrapped(wrap_function!(parse_file))?;
+    m.add_wrapped(wrap_function!(parse_text))?;
     m.add_class::<Document>()?;
 
     Ok(())
