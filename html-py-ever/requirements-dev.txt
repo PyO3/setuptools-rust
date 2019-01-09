@@ -2,6 +2,6 @@ setuptools
 setuptools-rust
 wheel
 pytest-benchmark[historgram]
-pytest
+pytest>=3.6
 beautifulsoup4
 lxml
