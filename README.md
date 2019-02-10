@@ -104,21 +104,16 @@ By default, `develop` will create a debug build, while `install` will create a r
 
 ### Binary wheels on linux
 
-To build binary wheels on linux, you need to use the [manylinux docker container](https://github.com/pypa/manylinux). You also need a `build-wheels.sh` similar to [the one in the example](https://github.com/PyO3/setuptools-rist/blob/master/html-py-ever/build-wheels.sh), which will be run in that container.
+To build binary wheels on linux, you need to use the [manylinux docker container](https://github.com/pypa/manylinux). You also need a `build-wheels.sh` similar to [the one in the example](https://github.com/PyO3/setuptools-rust/blob/master/html-py-ever/build-wheels.sh), which will be run in that container.
 
-First, pull the `manylinux1` Docker image:
-
-```bash
-docker pull quay.io/pypa/manylinux1_x86_64
-```
-
-Then use the following command to build wheels for supported Python versions:
+You can use the following command to build wheels for supported Python versions:
 
 ```bash
 docker run --rm -v `pwd`:/io quay.io/pypa/manylinux1_x86_64 /io/build-wheels.sh
 ```
+this will install rust nightly at each run. Alternatively, you can use the [`konstin2/pyo3-pack`](https://hub.docker.com/r/konstin2/pyo3-pack) image that is based on manylinux1 image and already includes rust nightly.
 
-This will create wheels in the `dist` directory:
+Wheels  will be created in the `dist` directory:
 
 ```bash
 $ ls dist
