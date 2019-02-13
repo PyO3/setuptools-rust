@@ -13,6 +13,6 @@ fn hello(_py: Python) -> PyResult<()> {
 #[pymodule]
 /// Module documentation string
 fn english(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_wrapped(wrap_function!(hello))?;
+    m.add_wrapped(wrap_pyfunction!(hello))?;
     Ok(())
 }
