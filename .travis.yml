@@ -1,8 +1,6 @@
 language: python
 
-cache:
-  directories:
-    - ~/.rustup
+dist: xenial
 
 matrix:
   fast_finish: true
@@ -10,15 +8,15 @@ matrix:
     - python: "2.7"
     - python: "3.5"
     - python: "3.6"
-    - python: "3.7-dev"
+    - python: "3.7"
+    - python: "3.8-dev"
   allow_failures:
-    - python: "3.7-dev"
+    - python: "3.8-dev"
 
 install:
   - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
   - source $HOME/.cargo/env
   - export PYTHON_LIB=$(python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
-  - export LIBRARY_PATH="$LIBRARY_PATH:$PYTHON_LIB"
   - export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PYTHON_LIB:$HOME/rust/lib"
   - pip install -e .
 

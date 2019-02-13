@@ -1,7 +1,6 @@
 //! Pure rust version for comparing with python based calls
 
-extern crate kuchiki;
-extern crate tendril;
+use kuchiki;
 
 use std::env;
 use std::path::PathBuf;
@@ -12,7 +11,7 @@ fn main() {
     let path = PathBuf::from(
         env::args()
             .nth(1)
-            .expect("You need to pass the file name as first argument")
+            .expect("You need to pass the file name as first argument"),
     );
 
     let now = Instant::now();

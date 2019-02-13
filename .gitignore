@@ -8,5 +8,4 @@ build
 target
 .pytest_cache
 *.egg-info
-Cargo.lock
 pyo3

@@ -1,12 +1,5 @@
-#![feature(specialization)]
-
-extern crate kuchiki;
-#[macro_use]
-extern crate pyo3;
-extern crate tendril;
-
-use kuchiki::NodeRef;
 use pyo3::prelude::*;
+use pyo3::wrap_pyfunction;
 use std::io::Read;
 use std::path::Path;
 use tendril::stream::TendrilSink;
@@ -14,7 +7,7 @@ use tendril::stream::TendrilSink;
 /// A parsed html document
 #[pyclass]
 struct Document {
-    node: NodeRef,
+    node: kuchiki::NodeRef,
 }
 
 #[pymethods]
@@ -56,7 +49,7 @@ fn parse_text(text: &str) -> PyResult<Document> {
 }
 
 #[pymodule]
-fn html_py_ever(_py: Python, m: &PyModule) -> PyResult<()> {
+fn html_py_ever(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pyfunction!(parse_file))?;
     m.add_wrapped(wrap_pyfunction!(parse_text))?;
     m.add_class::<Document>()?;
