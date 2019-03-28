@@ -1,9 +1,13 @@
 # Changelog
 
+## 0.11
+
+ - Removed python 2 support
+
 ## 0.10.6 (2018-11-07)
 
-- Fix tomlgen\_rust generating invalid `Cargo.toml` files.
-- Fix tomlgen\_rust setting wrong path in `.cargo/config`
+ - Fix tomlgen\_rust generating invalid `Cargo.toml` files.
+ - Fix tomlgen\_rust setting wrong path in `.cargo/config`
 
 ## 0.10.5 (2018-09-09)
 

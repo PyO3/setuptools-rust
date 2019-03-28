@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-version = "0.10.6"
+version = "0.11.0"
 
 setup(
     name="setuptools-rust",
@@ -22,8 +22,6 @@ setup(
         "Topic :: Software Development :: Version Control",
         "License :: OSI Approved :: MIT License",
         "Intended Audience :: Developers",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
