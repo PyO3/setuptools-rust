@@ -38,29 +38,19 @@ def cpython_feature(ext=True, binding=Binding.PyO3):
     if binding in (Binding.NoBinding, Binding.Exec):
         return ()
     elif binding is Binding.PyO3:
-        if (2, 7) < version < (2, 8):
+        if version > (3, 5):
             if ext:
-                return ("pyo3/python2", "pyo3/extension-module")
+                return {"pyo3/extension-module"}
             else:
-                return ("pyo3/python2",)
-        elif version > (3, 4):
-            if ext:
-                return ("pyo3/python3", "pyo3/extension-module")
-            else:
-                return ("pyo3/python3",)
+                return {}
         else:
             raise DistutilsPlatformError("Unsupported python version: %s" % sys.version)
     elif binding is Binding.RustCPython:
-        if (2, 7) < version < (2, 8):
+        if (3, 3) < version:
             if ext:
-                return ("cpython/python27-sys", "cpython/extension-module-2-7")
+                return {"cpython/python3-sys", "cpython/extension-module"}
             else:
-                return ("cpython/python27-sys",)
-        elif (3, 3) < version:
-            if ext:
-                return ("cpython/python3-sys", "cpython/extension-module")
-            else:
-                return ("cpython/python3-sys",)
+                return {"cpython/python3-sys"}
         else:
             raise DistutilsPlatformError("Unsupported python version: %s" % sys.version)
     else:
