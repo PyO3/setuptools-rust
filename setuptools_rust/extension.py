@@ -12,7 +12,7 @@ class RustExtension:
     module and everything needed to build it
 
     Instance attributes:
-      name : string
+      target : string
         the full name of the extension, including any packages -- ie.
         *not* a filename or pathname, but Python dotted name
       path : string
