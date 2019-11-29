@@ -13,6 +13,7 @@ for PYBIN in /opt/python/cp{27,35,36,37}*/bin; do
     export PYTHON_LIB=$(${PYBIN}/python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
     export LIBRARY_PATH="$LIBRARY_PATH:$PYTHON_LIB"
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PYTHON_LIB"
+    rm -f /io/build/lib.*
     "${PYBIN}/pip" install -U  setuptools setuptools-rust wheel
     "${PYBIN}/pip" wheel /io/ -w /io/dist/
 done
