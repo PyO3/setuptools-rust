@@ -216,7 +216,7 @@ class build_rust(Command):
                     "rust build failed; unable to find executable in %s" % target_dir
                 )
         else:
-            if sys.platform == "win32":
+            if sys.platform == "win32" or sys.platform == "cygwin":
                 dylib_ext = "dll"
             elif sys.platform == "darwin":
                 dylib_ext = "dylib"
@@ -282,7 +282,7 @@ class build_rust(Command):
                     except subprocess.CalledProcessError as e:
                         pass
 
-            if executable:
+            if executable or sys.platform == "win32" or sys.platform == "cygwin":
                 mode = os.stat(ext_path).st_mode
                 mode |= (mode & 0o444) >> 2  # copy R bits to X
                 os.chmod(ext_path, mode)
