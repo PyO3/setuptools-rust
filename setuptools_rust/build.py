@@ -282,6 +282,7 @@ class build_rust(Command):
                     except subprocess.CalledProcessError as e:
                         pass
 
+            # executables and win32(cygwin)-dll's need X bits
             if executable or sys.platform == "win32" or sys.platform == "cygwin":
                 mode = os.stat(ext_path).st_mode
                 mode |= (mode & 0o444) >> 2  # copy R bits to X
