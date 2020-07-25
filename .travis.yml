@@ -13,7 +13,7 @@ matrix:
     - python: "3.8-dev"
 
 install:
-  - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly-2019-06-22
+  - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
   - source $HOME/.cargo/env
   - export PYTHON_LIB=$(python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
   - export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PYTHON_LIB:$HOME/rust/lib"
