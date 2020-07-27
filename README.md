@@ -61,7 +61,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 
 cd /io
 
-for PYBIN in /opt/python/{cp27-cp27m,cp27-cp27mu,cp35-cp35m,cp36-cp36m,cp37-cp37m}/bin; do
+for PYBIN in /opt/python/cp{35,36,37,38,39}*/bin; do
     export PYTHON_SYS_EXECUTABLE="$PYBIN/python"
 
     "${PYBIN}/pip" install -U setuptools wheel setuptools-rust
@@ -104,31 +104,34 @@ By default, `develop` will create a debug build, while `install` will create a r
 
 ### Binary wheels on linux
 
-To build binary wheels on linux, you need to use the [manylinux docker container](https://github.com/pypa/manylinux). You also need a `build-wheels.sh` similar to [the one in the example](https://github.com/PyO3/setuptools-rist/blob/master/html-py-ever/build-wheels.sh), which will be run in that container.
+To build binary wheels on linux, you need to use the [manylinux docker container](https://github.com/pypa/manylinux). You also need a `build-wheels.sh` similar to [the one in the example](https://github.com/PyO3/setuptools-rust/blob/master/html-py-ever/build-wheels.sh), which will be run in that container.
 
-First, pull the `manylinux1` Docker image:
+First, pull the `manylinux2014` Docker image:
 
 ```bash
-docker pull quay.io/pypa/manylinux1_x86_64
+docker pull quay.io/pypa/manylinux2014_x86_64
 ```
 
 Then use the following command to build wheels for supported Python versions:
 
 ```bash
-docker run --rm -v `pwd`:/io quay.io/pypa/manylinux1_x86_64 /io/build-wheels.sh
+docker run --rm -v `pwd`:/io quay.io/pypa/manylinux2014_x86_64 /io/build-wheels.sh
 ```
 
 This will create wheels in the `dist` directory:
 
 ```bash
 $ ls dist
-hello_rust-1.0-cp27-cp27m-linux_x86_64.whl       hello_rust-1.0-cp35-cp35m-linux_x86_64.whl
-hello_rust-1.0-cp27-cp27m-manylinux1_x86_64.whl  hello_rust-1.0-cp35-cp35m-manylinux1_x86_64.whl
-hello_rust-1.0-cp27-cp27mu-linux_x86_64.whl      hello_rust-1.0-cp36-cp36m-linux_x86_64.whl
-hello_rust-1.0-cp27-cp27mu-manylinux1_x86_64.whl hello_rust-1.0-cp36-cp36m-manylinux1_x86_64.whl
+hello_rust-0.1.0-cp35-cp35m-linux_x86_64.whl          hello_rust-0.1.0-cp35-cp35m-manylinux2014_x86_64.whl
+hello_rust-0.1.0-cp36-cp36m-linux_x86_64.whl          hello_rust-0.1.0-cp36-cp36m-manylinux2014_x86_64.whl
+hello_rust-0.1.0-cp37-cp37m-linux_x86_64.whl          hello_rust-0.1.0-cp37-cp37m-manylinux2014_x86_64.whl
+hello_rust-0.1.0-cp38-cp38-linux_x86_64.whl           hello_rust-0.1.0-cp38-cp38-manylinux2014_x86_64.whl
+hello_rust-0.1.0-cp39-cp39-linux_x86_64.whl           hello_rust-0.1.0-cp39-cp39-manylinux2014_x86_64.whl
 ```
 
-You can then upload the `manylinux1` wheels to pypi using [twine](https://github.com/pypa/twine).
+You can then upload the `manylinux2014` wheels to pypi using [twine](https://github.com/pypa/twine).
+
+It is possible to use any of the `manylinux` docker images: `manylinux1`, `manylinux2010` or `manylinux2014`. (Just replace `manylinux2014` in the above instructions with the alternative version you wish to use.)
 
 ## RustExtension
 
