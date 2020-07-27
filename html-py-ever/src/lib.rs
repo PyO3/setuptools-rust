@@ -5,7 +5,7 @@ use std::path::Path;
 use tendril::stream::TendrilSink;
 
 /// A parsed html document
-#[pyclass]
+#[pyclass(unsendable)]
 struct Document {
     node: kuchiki::NodeRef,
 }
