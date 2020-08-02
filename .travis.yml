@@ -26,4 +26,11 @@ script:
   - cd html-py-ever
   - pip install -r requirements-dev.txt
   - python setup.py install
-  - if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then cd test && pytest; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then cd test && pytest && cd ..; fi
+  - cd ..
+  - cd examples/
+  # PEP517 build isolation means we don't use the setuptools-rust locally,
+  # instead it installs from PyPI!
+  - pip install -U pip
+  - pip install --no-use-pep517 -e rust_with_cffi/
+  - pytest rust_with_cffi/tests.py
