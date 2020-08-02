@@ -8,9 +8,10 @@ matrix:
     - python: "3.5"
     - python: "3.6"
     - python: "3.7"
-    - python: "3.8-dev"
+    - python: "3.8"
+    - python: "3.9-dev"
   allow_failures:
-    - python: "3.8-dev"
+    - python: "3.9-dev"
 
 install:
   - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
