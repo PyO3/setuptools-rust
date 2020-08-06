@@ -15,6 +15,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        # Fetch all history so that setuptools_scm works correctly
+        fetch-depth: 0
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
