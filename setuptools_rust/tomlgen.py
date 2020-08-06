@@ -69,35 +69,34 @@ class tomlgen_rust(setuptools.Command):
         # Build list of authors
         if self.authors is not None:
             sep = "\n" if "\n" in self.authors.strip() else ","
-            self.authors = "[{}]".format(
-                ", ".join(author.strip() for author in self.authors.split(sep))
-            )
+            self.authors = [author.strip() for author in self.authors.split(sep)]
         else:
-            self.authors = '["{} <{}>"]'.format(
-                self.distribution.get_author(),
-                self.distribution.get_author_email().strip("\"'"),
-            )
+            self.authors = [
+                "{} <{}>".format(
+                    self.distribution.get_author(),
+                    self.distribution.get_author_email().strip("\"'"),
+                )
+            ]
 
     def run(self):
+        import toml
 
         # Create a `Cargo.toml` for each extension
         for ext in self.extensions:
-            toml = self.build_cargo_toml(ext)
             if not os.path.exists(ext.path) or self.force:
                 log.info("creating 'Cargo.toml' for '%s'", ext.name)
                 with open(ext.path, "w") as manifest:
-                    toml.write(manifest)
+                    toml.dump(self.build_cargo_toml(ext), manifest)
             else:
                 log.warn("skipping 'Cargo.toml' for '%s' -- already exists", ext.name)
 
         # Create a `Cargo.toml` for the project workspace
         if self.create_workspace and self.extensions:
-            toml = self.build_workspace_toml()
             toml_path = os.path.join(self.workspace, "Cargo.toml")
             if not os.path.exists(toml_path) or self.force:
                 log.info("creating 'Cargo.toml' for workspace")
                 with open(toml_path, "w") as manifest:
-                    toml.write(manifest)
+                    toml.dump(self.build_workspace_toml(), manifest)
             else:
                 log.warn("skipping 'Cargo.toml' for workspace -- already exists")
 
@@ -115,23 +114,16 @@ class tomlgen_rust(setuptools.Command):
                     os.makedirs(cfgdir)
                 with open(os.path.join(cfgdir, "config"), "w") as config:
                     log.info("creating '.cargo/config' for workspace")
-
-                    config.write("[build]\n")
-                    config.write(
-                        'target-dir = "{}"\n'.format(os.path.relpath(targetdir))
-                    )
-
+                    toml.dump({
+                        'build': {
+                            'target-dir': os.path.relpath(targetdir)
+                        },
+                    }, config)
             else:
                 log.warn("skipping '.cargo/config' -- already exists")
 
     def build_cargo_toml(self, ext):
-
-        # Shortcuts
-        quote = '"{}"'.format
-        dist = self.distribution
-
-        # Use a ConfigParser object to build a TOML file (hackish)
-        toml = configparser.ConfigParser()
+        toml = {}
 
         # The directory where the extension's manifest is located
         tomldir = os.path.dirname(ext.path)
@@ -142,27 +134,29 @@ class tomlgen_rust(setuptools.Command):
             ext.libfile = ext.path.replace("Cargo.toml", "lib.rs")
 
         # Create a small package section
-        toml.add_section("package")
-        toml.set("package", "name", quote(ext.name.replace('.', '-')))
-        toml.set("package", "version", quote(dist.get_version()))
-        toml.set("package", "authors", self.authors)
-        toml.set("package", "publish", "false")
+        toml["package"] = {
+            "name": ext.name.replace('.', '-'),
+            "version": self.distribution.get_version(),
+            "authors": self.authors,
+            "publish": False,
+            "edition": "2018"
+        }
 
         # Add the relative path to the workspace if any
         if self.create_workspace:
-            path_to_workspace = os.path.relpath(self.workspace, tomldir)
-            toml.set("package", "workspace", quote(path_to_workspace))
+            toml["package"]["workspace"] = os.path.relpath(self.workspace, tomldir)
 
         # Create a small lib section
-        toml.add_section("lib")
-        toml.set("lib", "crate-type", '["cdylib"]')
-        toml.set("lib", "name", quote(_slugify(ext.name)))
-        toml.set("lib", "path", quote(os.path.relpath(ext.libfile, tomldir)))
+        toml["lib"] = {
+            "crate-type": ["cdylib"],
+            "name": _slugify(ext.name),
+            "path": os.path.relpath(ext.libfile, tomldir)
+        }
 
         # Find dependencies within the `setup.cfg` file of the project
-        toml.add_section("dependencies")
+        toml["dependencies"] = {}
         for dep, options in self.iter_dependencies(ext):
-            toml.set("dependencies", dep, options)
+            toml["dependencies"][dep] = options
 
         return toml
 
@@ -172,16 +166,15 @@ class tomlgen_rust(setuptools.Command):
         members = [
             os.path.dirname(os.path.relpath(ext.path)) for ext in self.extensions
         ]
-        members = ['"{}"'.format(m) for m in members]
 
-        # Create the `Cargo.toml` content using a ConfigParser
-        toml = configparser.ConfigParser()
-        toml.add_section("workspace")
-        toml.set("workspace", "members", "[{}]".format(", ".join(members)))
-
-        return toml
+        return {
+            "workspace": {
+                "members": members
+            }
+        }
 
     def iter_dependencies(self, ext=None):
+        import toml
 
         command = self.get_command_name()
 
@@ -195,7 +188,7 @@ class tomlgen_rust(setuptools.Command):
         for section in sections:
             if self.cfg.has_section(section):
                 for dep, options in self.cfg.items(section):
-                    yield dep, options
+                    yield dep, toml.loads(f"{dep} = {options}")[dep]
 
 
 def _slugify(name):

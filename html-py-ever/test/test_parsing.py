@@ -12,7 +12,7 @@ def rust(filename: str) -> Document:
 
 
 def python(filename: str) -> BeautifulSoup:
-    with open(filename) as fp:
+    with open(filename, encoding='utf8') as fp:
         soup = BeautifulSoup(fp, "html.parser")
 
     return soup

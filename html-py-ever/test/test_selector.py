@@ -14,6 +14,6 @@ def test_bench_selector_rust(benchmark, filename):
 
 @pytest.mark.parametrize("filename", list(glob("*.html")))
 def test_bench_selector_python(benchmark, filename):
-    with open(filename) as fp:
+    with open(filename, encoding='utf8') as fp:
         soup = BeautifulSoup(fp, "html.parser")
     benchmark(soup.select, "a[href]")

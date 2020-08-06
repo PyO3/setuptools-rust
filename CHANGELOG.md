@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+ - Fix `tomlgen` functionality on Windows. [#78](https://github.com/PyO3/setuptools-rust/pull/78)
+
 ## 0.11.3 (2020-08-24)
 
  - Fix building on Linux distributions that use musl (e.g. Alpine) out of the box. [#80](https://github.com/PyO3/setuptools-rust/pull/80)
