@@ -1,13 +1,14 @@
 # Changelog
 
-## 0.11
+## Unreleased
 
- - Removed python 2 support
+ - Remove python 2 support.
+ - Add support for pyo3 `0.12`'s `PYO3_PYTHON` setting.
 
 ## 0.10.6 (2018-11-07)
 
  - Fix tomlgen\_rust generating invalid `Cargo.toml` files.
- - Fix tomlgen\_rust setting wrong path in `.cargo/config`
+ - Fix tomlgen\_rust setting wrong path in `.cargo/config`.
 
 ## 0.10.5 (2018-09-09)
 
