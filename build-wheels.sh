@@ -9,10 +9,6 @@ export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/rust/lib"
 
 # Compile wheels
 for PYBIN in /opt/python/cp{35,36,37,38,39}*/bin; do
-    export PYTHON_SYS_EXECUTABLE="$PYBIN/python"
-    export PYTHON_LIB=$(${PYBIN}/python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
-    export LIBRARY_PATH="$LIBRARY_PATH:$PYTHON_LIB"
-    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PYTHON_LIB"
     rm -f /io/build/lib.*
     "${PYBIN}/pip" install -U  setuptools setuptools-rust wheel
     "${PYBIN}/pip" wheel /io/ -w /io/dist/

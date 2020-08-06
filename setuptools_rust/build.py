@@ -78,7 +78,9 @@ class build_rust(Command):
                 # disables rust's pkg-config seeking for specified packages,
                 # which causes pythonXX-sys to fall back to detecting the
                 # interpreter from the path.
-                "PATH": os.path.join(bindir, os.environ.get("PATH", ""))
+                "PATH": os.path.join(bindir, os.environ.get("PATH", "")),
+                "PYTHON_SYS_EXECUTABLE": sys.executable,
+                "PYO3_PYTHON": sys.executable,
             }
         )
 

@@ -7,8 +7,6 @@ export PATH="$HOME/.cargo/bin:$PATH"
 cd /io
 
 for PYBIN in /opt/python/cp{35,36,37,38,39}*/bin; do
-    export PYTHON_SYS_EXECUTABLE="$PYBIN/python"
-
     "${PYBIN}/pip" install -U setuptools wheel setuptools-rust
     "${PYBIN}/python" setup.py bdist_wheel
 done
