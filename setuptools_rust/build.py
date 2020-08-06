@@ -88,7 +88,7 @@ class build_rust(Command):
 
         # If we are on a 64-bit machine, but running a 32-bit Python, then
         # we'll target a 32-bit Rust build.
-        # TODO: make this not Windows specific
+        # TODO: include --target for all platforms so env vars can't break the build
         target_triple = None
         target_args = []
         if platform.machine() == "AMD64" and self.plat_name == "win32":
