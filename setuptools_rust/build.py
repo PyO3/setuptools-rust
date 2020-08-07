@@ -3,6 +3,7 @@ import glob
 import json
 import os
 import shutil
+import platform
 import sys
 import subprocess
 from distutils.cmd import Command
@@ -49,6 +50,7 @@ class build_rust(Command):
         self.release = None
         self.qbuild = None
         self.build_temp = None
+        self.plat_name = None
 
     def finalize_options(self):
         self.extensions = [
@@ -83,6 +85,15 @@ class build_rust(Command):
                 "PYO3_PYTHON": sys.executable,
             }
         )
+
+        # If we are on a 64-bit machine, but running a 32-bit Python, then
+        # we'll target a 32-bit Rust build.
+        # TODO: include --target for all platforms so env vars can't break the build
+        target_triple = None
+        target_args = []
+        if platform.machine() == "AMD64" and self.plat_name == "win32":
+            target_triple = "i686-pc-windows-msvc"
+            target_args = ["--target", target_triple]
 
         # Find where to put the temporary build files created by `cargo`
         metadata_command = [
@@ -119,6 +130,7 @@ class build_rust(Command):
             args = (
                 ["cargo", "build", "--manifest-path", ext.path]
                 + feature_args
+                + target_args
                 + list(ext.args or [])
             )
             if not debug_build:
@@ -132,6 +144,7 @@ class build_rust(Command):
             args = (
                 ["cargo", "rustc", "--lib", "--manifest-path", ext.path]
                 + feature_args
+                + target_args
                 + list(ext.args or [])
             )
             if not debug_build:
@@ -187,7 +200,7 @@ class build_rust(Command):
             suffix = "release"
 
         # location of cargo compiled files
-        artifactsdir = os.path.join(target_dir, suffix)
+        artifactsdir = os.path.join(target_dir, target_triple or "", suffix)
         dylib_paths = []
 
         if executable:
