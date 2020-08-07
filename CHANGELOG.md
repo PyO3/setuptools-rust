@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.11.1 (2020-08-07)
 
- - Fix building for 32-bit Python on 64-bit Windows. #[77](https://github.com/PyO3/setuptools-rust/pull/77)
+ - Fix building for 32-bit Python on 64-bit Windows. [#77](https://github.com/PyO3/setuptools-rust/pull/77)
 
 ## 0.11.0 (2020-08-06)
 
- - Remove python 2 support. #[53](https://github.com/PyO3/setuptools-rust/pull/53)
- - Fix compatibility with `cffi`. #[68](https://github.com/PyO3/setuptools-rust/pull/68)
- - Add support for pyo3 `0.12`'s `PYO3_PYTHON` setting. #[71](https://github.com/PyO3/setuptools-rust/pull/71)
+ - Remove python 2 support. [#53](https://github.com/PyO3/setuptools-rust/pull/53)
+ - Fix compatibility with `cffi`. [#68](https://github.com/PyO3/setuptools-rust/pull/68)
+ - Add support for pyo3 `0.12`'s `PYO3_PYTHON` setting. [#71](https://github.com/PyO3/setuptools-rust/pull/71)
 
 ## 0.10.6 (2018-11-07)
 
