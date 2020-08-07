@@ -2,7 +2,7 @@
 
 ## Unreleased
 
- - Fix building 32-bit Python on 64-bit Windows. #[77](https://github.com/PyO3/setuptools-rust/pull/77)
+ - Fix building for 32-bit Python on 64-bit Windows. #[77](https://github.com/PyO3/setuptools-rust/pull/77)
 
 ## 0.11.0 (2020-08-06)
 
