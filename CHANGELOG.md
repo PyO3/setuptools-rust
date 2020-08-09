@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+ - Fix support for namespace packages. [#79](https://github.com/PyO3/setuptools-rust/pull/79)
+
 ## 0.11.1 (2020-08-07)
 
  - Fix building for 32-bit Python on 64-bit Windows. [#77](https://github.com/PyO3/setuptools-rust/pull/77)

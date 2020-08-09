@@ -1,8 +1,7 @@
 from distutils import log
 from distutils.command.check import check
 from distutils.command.clean import clean
-from distutils.command.install import install
-
+from setuptools.command.install import install
 from setuptools.command.build_ext import build_ext
 
 try:
