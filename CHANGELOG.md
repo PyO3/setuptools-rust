@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.2 (2020-08-10)
 
  - Fix support for namespace packages. [#79](https://github.com/PyO3/setuptools-rust/pull/79)
 
