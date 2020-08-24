@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+ - Fix building on Linux distributions that use musl (e.g. Alpine) out of the box. [#80](https://github.com/PyO3/setuptools-rust/pull/80)
+
 ## 0.11.2 (2020-08-10)
 
  - Fix support for namespace packages. [#79](https://github.com/PyO3/setuptools-rust/pull/79)

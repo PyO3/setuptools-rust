@@ -67,3 +67,8 @@ def get_rust_version():
         raise DistutilsPlatformError("Can not find Rust compiler")
     except Exception as exc:
         raise DistutilsPlatformError("Can not get rustc version: %s" % str(exc))
+
+
+def get_rust_target_info():
+    output = subprocess.check_output(["rustc", "--print", "cfg"])
+    return output.splitlines()

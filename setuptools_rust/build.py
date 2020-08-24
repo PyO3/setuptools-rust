@@ -17,7 +17,9 @@ from distutils.errors import (
 from subprocess import check_output
 
 from .extension import RustExtension
-from .utils import Binding, Strip, cpython_feature, get_rust_version
+from .utils import (
+    Binding, Strip, cpython_feature, get_rust_version, get_rust_target_info
+)
 
 
 class build_rust(Command):
@@ -70,6 +72,8 @@ class build_rust(Command):
     def build_extension(self, ext):
         executable = ext.binding == Binding.Exec
 
+        rust_target_info = get_rust_target_info()
+
         # Make sure that if pythonXX-sys is used, it builds against the current
         # executing python interpreter.
         bindir = os.path.dirname(sys.executable)
@@ -85,6 +89,7 @@ class build_rust(Command):
                 "PYO3_PYTHON": sys.executable,
             }
         )
+        rustflags = ""
 
         # If we are on a 64-bit machine, but running a 32-bit Python, then
         # we'll target a 32-bit Rust build.
@@ -162,12 +167,19 @@ class build_rust(Command):
                 args.extend(
                     ["-C", "link-arg=-undefined", "-C", "link-arg=dynamic_lookup"]
                 )
+            # Tell musl targets not to statically link libc. See
+            # https://github.com/rust-lang/rust/issues/59302 for details.
+            if b'target_env="musl"' in rust_target_info:
+                rustflags += " -C target-feature=-crt-static"
 
         if not quiet:
             print(" ".join(args), file=sys.stderr)
 
         if ext.native:
-            env["RUSTFLAGS"] = "-C target-cpu=native"
+            rustflags += " -C target-cpu=native"
+
+        if rustflags:
+            env["RUSTFLAGS"] = rustflags
 
         # Execute cargo
         try:
