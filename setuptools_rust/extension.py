@@ -47,6 +47,10 @@ class RustExtension:
       optional : bool
         if it is true, a build failure in the extension will not abort the
         build process, but instead simply not install the failing extension.
+      py_limited_api : bool
+        Same as `py_limited_api` on `setuptools.Extension`. Note that if you
+        set this to True, your extension must pass the appropriate feature
+        flags to pyo3 (ensuring that `abi3` feature is enabled).
     """
 
     def __init__(
@@ -64,6 +68,7 @@ class RustExtension:
         script=False,
         native=False,
         optional=False,
+        py_limited_api=False,
     ):
         if isinstance(target, dict):
             name = "; ".join("%s=%s" % (key, val) for key, val in target.items())
@@ -83,6 +88,10 @@ class RustExtension:
         self.script = script
         self.native = native
         self.optional = optional
+        self.py_limited_api = py_limited_api
+        # We pass this over to setuptools in one place, and it wants this
+        # attribute to exist.
+        self._links_to_dynamic = False
 
         if features is None:
             features = []

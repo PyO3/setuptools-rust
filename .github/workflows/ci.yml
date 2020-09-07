@@ -67,3 +67,47 @@ jobs:
           pip install --no-use-pep517 -e rust_with_cffi/
           pip install -r rust_with_cffi/requirements-dev.txt
           pytest rust_with_cffi/tests.py
+  test-abi3:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Build package
+        run: pip install -e .
+
+      - name: Build an abi3 wheel
+        shell: bash
+        run: |
+          cd examples/rust_with_cffi/
+          python --version
+          python setup.py bdist_wheel --py-limited-api=cp35
+          ls -la dist/
+
+      # Now we switch to a differnet Python version and ensure we can install
+      # the wheel we just buitl.
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install abi3 wheel and run tests
+        shell: bash
+        run: |
+          cd examples/
+          python --version
+          pip install rust_with_cffi/dist/rust_with_cffi*.whl
+          python -c "from rust_with_cffi import rust; assert rust.rust_func() == 14"
+          python -c "from rust_with_cffi.cffi import lib; assert lib.cffi_func() == 15"

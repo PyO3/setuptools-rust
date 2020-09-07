@@ -170,9 +170,8 @@ dependencies = [
 
 [[package]]
 name = "pyo3"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b065394f390af20bfe60bad3728d71dfc4d397a5717f46cf9083a40ea468a52c"
+version = "0.12.3"
+source = "git+https://github.com/pyo3/pyo3#3b3ba4e3abd57bc3b8f86444b3f61e6e2f4c5fc1"
 dependencies = [
  "ctor",
  "indoc",
@@ -186,9 +185,8 @@ dependencies = [
 
 [[package]]
 name = "pyo3-derive-backend"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3aa7cbb51801ffb526165a0ed6722b71b5c81ec43e87ceaa4b56c6501abad008"
+version = "0.12.3"
+source = "git+https://github.com/pyo3/pyo3#3b3ba4e3abd57bc3b8f86444b3f61e6e2f4c5fc1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -197,9 +195,8 @@ dependencies = [
 
 [[package]]
 name = "pyo3cls"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "914680828ba0395e05902bbf358c26e8bf20fb484385334ab700a61e6f1a9ccf"
+version = "0.12.3"
+source = "git+https://github.com/pyo3/pyo3#3b3ba4e3abd57bc3b8f86444b3f61e6e2f4c5fc1"
 dependencies = [
  "pyo3-derive-backend",
  "quote",

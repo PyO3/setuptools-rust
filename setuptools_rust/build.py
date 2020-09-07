@@ -285,7 +285,16 @@ class build_rust(Command):
 
                 ext.install_script(ext_path)
             else:
-                ext_path = build_ext.get_ext_fullpath(target_fname)
+                # Technically it's supposed to contain a
+                # `setuptools.Extension`, but in practice the only attribute it
+                # checks is `ext.py_limited_api`.
+                modpath = target_fname.split('.')[-1]
+                assert modpath not in build_ext.ext_map
+                build_ext.ext_map[modpath] = ext
+                try:
+                    ext_path = build_ext.get_ext_fullpath(target_fname)
+                finally:
+                    del build_ext.ext_map[modpath]
 
             try:
                 os.makedirs(os.path.dirname(ext_path))
