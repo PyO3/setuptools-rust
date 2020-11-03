@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.11.4 (2020-11-03)
 
  - Fix `tomlgen` functionality on Windows. [#78](https://github.com/PyO3/setuptools-rust/pull/78)
+ - Add support for building abi3 shared objects. [#82](https://github.com/PyO3/setuptools-rust/pull/82)
 
 ## 0.11.3 (2020-08-24)
 
