@@ -188,7 +188,7 @@ class tomlgen_rust(setuptools.Command):
         for section in sections:
             if self.cfg.has_section(section):
                 for dep, options in self.cfg.items(section):
-                    yield dep, toml.loads(f"{dep} = {options}")[dep]
+                    yield dep, toml.loads("%s = %s" % (dep, options))[dep]
 
 
 def _slugify(name):
