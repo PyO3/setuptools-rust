@@ -23,11 +23,6 @@ jobs:
           toolchain: stable
           override: true
 
-      # Install dependencies on ubuntu
-      - if: matrix.os == 'ubuntu-latest'
-        name: Install build dependencies
-        run: sudo apt-get install -y libxml2-dev libxslt-dev
-
       # Install 32-bit windows target for pypy3
       - if: matrix.os == 'windows-latest' && matrix.python-version == 'pypy3'
         name: Install 32-bit Rust target
@@ -48,15 +43,18 @@ jobs:
           cd example_tomlgen
           python setup.py tomlgen_rust -w build
 
-      # FIXME: Can't test easily on windows 3.9 or pypy because have to build lxml from source!
+      # Install lxml build dependencies on ubuntu for pypy
+      - if: matrix.os == 'ubuntu-latest' && matrix.python-version == 'pypy3'
+        name: Install lxml build dependencies
+        run: sudo apt-get install -y libxml2-dev libxslt-dev
+
+      # Can't test easily on windows pypy because have to build lxml from source!
       - name: Test html-py-ever
-        if: ${{ !(matrix.os == 'windows-latest' && (matrix.python-version == 'pypy3' || matrix.python-version == '3.9-dev')) }}
+        if: ${{ !(matrix.os == 'windows-latest' && matrix.python-version == 'pypy3') }}
         shell: bash
         run: |
-          cd html-py-ever
-          pip install -r requirements-dev.txt
-          python setup.py install
-          cd test && pytest
+          pip install tox
+          tox -c html-py-ever -e py
 
       - name: Test other examples
         shell: bash
