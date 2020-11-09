@@ -3,7 +3,6 @@ import glob
 import json
 import os
 import shutil
-import platform
 import sys
 import subprocess
 from distutils.cmd import Command
@@ -96,8 +95,12 @@ class build_rust(Command):
         # TODO: include --target for all platforms so env vars can't break the build
         target_triple = None
         target_args = []
-        if platform.machine() == "AMD64" and self.plat_name == "win32":
+        if self.plat_name == "win32":
             target_triple = "i686-pc-windows-msvc"
+        elif self.plat_name == "win-amd64":
+            target_triple = "x86_64-pc-windows-msvc"
+
+        if target_triple is not None:
             target_args = ["--target", target_triple]
 
         # Find where to put the temporary build files created by `cargo`

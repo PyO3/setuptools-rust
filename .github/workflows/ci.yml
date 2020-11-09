@@ -1,70 +1,75 @@
 name: CI
-on:
-  pull_request: {}
-  push: {}
+on: [push]
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
+  build:
+    name:  ${{ matrix.python-version }} ${{ matrix.platform.os }}-${{ matrix.platform.python-architecture }}
+    runs-on: ${{ matrix.platform.os }}
     strategy:
+      fail-fast: false  # If one platform fails, allow the rest to keep testing.
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.5, 3.6, 3.7, 3.8, 3.9, pypy3]
+        python-version: [3.6, 3.7, 3.8, 3.9, pypy3]
+        platform: [
+          { os: "macOS-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
+          { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
+          { os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc" },
+          { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" },
+        ]
+        exclude:
+          # No 64-bit pypy on windows
+          - python-version: pypy3
+            platform: { os: "windows-latest", python-architecture: "x64" }
+          # Example rust_with_cffi broken on Python 3.5 for Windows, never mind!
+          - python-version: 3.5
+            platform: { os: "windows-latest" }
+
     steps:
-      - uses: actions/checkout@master
-      - name: Setup python
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.platform.python-architecture }}
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-
-      # Install 32-bit windows target for pypy3
-      - if: matrix.os == 'windows-latest' && matrix.python-version == 'pypy3'
-        name: Install 32-bit Rust target
+      - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
-          override: true
-          target: i686-pc-windows-msvc
+          target: ${{ matrix.platform.rust-target }}
+          profile: minimal
+          default: true
+
+      - name: Install test dependencies
+        run: pip install --upgrade tox setuptools
 
       - name: Build package
         run: pip install -e .
 
-      - name: Test tomlgen_rust
+      - name: Test examples
+        if: matrix.python-version != 'pypy3'
+        shell: bash
+        env:
+          PYTHON: ${{ matrix.python-version }}
+        run: |
+          for example_dir in examples/*; do
+              tox -c $example_dir -e py
+          done
+
+      - name: Test examples (pypy)
+        # FIXME: issues with tox + pypy + windows
+        if: matrix.python-version == 'pypy3' && matrix.platform.os != 'windows-latest'
         shell: bash
         run: |
-          pip install wheel
-          cd example_tomlgen
-          python setup.py tomlgen_rust -w build
+          for example_dir in examples/*; do
+              if [[ $example_dir = "examples/html-py-ever" ]]; then
+              echo "skipping html-py-ever on pypy3 - lxml is hard to build from source"
+              continue
+              fi
 
-      # Install lxml build dependencies on ubuntu for pypy
-      - if: matrix.os == 'ubuntu-latest' && matrix.python-version == 'pypy3'
-        name: Install lxml build dependencies
-        run: sudo apt-get install -y libxml2-dev libxslt-dev
+              tox -c $example_dir -e py
+          done
 
-      # Can't test easily on windows pypy because have to build lxml from source!
-      - name: Test html-py-ever
-        if: ${{ !(matrix.os == 'windows-latest' && matrix.python-version == 'pypy3') }}
-        shell: bash
-        run: |
-          pip install tox
-          tox -c html-py-ever -e py
-
-      - name: Test other examples
-        shell: bash
-        run: |
-          cd examples/
-          # PEP517 build isolation means we don't use the setuptools-rust locally,
-          # instead it installs from PyPI!
-          pip install --no-use-pep517 -e rust_with_cffi/
-          pip install -r rust_with_cffi/requirements-dev.txt
-          pytest rust_with_cffi/tests.py
   test-abi3:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -91,11 +96,12 @@ jobs:
         run: |
           cd examples/rust_with_cffi/
           python --version
+          pip install wheel
           python setup.py bdist_wheel --py-limited-api=cp35
           ls -la dist/
 
       # Now we switch to a differnet Python version and ensure we can install
-      # the wheel we just buitl.
+      # the wheel we just built.
       - name: Setup python
         uses: actions/setup-python@v2
         with:
