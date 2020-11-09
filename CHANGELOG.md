@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.5 (2020-11-09)
+
+ - Fix support for Python 3.5. [#86](https://github.com/PyO3/setuptools-rust/pull/86)
+
 ## 0.11.4 (2020-11-03)
 
  - Fix `tomlgen` functionality on Windows. [#78](https://github.com/PyO3/setuptools-rust/pull/78)

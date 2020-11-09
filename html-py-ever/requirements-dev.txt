@@ -1,5 +1,5 @@
 setuptools
-setuptools-rust
+-e ../  # use local setuptools-rust package
 wheel
 pytest-benchmark[historgram]
 pytest>=3.6
