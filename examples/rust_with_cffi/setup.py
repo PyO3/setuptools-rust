@@ -3,11 +3,7 @@ import platform
 import sys
 
 from setuptools import setup
-
 from setuptools_rust import RustExtension
-
-setup_requires = ["setuptools-rust>=0.10.1", "wheel", "cffi"]
-install_requires = ["cffi"]
 
 setup(
     name="rust-with-cffi",
@@ -30,8 +26,8 @@ setup(
         ),
     ],
     cffi_modules=["cffi_module.py:ffi"],
-    install_requires=install_requires,
-    setup_requires=setup_requires,
+    install_requires=["cffi"],
+    setup_requires=["cffi"],
     include_package_data=True,
     zip_safe=False,
 )
