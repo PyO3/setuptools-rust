@@ -14,7 +14,7 @@ they were written in C.
 ## Setup
 
 For a complete example, see
-[html-py-ever](https://github.com/PyO3/setuptools-rust/tree/master/html-py-ever).
+[html-py-ever](https://github.com/PyO3/setuptools-rust/tree/master/examples/html-py-ever).
 
 First, you need to create a bunch of files:
 
