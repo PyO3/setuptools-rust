@@ -92,10 +92,14 @@ class build_rust(Command):
 
         # If we are on a 64-bit machine, but running a 32-bit Python, then
         # we'll target a 32-bit Rust build.
+        # Automatic target detection can be overridden via the CARGO_BUILD_TARGET
+        # environment variable.
         # TODO: include --target for all platforms so env vars can't break the build
         target_triple = None
         target_args = []
-        if self.plat_name == "win32":
+        if os.getenv("CARGO_BUILD_TARGET"):
+            target_triple = os.environ["CARGO_BUILD_TARGET"]
+        elif self.plat_name == "win32":
             target_triple = "i686-pc-windows-msvc"
         elif self.plat_name == "win-amd64":
             target_triple = "x86_64-pc-windows-msvc"
