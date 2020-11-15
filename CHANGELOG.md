@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+ - Respect `CARGO_BUILD_TARGET` environment variable if set. [#90](https://github.com/PyO3/setuptools-rust/pull/90)
+
 ## 0.11.5 (2020-11-10)
 
  - Fix support for Python 3.5. [#86](https://github.com/PyO3/setuptools-rust/pull/86)
