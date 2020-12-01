@@ -4,8 +4,6 @@
 [![pypi package](https://badge.fury.io/py/setuptools-rust.svg)](https://badge.fury.io/py/setuptools-rust)
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-Note: You might want to check out [maturin](https://github.com/PyO3/maturin), which allows to develop, build and upload without any configuration, though it can't do some things setuptools-rust can, e.g. mixing python and rust in single wheel.
-
 Setuptools helpers for rust Python extensions implemented with [PyO3](https://github.com/PyO3/pyo3) and [rust-cpython](https://github.com/dgrunwald/rust-cpython).
 
 Compile and distribute Python extensions written in rust as easily as if
