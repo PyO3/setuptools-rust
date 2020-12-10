@@ -8,6 +8,8 @@ from .test import test_rust
 from .tomlgen import tomlgen_rust, find_rust_extensions
 from .utils import Binding, Strip
 
+__version__ = "0.11.6.dev1"
+
 __all__ = (
     "RustExtension",
     "Binding",
