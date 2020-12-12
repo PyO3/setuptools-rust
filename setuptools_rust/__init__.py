@@ -7,6 +7,8 @@ from .extension import RustExtension
 from .test import test_rust
 from .tomlgen import tomlgen_rust, find_rust_extensions
 from .utils import Binding, Strip
+from .version import version as __version__
+
 
 __all__ = (
     "RustExtension",

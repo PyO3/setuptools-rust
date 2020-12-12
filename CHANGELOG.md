@@ -3,6 +3,7 @@
 ## Unreleased
 
  - Respect `CARGO_BUILD_TARGET` environment variable if set. [#90](https://github.com/PyO3/setuptools-rust/pull/90)
+ - Add `setuptools_rust.__version__` and require setuptools >= 46.1. [#91](https://github.com/PyO3/setuptools-rust/issues/91)
 
 ## 0.11.5 (2020-11-10)
 
