@@ -84,8 +84,8 @@ class build_rust(Command):
                 # which causes pythonXX-sys to fall back to detecting the
                 # interpreter from the path.
                 "PATH": os.path.join(bindir, os.environ.get("PATH", "")),
-                "PYTHON_SYS_EXECUTABLE": sys.executable,
-                "PYO3_PYTHON": sys.executable,
+                "PYTHON_SYS_EXECUTABLE": os.environ.get("PYTHON_SYS_EXECUTABLE", sys.executable),
+                "PYO3_PYTHON": os.environ.get("PYO3_PYTHON", sys.executable),
             }
         )
         rustflags = ""
