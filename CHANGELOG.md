@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Respect `PYO3_PYTHON` and `PYTHON_SYS_EXECUTABLE` environment variables if set. [#96](https://github.com/PyO3/setuptools-rust/pull/96)
+
 ## 0.11.6 (2020-12-13)
 
  - Respect `CARGO_BUILD_TARGET` environment variable if set. [#90](https://github.com/PyO3/setuptools-rust/pull/90)
