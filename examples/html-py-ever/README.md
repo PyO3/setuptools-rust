@@ -1,6 +1,6 @@
 # html-py-ever
 
-Demoing hot to use [html5ever](https://github.com/servo/html5ever) through [kuchiki](https://github.com/kuchiki-rs/kuchiki) to speed up html parsing and css-selecting.
+Demoing how to use [html5ever](https://github.com/servo/html5ever) through [kuchiki](https://github.com/kuchiki-rs/kuchiki) to speed up html parsing and css-selecting.
 
 ## Usage
 
