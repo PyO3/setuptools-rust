@@ -1,0 +1,3 @@
+setuptools-rust
+setuptools
+wheel

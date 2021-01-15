@@ -81,3 +81,18 @@ test_bench_selector_rust[python.html]              6,504.3130 (>1000.0)  12,934.
 test_bench_selector_python[python.html]           36,145.0260 (>1000.0)  46,582.5100 (729.23)   38,058.3009 (>1000.0)  2,960.4055 (>1000.0)  36,630.3450 (>1000.0)  1,389.9710 (>1000.0)       4;5       26.2755 (0.00)         23           1
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ```
+
+## build instructions
+
+**Requirements:**
+
+-   rust-toolchain (i.e cargo, rustc)
+-   python3-dev or python3-devel
+
+**building and installing**
+```
+pip install -r setuptools-rust setuptools wheel
+python3 setup.py install --user
+```
+
+github workflows example to test and upload the module to pypi [here](./.github/workflows/upload.yml)
