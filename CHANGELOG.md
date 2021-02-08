@@ -4,6 +4,7 @@
 
 - Respect `PYO3_PYTHON` and `PYTHON_SYS_EXECUTABLE` environment variables if set. [#96](https://github.com/PyO3/setuptools-rust/pull/96)
 - Add runtime dependency on setuptools >= 46.1. [#102](https://github.com/PyO3/setuptools-rust/pull/102)
+- Append to, rather than replace, existing RUSTFLAGS when building. [#103](https://github.com/PyO3/setuptools-rust/pull/103)
 
 ## 0.11.6 (2020-12-13)
 
