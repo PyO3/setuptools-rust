@@ -186,7 +186,7 @@ class build_rust(Command):
             rustflags += " -C target-cpu=native"
 
         if rustflags:
-            env["RUSTFLAGS"] = rustflags
+            env["RUSTFLAGS"] = (env.get("RUSTFLAGS", "") + " " + rustflags).strip()
 
         # Execute cargo
         try:
