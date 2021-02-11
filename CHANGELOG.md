@@ -6,6 +6,7 @@
 - Add runtime dependency on setuptools >= 46.1. [#102](https://github.com/PyO3/setuptools-rust/pull/102)
 - Append to, rather than replace, existing RUSTFLAGS when building. [#103](https://github.com/PyO3/setuptools-rust/pull/103)
 - Set executable bit on shared library. [#110](https://github.com/PyO3/setuptools-rust/pull/110)
+- Don't require optional wheel dependency. [#111](https://github.com/PyO3/setuptools-rust/pull/111)
 
 ## 0.11.6 (2020-12-13)
 
