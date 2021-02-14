@@ -1,12 +1,12 @@
-from __future__ import print_function, absolute_import
 import sys
 import subprocess
+from enum import IntEnum
 from distutils.errors import DistutilsPlatformError
 
 import semantic_version
 
 
-class Binding:
+class Binding(IntEnum):
     """
     Binding Options
     """
@@ -20,7 +20,7 @@ class Binding:
     Exec = 3
 
 
-class Strip:
+class Strip(IntEnum):
     """
     Strip Options
     """
@@ -32,19 +32,19 @@ class Strip:
     All = 2
 
 
-def cpython_feature(ext=True, binding=Binding.PyO3):
+def rust_features(ext=True, binding=Binding.PyO3):
     version = sys.version_info
 
     if binding in (Binding.NoBinding, Binding.Exec):
         return ()
     elif binding is Binding.PyO3:
-        if version > (3, 5):
+        if version >= (3, 6):
             if ext:
                 return {"pyo3/extension-module"}
             else:
                 return {}
         else:
-            raise DistutilsPlatformError("Unsupported python version: %s" % sys.version)
+            raise DistutilsPlatformError(f"unsupported python version: {sys.version}")
     elif binding is Binding.RustCPython:
         if (3, 3) < version:
             if ext:
@@ -52,21 +52,19 @@ def cpython_feature(ext=True, binding=Binding.PyO3):
             else:
                 return {"cpython/python3-sys"}
         else:
-            raise DistutilsPlatformError("Unsupported python version: %s" % sys.version)
+            raise DistutilsPlatformError(f"unsupported python version: {sys.version}")
     else:
-        raise DistutilsPlatformError('Unknown Binding: "{}" '.format(binding))
+        raise DistutilsPlatformError(f"unknown Rust binding: '{binding}'")
 
 
 def get_rust_version():
     try:
-        output = subprocess.check_output(["rustc", "-V"])
-        if isinstance(output, bytes):
-            output = output.decode("latin-1")
+        output = subprocess.check_output(["rustc", "-V"]).decode("latin-1")
         return semantic_version.Version(output.split(" ")[1], partial=True)
     except (subprocess.CalledProcessError, OSError):
-        raise DistutilsPlatformError("Can not find Rust compiler")
+        raise DistutilsPlatformError("can't find Rust compiler")
     except Exception as exc:
-        raise DistutilsPlatformError("Can not get rustc version: %s" % str(exc))
+        raise DistutilsPlatformError(f"can't get rustc version: {str(exc)}")
 
 
 def get_rust_target_info():

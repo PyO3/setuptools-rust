@@ -1,5 +1,3 @@
-from __future__ import print_function, absolute_import
-
 from .build import build_rust
 from .check import check_rust
 from .clean import clean_rust
