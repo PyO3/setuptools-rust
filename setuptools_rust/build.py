@@ -2,6 +2,7 @@ from __future__ import print_function, absolute_import
 import glob
 import json
 import os
+import platform
 import shutil
 import sys
 import subprocess
@@ -103,6 +104,9 @@ class build_rust(Command):
             target_triple = "i686-pc-windows-msvc"
         elif self.plat_name == "win-amd64":
             target_triple = "x86_64-pc-windows-msvc"
+        elif self.plat_name.startswith("macosx-") and platform.machine() == "x86_64":
+            # x86_64 or arm64 macOS targeting x86_64
+            target_triple = "x86_64-apple-darwin"
 
         if target_triple is not None:
             target_args = ["--target", target_triple]
