@@ -4,6 +4,9 @@
 ### Packaging
 - Bump minimum Python version to Python 3.6.
 
+### Added
+- Support building x86-64 wheel on arm64 macOS machine. [#114](https://github.com/PyO3/setuptools-rust/pull/114)
+
 ### Changed
 - Respect `PYO3_PYTHON` and `PYTHON_SYS_EXECUTABLE` environment variables if set. [#96](https://github.com/PyO3/setuptools-rust/pull/96)
 - Add runtime dependency on setuptools >= 46.1. [#102](https://github.com/PyO3/setuptools-rust/pull/102)
