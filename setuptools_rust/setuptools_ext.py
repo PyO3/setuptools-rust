@@ -1,6 +1,9 @@
+from abc import ABC, abstractmethod
 from distutils import log
+from distutils.cmd import Command
 from distutils.command.check import check
 from distutils.command.clean import clean
+from distutils.errors import DistutilsPlatformError
 from setuptools.command.install import install
 from setuptools.command.build_ext import build_ext
 
@@ -8,6 +11,9 @@ try:
     from wheel.bdist_wheel import bdist_wheel
 except ImportError:
     bdist_wheel = None
+
+from .extension import RustExtension
+from .utils import get_rust_version
 
 
 def add_rust_extension(dist):

@@ -1,12 +1,7 @@
 # coding: utf-8
-import glob
+import configparser
 import os
 import string
-
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
 
 import setuptools
 
@@ -21,7 +16,7 @@ __all__ = ["tomlgen"]
 
 class tomlgen_rust(setuptools.Command):
 
-    description = "Generate `Cargo.toml` for rust extensions"
+    description = "Generate `Cargo.toml` for Rust extensions"
 
     user_options = [
         (str("force"), str("f"), str("overwrite existing files if any")),

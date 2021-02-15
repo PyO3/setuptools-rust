@@ -1,61 +1,33 @@
-from __future__ import print_function, absolute_import
 import os
 import sys
 import subprocess
-from distutils.cmd import Command
 from distutils.errors import (
     CompileError,
     DistutilsFileError,
     DistutilsExecError,
-    DistutilsPlatformError,
 )
 
 import semantic_version
 
+from .command import RustCommand
 from .extension import RustExtension
-from .utils import cpython_feature, get_rust_version
+from .utils import rust_features
 
 MIN_VERSION = semantic_version.Spec(">=1.16")
 
 
-class check_rust(Command):
-    """ Run rust check"""
+class check_rust(RustCommand):
+    """Run Rust check"""
 
-    description = "check rust extensions"
-
-    def initialize_options(self):
-        self.extensions = ()
-
-    def finalize_options(self):
-        self.extensions = [
-            ext
-            for ext in self.distribution.rust_extensions
-            if isinstance(ext, RustExtension)
-        ]
+    description = "check Rust extensions"
 
     def run(self):
         if "sdist" in self.distribution.commands:
             return
 
-        if not self.extensions:
-            return
+        super().run()
 
-        all_optional = all(ext.optional for ext in self.extensions)
-        try:
-            version = get_rust_version()
-        except DistutilsPlatformError as e:
-            if not all_optional:
-                raise
-            else:
-                print(str(e))
-                return
-        if version not in MIN_VERSION:
-            print(
-                "Rust version mismatch: required rust%s got rust%s"
-                % (MIN_VERSION, version)
-            )
-            return
-
+    def run_for_extension(self, ext: RustExtension):
         # Make sure that if pythonXX-sys is used, it builds against the current
         # executing python interpreter.
         bindir = os.path.dirname(sys.executable)
@@ -71,43 +43,35 @@ class check_rust(Command):
             }
         )
 
-        for ext in self.extensions:
-            try:
-                if not os.path.exists(ext.path):
-                    raise DistutilsFileError(
-                        "Can not file rust extension project file: %s" % ext.path
-                    )
+        if not os.path.exists(ext.path):
+            raise DistutilsFileError(
+                f"can't find Rust extension project file: {ext.path}"
+            )
 
-                features = set(ext.features)
-                features.update(cpython_feature(binding=ext.binding))
+        features = set(ext.features)
+        features.update(rust_features(binding=ext.binding))
 
-                # check cargo command
-                feature_args = ["--features", " ".join(features)] if features else []
-                args = (
-                    ["cargo", "check", "--manifest-path", ext.path]
-                    + feature_args
-                    + list(ext.args or [])
-                )
+        # check cargo command
+        feature_args = ["--features", " ".join(features)] if features else []
+        args = (
+            ["cargo", "check", "--manifest-path", ext.path]
+            + feature_args
+            + list(ext.args or [])
+        )
 
-                # Execute cargo command
-                try:
-                    subprocess.check_output(args)
-                except subprocess.CalledProcessError as e:
-                    raise CompileError(
-                        "cargo failed with code: %d\n%s"
-                        % (e.returncode, e.output.decode("utf-8"))
-                    )
-                except OSError:
-                    raise DistutilsExecError(
-                        "Unable to execute 'cargo' - this package "
-                        "requires rust to be installed and "
-                        "cargo to be on the PATH"
-                    )
-                else:
-                    print("Extension '%s' checked" % ext.name)
-            except (DistutilsFileError, DistutilsExecError, CompileError) as e:
-                if not ext.optional:
-                    raise
-                else:
-                    print("Check optional Rust extension %s failed." % ext.name)
-                    print(str(e))
+        # Execute cargo command
+        try:
+            subprocess.check_output(args)
+        except subprocess.CalledProcessError as e:
+            raise CompileError(
+                "cargo failed with code: %d\n%s"
+                % (e.returncode, e.output.decode("utf-8"))
+            )
+        except OSError:
+            raise DistutilsExecError(
+                "unable to execute 'cargo' - this package "
+                "requires Rust to be installed and "
+                "cargo to be on the PATH"
+            )
+        else:
+            print(f"extension '{ext.name}' checked")
