@@ -25,7 +25,15 @@ class RustCommand(Command, ABC):
 
         all_optional = all(ext.optional for ext in self.extensions)
         try:
-            version = get_rust_version()
+            version = get_rust_version(
+                min_version=max(
+                    filter(
+                        lambda version: version is not None,
+                        (ext.get_rust_version() for ext in self.extensions),
+                    ),
+                    default=None
+                )
+            )
         except DistutilsPlatformError as e:
             if not all_optional:
                 raise
