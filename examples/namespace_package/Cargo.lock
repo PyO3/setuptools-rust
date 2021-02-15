@@ -109,7 +109,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "namespace_package_bar"
+name = "namespace_package_rust"
 version = "0.1.0"
 dependencies = [
  "pyo3",

@@ -1,4 +1,3 @@
-from __future__ import print_function, absolute_import
 import os
 import re
 from distutils.errors import DistutilsSetupError
@@ -100,16 +99,6 @@ class RustExtension:
 
         # get relative path to Cargo manifest file
         path = os.path.relpath(path)
-        # file = sys._getframe(1).f_globals.get('__file__')
-        # if file:
-        #     dirname = os.path.dirname(file)
-        #     print(dirname)
-        #     if dirname:
-        #         cwd = os.getcwd()
-        #         os.chdir(dirname)
-        #         path = os.path.abspath(path)
-        #         os.chdir(cwd)
-
         self.path = path
 
     def get_lib_name(self):
@@ -158,8 +147,7 @@ class RustExtension:
                 f.write(TMPL.format({"name": name}))
 
 
-TMPL = """from __future__ import absolute_import, print_function
-
+TMPL = """
 import os
 import sys
 
@@ -171,5 +159,5 @@ def run():
     if os.path.isfile(file):
         os.execv(file, sys.argv)
     else:
-        print("Can not execute '%s'" % name)
+        print("can't execute '{name}'")
 """
