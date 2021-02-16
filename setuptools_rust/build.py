@@ -62,7 +62,35 @@ class build_rust(RustCommand):
             ("inplace", "inplace"),
         )
 
+    def get_target_triple(self):
+        # If we are on a 64-bit machine, but running a 32-bit Python, then
+        # we'll target a 32-bit Rust build.
+        # Automatic target detection can be overridden via the CARGO_BUILD_TARGET
+        # environment variable.
+        if os.getenv("CARGO_BUILD_TARGET"):
+            return os.environ["CARGO_BUILD_TARGET"]
+        elif self.plat_name == "win32":
+            return "i686-pc-windows-msvc"
+        elif self.plat_name == "win-amd64":
+            return "x86_64-pc-windows-msvc"
+        elif self.plat_name.startswith("macosx-") and platform.machine() == "x86_64":
+            # x86_64 or arm64 macOS targeting x86_64
+            return "x86_64-apple-darwin"
+
     def run_for_extension(self, ext: RustExtension):
+        if ext.universal2 and self.plat_name.startswith("macosx-"):
+            arm64_dylib_paths = self.build_extension(ext, "aarch64-apple-darwin")
+            x86_64_dylib_paths = self.build_extension(ext, "x86_64-apple-darwin")
+            dylib_paths = []
+            for (target_fname, arm64_dylib), (_, x86_64_dylib) in zip(arm64_dylib_paths, x86_64_dylib_paths):
+                fat_dylib_path = arm64_dylib.replace("aarch64-apple-darwin/", "")
+                self.create_universal2_binary(fat_dylib_path, [arm64_dylib, x86_64_dylib])
+                dylib_paths.append((target_fname, fat_dylib_path))
+        else:
+            dylib_paths = self.build_extension(ext)
+        self.install_extension(ext, dylib_paths)
+
+    def build_extension(self, ext: RustExtension, target_triple=None):
         executable = ext.binding == Binding.Exec
 
         rust_target_info = get_rust_target_info()
@@ -84,22 +112,8 @@ class build_rust(RustCommand):
         )
         rustflags = ""
 
-        # If we are on a 64-bit machine, but running a 32-bit Python, then
-        # we'll target a 32-bit Rust build.
-        # Automatic target detection can be overridden via the CARGO_BUILD_TARGET
-        # environment variable.
-        target_triple = None
+        target_triple = target_triple or self.get_target_triple()
         target_args = []
-        if os.getenv("CARGO_BUILD_TARGET"):
-            target_triple = os.environ["CARGO_BUILD_TARGET"]
-        elif self.plat_name == "win32":
-            target_triple = "i686-pc-windows-msvc"
-        elif self.plat_name == "win-amd64":
-            target_triple = "x86_64-pc-windows-msvc"
-        elif self.plat_name.startswith("macosx-") and platform.machine() == "x86_64":
-            # x86_64 or arm64 macOS targeting x86_64
-            target_triple = "x86_64-apple-darwin"
-
         if target_triple is not None:
             target_args = ["--target", target_triple]
 
@@ -264,7 +278,14 @@ class build_rust(RustCommand):
                 raise DistutilsExecError(
                     f"Rust build failed; unable to find any {wildcard_so} in {artifactsdir}"
                 )
+        return dylib_paths
 
+    def install_extension(self, ext: RustExtension, dylib_paths):
+        executable = ext.binding == Binding.Exec
+        debug_build = ext.debug if ext.debug is not None else self.inplace
+        debug_build = self.debug if self.debug is not None else debug_build
+        if self.release:
+            debug_build = False
         # Ask build_ext where the shared library would go if it had built it,
         # then copy it there.
         build_ext = self.get_finalized_command("build_ext")
@@ -301,7 +322,7 @@ class build_rust(RustCommand):
                     args.insert(0, "strip")
                     args.append(ext_path)
                     try:
-                        output = subprocess.check_output(args, env=env)
+                        output = subprocess.check_output(args, env=os.environ)
                     except subprocess.CalledProcessError:
                         pass
 
@@ -323,3 +344,32 @@ class build_rust(RustCommand):
             return build_ext.get_ext_fullpath(target_fname)
         finally:
             del build_ext.ext_map[modpath]
+
+    @staticmethod
+    def create_universal2_binary(output_path, input_paths):
+        # Try lipo first
+        command = ["lipo", "-create", "-output", output_path]
+        command.extend(input_paths)
+        try:
+            subprocess.check_output(command)
+        except subprocess.CalledProcessError as e:
+            output = e.output
+            if isinstance(output, bytes):
+                output = e.output.decode("latin-1").strip()
+            raise CompileError(
+                "lipo failed with code: %d\n%s" % (e.returncode, output)
+            )
+        except OSError:
+            # lipo not found, try using the fat-macho library
+            try:
+                from fat_macho import FatWriter
+            except ImportError:
+                raise DistutilsExecError(
+                    "unable to import fat_macho.FatWriter, did you install it?"
+                    " Try running `pip install fat-macho`"
+                )
+            fat = FatWriter()
+            for input_path in input_paths:
+                with open(input_path, "rb") as f:
+                    fat.add(f.read())
+            fat.write_to(output_path)

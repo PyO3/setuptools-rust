@@ -133,12 +133,30 @@ It is possible to use any of the `manylinux` docker images: `manylinux1`, `manyl
 
 You can define rust extension with RustExtension class:
 
-RustExtension(name, path, args=None, features=None,
-rust\_version=None, quiet=False, debug=False)
+```python
+RustExtension(
+     name,
+     path="Cargo.toml",
+     args=None,
+     features=None,
+     rustc_flags=None,
+     rust_version=None,
+     quiet=False,
+     debug=None,
+     binding=Binding.PyO3,
+     strip=Strip.No,
+     script=False,
+     native=False,
+     optional=False,
+     py_limited_api=False,
+     universal2=False,
+)
+```
 
 The class for creating rust extensions.
 
-   - param str name
+   - param str `name`
+
      the full name of the extension, including any packages -- ie.
      *not* a filename or pathname, but Python dotted name. It is
      possible to specify multiple binaries, if extension uses
@@ -147,51 +165,75 @@ The class for creating rust extensions.
      binaries and values are full name of the executable inside python
      package.
 
-   - param str path
+   - param str `path`
+
      path to the Cargo.toml manifest file
 
-   - param \[str\] args
+   - param \[str\] `args`
+
      a list of extra argumenents to be passed to cargo.
 
-   - param \[str\] features
+   - param \[str\] `features`
+
      a list of features to also build
 
-   - param \[str\] rustc\_flags
+   - param \[str\] `rustc_flags`
+
      A list of arguments to pass to rustc, e.g. cargo rustc --features
      \<features\> \<args\> -- \<rustc\_flags\>
 
-   - param str rust\_version
+   - param str `rust_version`
+
      sematic version of rust compiler version -- for example
      *\>1.14,\<1.16*, default is None
 
-   - param bool quiet
-     Does not echo cargo's output. default is False
+   - param bool `quiet`
 
-   - param bool debug
-     Controls whether --debug or --release is passed to cargo. If set
+     Does not echo cargo's output. default is `False`
+
+   - param bool `debug`
+
+     Controls whether `--debug` or `--release` is passed to cargo. If set
      to None then build type is auto-detect. Inplace build is debug
-     build otherwise release. Default: None
+     build otherwise release. Default: `None`
 
-   - param int binding
-     Controls which python binding is in use. Binding.PyO3 uses PyO3
-     Binding.RustCPython uses rust-cpython Binding.NoBinding uses no
-     binding. Binding.Exec build executable.
+   - param int `binding`
 
-   - param int strip
+     Controls which python binding is in use.
+     * `Binding.PyO3` uses PyO3
+     * `Binding.RustCPython` uses rust-cpython
+     * `Binding.NoBinding` uses no binding.
+     * `Binding.Exec` build executable.
+
+   - param int `strip`
+
      Strip symbols from final file. Does nothing for debug build.
-     Strip.No - do not strip symbols (default) Strip.Debug - strip
-     debug symbols Strip.All - strip all symbols
+     * `Strip.No` - do not strip symbols (default)
+     * `Strip.Debug` - strip debug symbols
+     * `Strip.All` - strip all symbols
 
-   - param bool script
-     Generate console script for executable if Binding.Exec is used.
+   - param bool `script`
 
-   - param bool native
+     Generate console script for executable if `Binding.Exec` is used.
+
+   - param bool `native`
+
      Build extension or executable with "-C target-cpu=native"
 
-   - param bool optional
+   - param bool `optional`
+
      if it is true, a build failure in the extension will not abort the
      build process, but instead simply not install the failing
      extension.
+   - param bool `py_limited_api`
+
+        Same as `py_limited_api` on `setuptools.Extension`. Note that if you
+        set this to True, your extension must pass the appropriate feature
+        flags to pyo3 (ensuring that `abi3` feature is enabled).
+   - param bool `universal2`
+
+        Control whether to build universal2 wheel for macOS or not.
+        Only applies to macOS targets, does nothing otherwise.
 
 ## Commands
 
