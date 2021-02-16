@@ -7,6 +7,7 @@
 ### Added
 - Support building x86-64 wheel on arm64 macOS machine. [#114](https://github.com/PyO3/setuptools-rust/pull/114)
 - Add macOS universal2 wheel building support. [#115](https://github.com/PyO3/setuptools-rust/pull/115)
+- Add option to cargo vendor crates into sdist. [#118](https://github.com/PyO3/setuptools-rust/pull/118)
 
 ### Changed
 - Respect `PYO3_PYTHON` and `PYTHON_SYS_EXECUTABLE` environment variables if set. [#96](https://github.com/PyO3/setuptools-rust/pull/96)

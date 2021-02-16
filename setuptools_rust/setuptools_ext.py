@@ -5,6 +5,8 @@ from distutils.command.clean import clean
 
 from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
+from distutils.command.sdist import sdist
+import subprocess
 
 try:
     from wheel.bdist_wheel import bdist_wheel
@@ -13,6 +15,45 @@ except ImportError:
 
 
 def add_rust_extension(dist):
+    sdist_base_class = dist.cmdclass.get("sdist", sdist)
+    sdist_options = sdist_base_class.user_options.copy()
+    sdist_boolean_options = sdist_base_class.boolean_options.copy()
+    sdist_negative_opt = sdist_base_class.negative_opt.copy()
+    sdist_options.extend([
+        ('vendor-crates', None,
+         "vendor Rust crates"),
+        ('no-vendor-crates', None,
+         "don't vendor Rust crates."
+         "[default; enable with --vendor-crates]"),
+    ])
+    sdist_boolean_options.append('vendor-crates')
+    sdist_negative_opt['no-vendor-crates'] = 'vendor-crates'
+
+    class sdist_rust_extension(sdist_base_class):
+        user_options = sdist_options
+        boolean_options = sdist_boolean_options
+        negative_opt = sdist_negative_opt
+
+        def initialize_options(self):
+            super().initialize_options()
+            self.vendor_crates = 0
+
+        def get_file_list(self):
+            if self.vendor_crates:
+                base_dir = self.distribution.get_fullname()
+                vendor_path = os.path.join(base_dir, "vendored-crates")
+                cargo_config = subprocess.check_output(["cargo", "vendor", vendor_path])
+                cargo_config = cargo_config.replace(base_dir.encode() + b'/', b'')
+                dot_cargo_path = os.path.join(base_dir, ".cargo")
+                self.mkpath(dot_cargo_path)
+                cargo_config_path = os.path.join(dot_cargo_path, "config.toml")
+                with open(cargo_config_path, "wb") as f:
+                    f.write(cargo_config)
+                self.filelist.append(vendor_path)
+                self.filelist.append(cargo_config_path)
+            super().get_file_list()
+    dist.cmdclass["sdist"] = sdist_rust_extension
+
     build_ext_base_class = dist.cmdclass.get('build_ext', build_ext)
 
     class build_ext_rust_extension(build_ext_base_class):
