@@ -6,6 +6,7 @@ from distutils.command.clean import clean
 from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
 from distutils.command.sdist import sdist
+import sys
 import subprocess
 
 try:
@@ -40,17 +41,37 @@ def add_rust_extension(dist):
 
         def get_file_list(self):
             if self.vendor_crates:
-                base_dir = self.distribution.get_fullname()
-                vendor_path = os.path.join(base_dir, "vendored-crates")
-                cargo_config = subprocess.check_output(["cargo", "vendor", vendor_path])
-                cargo_config = cargo_config.replace(base_dir.encode() + b'/', b'')
-                dot_cargo_path = os.path.join(base_dir, ".cargo")
-                self.mkpath(dot_cargo_path)
-                cargo_config_path = os.path.join(dot_cargo_path, "config.toml")
-                with open(cargo_config_path, "wb") as f:
-                    f.write(cargo_config)
-                self.filelist.append(vendor_path)
-                self.filelist.append(cargo_config_path)
+                manifest_paths = []
+                for ext in self.distribution.rust_extensions:
+                    manifest_paths.append(ext.path)
+                if manifest_paths:
+                    base_dir = self.distribution.get_fullname()
+                    dot_cargo_path = os.path.join(base_dir, ".cargo")
+                    self.mkpath(dot_cargo_path)
+                    cargo_config_path = os.path.join(dot_cargo_path, "config.toml")
+                    vendor_path = os.path.join(dot_cargo_path, "vendor")
+                    command = [
+                        "cargo", "vendor"
+                    ]
+                    # additional Cargo.toml for extension 1..n
+                    for extra_path in manifest_paths[1:]:
+                        command.append("--sync")
+                        command.append(extra_path)
+                    # `cargo vendor --sync` accepts multiple values, for example
+                    # `cargo vendor --sync a --sync b --sync c vendor_path`
+                    # but it would also consider vendor_path as --sync value
+                    # set --manifest-path before vendor_path and after --sync to workaround that
+                    # See https://docs.rs/clap/latest/clap/struct.Arg.html#method.multiple for detail
+                    command.extend(["--manifest-path", manifest_paths[0], vendor_path])
+                    cargo_config = subprocess.check_output(command)
+                    base_dir_bytes = base_dir.encode(sys.getfilesystemencoding())
+                    cargo_config = cargo_config.replace(base_dir_bytes + os.sep.encode(), b'')
+                    if os.altsep:
+                        cargo_config = cargo_config.replace(base_dir_bytes + os.altsep.encode(), b'')
+                    with open(cargo_config_path, "wb") as f:
+                        f.write(cargo_config)
+                    self.filelist.append(vendor_path)
+                    self.filelist.append(cargo_config_path)
             super().get_file_list()
     dist.cmdclass["sdist"] = sdist_rust_extension
 
