@@ -14,7 +14,7 @@ jobs:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9, pypy3]
         platform: [
-          { os: "macOS-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
+          { os: "macos-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
           { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
           { os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc" },
           { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" },
@@ -43,6 +43,10 @@ jobs:
           target: ${{ matrix.platform.rust-target }}
           profile: minimal
           default: true
+
+      - name: Install Rust aarch64-apple-darwin target
+        if: matrix.platform.os == 'macos-latest'
+        run: rustup target add aarch64-apple-darwin
 
       - name: Install test dependencies
         run: pip install --upgrade tox setuptools
@@ -92,6 +96,10 @@ jobs:
           toolchain: stable
           override: true
 
+      - name: Install Rust aarch64-apple-darwin target
+        if: matrix.os == 'macos-latest'
+        run: rustup target add aarch64-apple-darwin
+
       - name: Build package
         run: pip install -e .
 
@@ -99,6 +107,18 @@ jobs:
         shell: bash
         run: |
           cd examples/rust_with_cffi/
+          python --version
+          pip install wheel
+          python setup.py bdist_wheel --py-limited-api=cp35
+          ls -la dist/
+
+      - name: Build an universal2 abi3 wheel
+        if: matrix.os == 'macos-latest'
+        env:
+          MACOSX_DEPLOYMENT_TARGET: '10.9'
+        shell: bash
+        run: |
+          cd examples/universal2_abi3/
           python --version
           pip install wheel
           python setup.py bdist_wheel --py-limited-api=cp35
@@ -119,3 +139,13 @@ jobs:
           pip install rust_with_cffi/dist/rust_with_cffi*.whl
           python -c "from rust_with_cffi import rust; assert rust.rust_func() == 14"
           python -c "from rust_with_cffi.cffi import lib; assert lib.cffi_func() == 15"
+
+      - name: Install universal2 abi3 wheel and run tests
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          cd examples/
+          python --version
+          pip install universal2_abi3/dist/universal2*.whl
+          python -c "from universal2 import rust; assert rust.rust_func() == 14"
+          python -c "from universal2 import python; assert python.python_func() == 15"
