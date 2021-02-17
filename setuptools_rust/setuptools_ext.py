@@ -40,6 +40,7 @@ def add_rust_extension(dist):
             self.vendor_crates = 0
 
         def get_file_list(self):
+            super().get_file_list()
             if self.vendor_crates:
                 manifest_paths = []
                 for ext in self.distribution.rust_extensions:
@@ -68,11 +69,23 @@ def add_rust_extension(dist):
                     cargo_config = cargo_config.replace(base_dir_bytes + os.sep.encode(), b'')
                     if os.altsep:
                         cargo_config = cargo_config.replace(base_dir_bytes + os.altsep.encode(), b'')
+
+                    # Check whether `.cargo/config`/`.cargo/config.toml` already exists
+                    existing_cargo_config = None
+                    for filename in (".cargo/config", ".cargo/config.toml"):
+                        if filename in self.filelist.allfiles:
+                            existing_cargo_config = filename
+                            break
+                    if existing_cargo_config:
+                        cargo_config_path = os.path.join(base_dir, existing_cargo_config)
+                        # Append vendor config to original cargo config
+                        with open(existing_cargo_config, "rb") as f:
+                            cargo_config = f.read() + b'\n' + cargo_config
+
                     with open(cargo_config_path, "wb") as f:
                         f.write(cargo_config)
                     self.filelist.append(vendor_path)
                     self.filelist.append(cargo_config_path)
-            super().get_file_list()
     dist.cmdclass["sdist"] = sdist_rust_extension
 
     build_ext_base_class = dist.cmdclass.get('build_ext', build_ext)
