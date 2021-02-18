@@ -15,6 +15,7 @@
 ### Fixed
 - Set executable bit on shared library. [#110](https://github.com/PyO3/setuptools-rust/pull/110)
 - Don't require optional `wheel` dependency. [#111](https://github.com/PyO3/setuptools-rust/pull/111)
+- Set a more reasonable LC_ID_DYLIB entry on macOS. [#119](https://github.com/PyO3/setuptools-rust/pull/119)
 
 ## 0.11.6 (2020-12-13)
 
