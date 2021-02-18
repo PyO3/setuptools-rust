@@ -180,6 +180,10 @@ class build_rust(RustCommand):
         if ext.native:
             rustflags += " -C target-cpu=native"
 
+        if not executable and sys.platform == "darwin":
+            ext_basename = os.path.basename(self.get_dylib_ext_path(ext, ext.name))
+            rustflags += f" -C link-args=-Wl,-install_name,@rpath/{ext_basename}"
+
         if rustflags:
             env["RUSTFLAGS"] = (env.get("RUSTFLAGS", "") + " " + rustflags).strip()
 
@@ -281,16 +285,7 @@ class build_rust(RustCommand):
 
                 ext.install_script(ext_path)
             else:
-                # Technically it's supposed to contain a
-                # `setuptools.Extension`, but in practice the only attribute it
-                # checks is `ext.py_limited_api`.
-                modpath = target_fname.split('.')[-1]
-                assert modpath not in build_ext.ext_map
-                build_ext.ext_map[modpath] = ext
-                try:
-                    ext_path = build_ext.get_ext_fullpath(target_fname)
-                finally:
-                    del build_ext.ext_map[modpath]
+                ext_path = self.get_dylib_ext_path(ext, target_fname)
 
             os.makedirs(os.path.dirname(ext_path), exist_ok=True)
             shutil.copyfile(dylib_path, ext_path)
@@ -307,7 +302,7 @@ class build_rust(RustCommand):
                     args.append(ext_path)
                     try:
                         output = subprocess.check_output(args, env=env)
-                    except subprocess.CalledProcessError as e:
+                    except subprocess.CalledProcessError:
                         pass
 
             # executables, win32(cygwin)-dll's, and shared libraries on
@@ -315,3 +310,16 @@ class build_rust(RustCommand):
             mode = os.stat(ext_path).st_mode
             mode |= (mode & 0o444) >> 2  # copy R bits to X
             os.chmod(ext_path, mode)
+
+    def get_dylib_ext_path(self, ext, target_fname):
+        build_ext = self.get_finalized_command("build_ext")
+        # Technically it's supposed to contain a
+        # `setuptools.Extension`, but in practice the only attribute it
+        # checks is `ext.py_limited_api`.
+        modpath = target_fname.split('.')[-1]
+        assert modpath not in build_ext.ext_map
+        build_ext.ext_map[modpath] = ext
+        try:
+            return build_ext.get_ext_fullpath(target_fname)
+        finally:
+            del build_ext.ext_map[modpath]
