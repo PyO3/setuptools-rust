@@ -123,7 +123,7 @@ class RustExtension:
         if self.rust_version is None:
             return None
         try:
-            return semantic_version.Spec(self.rust_version)
+            return semantic_version.SimpleSpec.parse(self.rust_version)
         except ValueError:
             raise DistutilsSetupError(
                 "Can not parse rust compiler version: %s", self.rust_version
