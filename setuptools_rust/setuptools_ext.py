@@ -65,14 +65,17 @@ def add_rust_extension(dist):
                     # See https://docs.rs/clap/latest/clap/struct.Arg.html#method.multiple for detail
                     command.extend(["--manifest-path", manifest_paths[0], vendor_path])
                     cargo_config = subprocess.check_output(command)
-                    base_dir_bytes = base_dir.encode(sys.getfilesystemencoding())
-                    cargo_config = cargo_config.replace(base_dir_bytes + os.sep.encode(), b'')
+                    base_dir_bytes = base_dir.encode(sys.getfilesystemencoding()) + os.sep.encode()
+                    if os.sep == '\\':
+                        # TOML escapes backslash \
+                        base_dir_bytes += os.sep.encode()
+                    cargo_config = cargo_config.replace(base_dir_bytes, b'')
                     if os.altsep:
                         cargo_config = cargo_config.replace(base_dir_bytes + os.altsep.encode(), b'')
 
                     # Check whether `.cargo/config`/`.cargo/config.toml` already exists
                     existing_cargo_config = None
-                    for filename in (".cargo/config", ".cargo/config.toml"):
+                    for filename in (f".cargo{os.sep}config", f".cargo{os.sep}config.toml"):
                         if filename in self.filelist.allfiles:
                             existing_cargo_config = filename
                             break
