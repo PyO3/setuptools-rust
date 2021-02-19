@@ -149,7 +149,6 @@ RustExtension(
      native=False,
      optional=False,
      py_limited_api=False,
-     universal2=False,
 )
 ```
 
@@ -230,10 +229,6 @@ The class for creating rust extensions.
         Same as `py_limited_api` on `setuptools.Extension`. Note that if you
         set this to True, your extension must pass the appropriate feature
         flags to pyo3 (ensuring that `abi3` feature is enabled).
-   - param bool `universal2`
-
-        Control whether to build universal2 wheel for macOS or not.
-        Only applies to macOS targets, does nothing otherwise.
 
 ## Commands
 

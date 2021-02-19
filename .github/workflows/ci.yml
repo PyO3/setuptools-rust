@@ -78,6 +78,24 @@ jobs:
               tox -c $example_dir -e py
           done
 
+      - name: Test macOS universal2
+        if: matrix.platform.os == 'macos-latest'
+        shell: bash
+        env:
+          DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+          MACOSX_DEPLOYMENT_TARGET: '10.9'
+          ARCHFLAGS: -arch x86_64 -arch arm64
+          PYO3_CROSS_LIB_DIR: /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.8/lib
+        run: |
+          cd examples/namespace_package
+          pip install wheel
+          python setup.py bdist_wheel
+          ls -l dist/
+          pip install --force-reinstall dist/namespace_package*_universal2.whl
+          cd -
+          python -c "from namespace_package import rust; assert rust.rust_func() == 14"
+          python -c "from namespace_package import python; assert python.python_func() == 15"
+
   test-abi3:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -112,18 +130,6 @@ jobs:
           python setup.py bdist_wheel --py-limited-api=cp35
           ls -la dist/
 
-      - name: Build a universal2 abi3 wheel
-        if: matrix.os == 'macos-latest'
-        env:
-          MACOSX_DEPLOYMENT_TARGET: '10.9'
-        shell: bash
-        run: |
-          cd examples/universal2_abi3/
-          python --version
-          pip install wheel
-          python setup.py bdist_wheel --py-limited-api=cp35
-          ls -la dist/
-
       # Now we switch to a differnet Python version and ensure we can install
       # the wheel we just built.
       - name: Setup python
@@ -139,13 +145,3 @@ jobs:
           pip install rust_with_cffi/dist/rust_with_cffi*.whl
           python -c "from rust_with_cffi import rust; assert rust.rust_func() == 14"
           python -c "from rust_with_cffi.cffi import lib; assert lib.cffi_func() == 15"
-
-      - name: Install universal2 abi3 wheel and run tests
-        if: matrix.os == 'macos-latest'
-        shell: bash
-        run: |
-          cd examples/
-          python --version
-          pip install universal2_abi3/dist/universal2*.whl
-          python -c "from universal2 import rust; assert rust.rust_func() == 14"
-          python -c "from universal2 import python; assert python.python_func() == 15"

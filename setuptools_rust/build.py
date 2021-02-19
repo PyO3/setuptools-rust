@@ -78,7 +78,11 @@ class build_rust(RustCommand):
             return "x86_64-apple-darwin"
 
     def run_for_extension(self, ext: RustExtension):
-        if ext.universal2 and self.plat_name.startswith("macosx-"):
+        arch_flags = os.getenv("ARCHFLAGS")
+        universal2 = False
+        if self.plat_name.startswith("macosx-") and arch_flags:
+            universal2 = "x86_64" in arch_flags and "arm64" in arch_flags
+        if universal2:
             arm64_dylib_paths = self.build_extension(ext, "aarch64-apple-darwin")
             x86_64_dylib_paths = self.build_extension(ext, "x86_64-apple-darwin")
             dylib_paths = []

@@ -50,9 +50,6 @@ class RustExtension:
         Same as `py_limited_api` on `setuptools.Extension`. Note that if you
         set this to True, your extension must pass the appropriate feature
         flags to pyo3 (ensuring that `abi3` feature is enabled).
-      universal2 : bool
-        Control whether to build universal2 wheel for macOS or not.
-        Only applies to macOS targets, does nothing otherwise.
     """
 
     def __init__(
@@ -71,7 +68,6 @@ class RustExtension:
         native=False,
         optional=False,
         py_limited_api=False,
-        universal2=False,
     ):
         if isinstance(target, dict):
             name = "; ".join("%s=%s" % (key, val) for key, val in target.items())
@@ -92,7 +88,6 @@ class RustExtension:
         self.native = native
         self.optional = optional
         self.py_limited_api = py_limited_api
-        self.universal2 = universal2
         # We pass this over to setuptools in one place, and it wants this
         # attribute to exist.
         self._links_to_dynamic = False

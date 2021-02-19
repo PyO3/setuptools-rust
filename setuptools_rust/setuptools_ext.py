@@ -113,8 +113,10 @@ def add_rust_extension(dist):
 
             def get_tag(self):
                 python, abi, plat = super().get_tag()
-                universal2 = all(ext.universal2 for ext in self.distribution.rust_extensions) \
-                    if self.distribution.rust_extensions else False
+                arch_flags = os.getenv("ARCHFLAGS")
+                universal2 = False
+                if self.plat_name.startswith("macosx-") and arch_flags:
+                    universal2 = "x86_64" in arch_flags and "arm64" in arch_flags
                 if universal2 and plat.startswith("macosx_"):
                     from wheel.macosx_libfile import calculate_macosx_platform_tag
 
