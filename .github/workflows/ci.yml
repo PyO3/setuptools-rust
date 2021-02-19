@@ -112,7 +112,7 @@ jobs:
           python setup.py bdist_wheel --py-limited-api=cp35
           ls -la dist/
 
-      - name: Build an universal2 abi3 wheel
+      - name: Build a universal2 abi3 wheel
         if: matrix.os == 'macos-latest'
         env:
           MACOSX_DEPLOYMENT_TARGET: '10.9'

@@ -322,7 +322,7 @@ class build_rust(RustCommand):
                     args.insert(0, "strip")
                     args.append(ext_path)
                     try:
-                        output = subprocess.check_output(args, env=os.environ)
+                        output = subprocess.check_output(args)
                     except subprocess.CalledProcessError:
                         pass
 
@@ -348,8 +348,7 @@ class build_rust(RustCommand):
     @staticmethod
     def create_universal2_binary(output_path, input_paths):
         # Try lipo first
-        command = ["lipo", "-create", "-output", output_path]
-        command.extend(input_paths)
+        command = ["lipo", "-create", "-output", output_path, *input_paths]
         try:
             subprocess.check_output(command)
         except subprocess.CalledProcessError as e:
@@ -365,8 +364,8 @@ class build_rust(RustCommand):
                 from fat_macho import FatWriter
             except ImportError:
                 raise DistutilsExecError(
-                    "unable to import fat_macho.FatWriter, did you install it?"
-                    " Try running `pip install fat-macho`"
+                    "failed to locate `lipo` or import `fat_macho.FatWriter`. "
+                    "Try installing with `pip install fat-macho` "
                 )
             fat = FatWriter()
             for input_path in input_paths:
