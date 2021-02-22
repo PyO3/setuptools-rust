@@ -5,6 +5,9 @@ from distutils.command.clean import clean
 
 from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
+from distutils.command.sdist import sdist
+import sys
+import subprocess
 
 try:
     from wheel.bdist_wheel import bdist_wheel
@@ -13,6 +16,81 @@ except ImportError:
 
 
 def add_rust_extension(dist):
+    sdist_base_class = dist.cmdclass.get("sdist", sdist)
+    sdist_options = sdist_base_class.user_options.copy()
+    sdist_boolean_options = sdist_base_class.boolean_options.copy()
+    sdist_negative_opt = sdist_base_class.negative_opt.copy()
+    sdist_options.extend([
+        ('vendor-crates', None,
+         "vendor Rust crates"),
+        ('no-vendor-crates', None,
+         "don't vendor Rust crates."
+         "[default; enable with --vendor-crates]"),
+    ])
+    sdist_boolean_options.append('vendor-crates')
+    sdist_negative_opt['no-vendor-crates'] = 'vendor-crates'
+
+    class sdist_rust_extension(sdist_base_class):
+        user_options = sdist_options
+        boolean_options = sdist_boolean_options
+        negative_opt = sdist_negative_opt
+
+        def initialize_options(self):
+            super().initialize_options()
+            self.vendor_crates = 0
+
+        def get_file_list(self):
+            super().get_file_list()
+            if self.vendor_crates:
+                manifest_paths = []
+                for ext in self.distribution.rust_extensions:
+                    manifest_paths.append(ext.path)
+                if manifest_paths:
+                    base_dir = self.distribution.get_fullname()
+                    dot_cargo_path = os.path.join(base_dir, ".cargo")
+                    self.mkpath(dot_cargo_path)
+                    cargo_config_path = os.path.join(dot_cargo_path, "config.toml")
+                    vendor_path = os.path.join(dot_cargo_path, "vendor")
+                    command = [
+                        "cargo", "vendor"
+                    ]
+                    # additional Cargo.toml for extension 1..n
+                    for extra_path in manifest_paths[1:]:
+                        command.append("--sync")
+                        command.append(extra_path)
+                    # `cargo vendor --sync` accepts multiple values, for example
+                    # `cargo vendor --sync a --sync b --sync c vendor_path`
+                    # but it would also consider vendor_path as --sync value
+                    # set --manifest-path before vendor_path and after --sync to workaround that
+                    # See https://docs.rs/clap/latest/clap/struct.Arg.html#method.multiple for detail
+                    command.extend(["--manifest-path", manifest_paths[0], vendor_path])
+                    cargo_config = subprocess.check_output(command)
+                    base_dir_bytes = base_dir.encode(sys.getfilesystemencoding()) + os.sep.encode()
+                    if os.sep == '\\':
+                        # TOML escapes backslash \
+                        base_dir_bytes += os.sep.encode()
+                    cargo_config = cargo_config.replace(base_dir_bytes, b'')
+                    if os.altsep:
+                        cargo_config = cargo_config.replace(base_dir_bytes + os.altsep.encode(), b'')
+
+                    # Check whether `.cargo/config`/`.cargo/config.toml` already exists
+                    existing_cargo_config = None
+                    for filename in (f".cargo{os.sep}config", f".cargo{os.sep}config.toml"):
+                        if filename in self.filelist.allfiles:
+                            existing_cargo_config = filename
+                            break
+                    if existing_cargo_config:
+                        cargo_config_path = os.path.join(base_dir, existing_cargo_config)
+                        # Append vendor config to original cargo config
+                        with open(existing_cargo_config, "rb") as f:
+                            cargo_config = f.read() + b'\n' + cargo_config
+
+                    with open(cargo_config_path, "wb") as f:
+                        f.write(cargo_config)
+                    self.filelist.append(vendor_path)
+                    self.filelist.append(cargo_config_path)
+    dist.cmdclass["sdist"] = sdist_rust_extension
+
     build_ext_base_class = dist.cmdclass.get('build_ext', build_ext)
 
     class build_ext_rust_extension(build_ext_base_class):

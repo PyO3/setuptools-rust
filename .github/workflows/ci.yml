@@ -96,6 +96,16 @@ jobs:
           python -c "from namespace_package import rust; assert rust.rust_func() == 14"
           python -c "from namespace_package import python; assert python.python_func() == 15"
 
+      - name: Test sdist vendor Rust crates
+        shell: bash
+        run: |
+          cd examples/namespace_package
+          python setup.py sdist --vendor-crates
+          cd dist
+          tar -zxf namespace_package-0.1.0.tar.gz
+          cd namespace_package-0.1.0
+          cargo build --offline --target ${{ matrix.platform.rust-target }}
+
   test-abi3:
     runs-on: ${{ matrix.os }}
     strategy:
