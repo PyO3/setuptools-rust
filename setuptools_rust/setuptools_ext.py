@@ -1,19 +1,15 @@
-from abc import ABC, abstractmethod
+import os
 from distutils import log
-from distutils.cmd import Command
 from distutils.command.check import check
 from distutils.command.clean import clean
-from distutils.errors import DistutilsPlatformError
-from setuptools.command.install import install
+
 from setuptools.command.build_ext import build_ext
+from setuptools.command.install import install
 
 try:
     from wheel.bdist_wheel import bdist_wheel
 except ImportError:
     bdist_wheel = None
-
-from .extension import RustExtension
-from .utils import get_rust_version
 
 
 def add_rust_extension(dist):
@@ -114,6 +110,25 @@ def add_rust_extension(dist):
                         self.distribution.entry_points["console_scripts"] = ep_scripts
 
                 bdist_wheel_base_class.finalize_options(self)
+
+            def get_tag(self):
+                python, abi, plat = super().get_tag()
+                arch_flags = os.getenv("ARCHFLAGS")
+                universal2 = False
+                if self.plat_name.startswith("macosx-") and arch_flags:
+                    universal2 = "x86_64" in arch_flags and "arm64" in arch_flags
+                if universal2 and plat.startswith("macosx_"):
+                    from wheel.macosx_libfile import calculate_macosx_platform_tag
+
+                    macos_target = os.getenv("MACOSX_DEPLOYMENT_TARGET")
+                    if macos_target is None:
+                        # Example: macosx_11_0_arm64
+                        macos_target = '.'.join(plat.split("_")[1:3])
+                    plat = calculate_macosx_platform_tag(
+                        self.bdist_dir,
+                        "macosx-{}-universal2".format(macos_target)
+                    )
+                return python, abi, plat
         dist.cmdclass["bdist_wheel"] = bdist_wheel_rust_extension
 
 

@@ -14,7 +14,7 @@ jobs:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9, pypy3]
         platform: [
-          { os: "macOS-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
+          { os: "macos-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
           { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
           { os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc" },
           { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" },
@@ -43,6 +43,10 @@ jobs:
           target: ${{ matrix.platform.rust-target }}
           profile: minimal
           default: true
+
+      - name: Install Rust aarch64-apple-darwin target
+        if: matrix.platform.os == 'macos-latest'
+        run: rustup target add aarch64-apple-darwin
 
       - name: Install test dependencies
         run: pip install --upgrade tox setuptools
@@ -74,6 +78,24 @@ jobs:
               tox -c $example_dir -e py
           done
 
+      - name: Test macOS universal2
+        if: matrix.platform.os == 'macos-latest'
+        shell: bash
+        env:
+          DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+          MACOSX_DEPLOYMENT_TARGET: '10.9'
+          ARCHFLAGS: -arch x86_64 -arch arm64
+          PYO3_CROSS_LIB_DIR: /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.8/lib
+        run: |
+          cd examples/namespace_package
+          pip install wheel
+          python setup.py bdist_wheel
+          ls -l dist/
+          pip install --force-reinstall dist/namespace_package*_universal2.whl
+          cd -
+          python -c "from namespace_package import rust; assert rust.rust_func() == 14"
+          python -c "from namespace_package import python; assert python.python_func() == 15"
+
   test-abi3:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -91,6 +113,10 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
+
+      - name: Install Rust aarch64-apple-darwin target
+        if: matrix.os == 'macos-latest'
+        run: rustup target add aarch64-apple-darwin
 
       - name: Build package
         run: pip install -e .
