@@ -13,10 +13,8 @@ from distutils.errors import (
 from subprocess import check_output
 
 from .command import RustCommand
-from .extension import RustExtension
-from .utils import (
-    Binding, Strip, rust_features, get_rust_target_info
-)
+from .extension import Binding, RustExtension, Strip
+from .utils import rust_features, get_rust_target_info
 
 
 class build_rust(RustCommand):

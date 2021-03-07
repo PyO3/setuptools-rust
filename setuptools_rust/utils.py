@@ -1,35 +1,10 @@
 import sys
 import subprocess
-from enum import IntEnum
 from distutils.errors import DistutilsPlatformError
 
 import semantic_version
 
-
-class Binding(IntEnum):
-    """
-    Binding Options
-    """
-    # https://github.com/PyO3/PyO3
-    PyO3 = 0
-    # https://github.com/dgrunwald/rust-cpython
-    RustCPython = 1
-    # Bring your own binding
-    NoBinding = 2
-    # Build executable
-    Exec = 3
-
-
-class Strip(IntEnum):
-    """
-    Strip Options
-    """
-    # do not strip symbols
-    No = 0
-    # strip debug symbols
-    Debug = 1
-    # strip all symbos
-    All = 2
+from .extension import Binding
 
 
 def rust_features(ext=True, binding=Binding.PyO3):

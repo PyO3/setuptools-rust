@@ -1,12 +1,13 @@
 # Setuptools plugin for Rust extensions
 
-[![Build Status](https://travis-ci.org/PyO3/setuptools-rust.svg?branch=master)](https://travis-ci.org/PyO3/setuptools-rust)
+![example workflow](https://github.com/PyO3/setuptools-rust/actions/workflows/ci.yml/badge.svg)
 [![pypi package](https://badge.fury.io/py/setuptools-rust.svg)](https://badge.fury.io/py/setuptools-rust)
+[![readthedocs](https://readthedocs.org/projects/pip/badge/)](https://setuptools-rust.readthedocs.io/en/latest/)
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-Setuptools helpers for rust Python extensions implemented with [PyO3](https://github.com/PyO3/pyo3) and [rust-cpython](https://github.com/dgrunwald/rust-cpython).
+Setuptools helpers for Rust Python extensions implemented with [PyO3](https://github.com/PyO3/pyo3) and [rust-cpython](https://github.com/dgrunwald/rust-cpython).
 
-Compile and distribute Python extensions written in rust as easily as if
+Compile and distribute Python extensions written in Rust as easily as if
 they were written in C.
 
 ## Setup
@@ -31,6 +32,9 @@ setup(
     zip_safe=False,
 )
 ```
+
+For a complete reference of the options supported by the `RustExtension` class, see the
+[API reference](https://setuptools-rust.readthedocs.io/en/latest/reference.html).
 
 ### MANIFEST.in
 
@@ -129,107 +133,6 @@ You can then upload the `manylinux2014` wheels to pypi using [twine](https://git
 
 It is possible to use any of the `manylinux` docker images: `manylinux1`, `manylinux2010` or `manylinux2014`. (Just replace `manylinux2014` in the above instructions with the alternative version you wish to use.)
 
-## RustExtension
-
-You can define rust extension with RustExtension class:
-
-```python
-RustExtension(
-     name,
-     path="Cargo.toml",
-     args=None,
-     features=None,
-     rustc_flags=None,
-     rust_version=None,
-     quiet=False,
-     debug=None,
-     binding=Binding.PyO3,
-     strip=Strip.No,
-     script=False,
-     native=False,
-     optional=False,
-     py_limited_api=False,
-)
-```
-
-The class for creating rust extensions.
-
-   - param str `name`
-
-     the full name of the extension, including any packages -- ie.
-     *not* a filename or pathname, but Python dotted name. It is
-     possible to specify multiple binaries, if extension uses
-     Binsing.Exec binding mode. In that case first argument has to be
-     dictionary. Keys of the dictionary corresponds to compiled rust
-     binaries and values are full name of the executable inside python
-     package.
-
-   - param str `path`
-
-     path to the Cargo.toml manifest file
-
-   - param \[str\] `args`
-
-     a list of extra argumenents to be passed to cargo.
-
-   - param \[str\] `features`
-
-     a list of features to also build
-
-   - param \[str\] `rustc_flags`
-
-     A list of arguments to pass to rustc, e.g. cargo rustc --features
-     \<features\> \<args\> -- \<rustc\_flags\>
-
-   - param str `rust_version`
-
-     sematic version of rust compiler version -- for example
-     *\>1.14,\<1.16*, default is None
-
-   - param bool `quiet`
-
-     Does not echo cargo's output. default is `False`
-
-   - param bool `debug`
-
-     Controls whether `--debug` or `--release` is passed to cargo. If set
-     to None then build type is auto-detect. Inplace build is debug
-     build otherwise release. Default: `None`
-
-   - param int `binding`
-
-     Controls which python binding is in use.
-     * `Binding.PyO3` uses PyO3
-     * `Binding.RustCPython` uses rust-cpython
-     * `Binding.NoBinding` uses no binding.
-     * `Binding.Exec` build executable.
-
-   - param int `strip`
-
-     Strip symbols from final file. Does nothing for debug build.
-     * `Strip.No` - do not strip symbols (default)
-     * `Strip.Debug` - strip debug symbols
-     * `Strip.All` - strip all symbols
-
-   - param bool `script`
-
-     Generate console script for executable if `Binding.Exec` is used.
-
-   - param bool `native`
-
-     Build extension or executable with "-C target-cpu=native"
-
-   - param bool `optional`
-
-     if it is true, a build failure in the extension will not abort the
-     build process, but instead simply not install the failing
-     extension.
-   - param bool `py_limited_api`
-
-        Same as `py_limited_api` on `setuptools.Extension`. Note that if you
-        set this to True, your extension must pass the appropriate feature
-        flags to pyo3 (ensuring that `abi3` feature is enabled).
-
 ## Commands
 
   - build - Standard build command builds all rust extensions.
@@ -240,5 +143,5 @@ The class for creating rust extensions.
     extensions.
   - tomlgen\_rust - Automatically generate a Cargo.toml manifest based
     on Python package metadata. See the [example
-    project](https://github.com/PyO3/setuptools-rust/tree/master/example_tomlgen)
+    project](https://github.com/PyO3/setuptools-rust/tree/master/examples/tomlgen)
     on GitHub for more information about this command.
