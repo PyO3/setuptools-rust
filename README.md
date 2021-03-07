@@ -5,7 +5,7 @@
 [![readthedocs](https://readthedocs.org/projects/pip/badge/)](https://setuptools-rust.readthedocs.io/en/latest/)
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-Setuptools helpers for Rust Python extensions implemented with [PyO3](https://github.com/PyO3/pyo3) and [rust-cpython](https://github.com/dgrunwald/rust-cpython).
+`setuptools-rust` is a plugin for `setuptools` to build Rust Python extensions implemented with [PyO3](https://github.com/PyO3/pyo3) and [rust-cpython](https://github.com/dgrunwald/rust-cpython).
 
 Compile and distribute Python extensions written in Rust as easily as if
 they were written in C.
@@ -132,6 +132,12 @@ hello_rust-0.1.0-cp39-cp39-linux_x86_64.whl           hello_rust-0.1.0-cp39-cp39
 You can then upload the `manylinux2014` wheels to pypi using [twine](https://github.com/pypa/twine).
 
 It is possible to use any of the `manylinux` docker images: `manylinux1`, `manylinux2010` or `manylinux2014`. (Just replace `manylinux2014` in the above instructions with the alternative version you wish to use.)
+
+### Binary wheels on macOS
+
+For building wheels on macOS it is sufficient to run the `bdist_wheel` command, i.e. `setup.py bdist_wheel`.
+
+To build `universal2` wheels set the `ARCHFLAGS` environment variable to contain both `x86_64` and `arm64`, for example `ARCHFLAGS="-arch x86_64 -arch arm64"`. Wheel-building solutions such as [`cibuildwheel`](https://github.com/joerick/cibuildwheel) set this environment variable automatically.
 
 ## Commands
 
