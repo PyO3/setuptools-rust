@@ -137,7 +137,7 @@ It is possible to use any of the `manylinux` docker images: `manylinux1`, `manyl
 
 For building wheels on macOS it is sufficient to run the `bdist_wheel` command, i.e. `setup.py bdist_wheel`.
 
-To build `universal2` wheels set the `ARCHFLAGS` environment variable to contain both `x86_64` and `arm64`. Wheel-building solutions such as [`cibuildwheel`](https://github.com/joerick/cibuildwheel) set this environment variable automatically.
+To build `universal2` wheels set the `ARCHFLAGS` environment variable to contain both `x86_64` and `arm64`, for example `ARCHFLAGS="-arch x86_64 -arch arm64"`. Wheel-building solutions such as [`cibuildwheel`](https://github.com/joerick/cibuildwheel) set this environment variable automatically.
 
 ## Commands
 
