@@ -5,7 +5,7 @@
 [![readthedocs](https://readthedocs.org/projects/pip/badge/)](https://setuptools-rust.readthedocs.io/en/latest/)
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-`setuptools-rust` is a plugin for `setuptools` to build Rust Python extensions implemented with [PyO3](https://github.com/PyO3/pyo3) and [rust-cpython](https://github.com/dgrunwald/rust-cpython).
+`setuptools-rust` is a plugin for `setuptools` to build Rust Python extensions implemented with [PyO3](https://github.com/PyO3/pyo3) or [rust-cpython](https://github.com/dgrunwald/rust-cpython).
 
 Compile and distribute Python extensions written in Rust as easily as if
 they were written in C.

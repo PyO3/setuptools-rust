@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.12.0 (2020-03-08)
 ### Packaging
 - Bump minimum Python version to Python 3.6.
 
