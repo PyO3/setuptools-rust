@@ -1,10 +1,10 @@
 # Changelog
 
-## 0.12.1 (2020-03-10)
+## 0.12.1 (2021-03-11)
 ### Fixed
 - Fix some files unexpectedly missing from `sdist` command output. [#125](https://github.com/PyO3/setuptools-rust/pull/125)
 
-## 0.12.0 (2020-03-08)
+## 0.12.0 (2021-03-08)
 ### Packaging
 - Bump minimum Python version to Python 3.6.
 
