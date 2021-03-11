@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.12.1 (2020-03-10)
 ### Fixed
 - Fix some files unexpectedly missing from `sdist` command output. [#125](https://github.com/PyO3/setuptools-rust/pull/125)
 
