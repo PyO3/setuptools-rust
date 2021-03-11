@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+### Changed
+- Custom `sdist` command extends from `setuptools` instead of `distutils`. [#125](https://github.com/PyO3/setuptools-rust/pull/125)
+
 ## 0.12.0 (2020-03-08)
 ### Packaging
 - Bump minimum Python version to Python 3.6.
