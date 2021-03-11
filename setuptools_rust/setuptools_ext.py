@@ -5,7 +5,7 @@ from distutils.command.clean import clean
 
 from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
-from distutils.command.sdist import sdist
+from setuptools.command.sdist import sdist
 import sys
 import subprocess
 
@@ -39,8 +39,7 @@ def add_rust_extension(dist):
             super().initialize_options()
             self.vendor_crates = 0
 
-        def get_file_list(self):
-            super().get_file_list()
+        def make_distribution(self):
             if self.vendor_crates:
                 manifest_paths = []
                 for ext in self.distribution.rust_extensions:
@@ -76,7 +75,7 @@ def add_rust_extension(dist):
                     # Check whether `.cargo/config`/`.cargo/config.toml` already exists
                     existing_cargo_config = None
                     for filename in (f".cargo{os.sep}config", f".cargo{os.sep}config.toml"):
-                        if filename in self.filelist.allfiles:
+                        if filename in self.filelist.files:
                             existing_cargo_config = filename
                             break
                     if existing_cargo_config:
@@ -89,6 +88,7 @@ def add_rust_extension(dist):
                         f.write(cargo_config)
                     self.filelist.append(vendor_path)
                     self.filelist.append(cargo_config_path)
+            super().make_distribution()
     dist.cmdclass["sdist"] = sdist_rust_extension
 
     build_ext_base_class = dist.cmdclass.get('build_ext', build_ext)
