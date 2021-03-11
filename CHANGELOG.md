@@ -1,8 +1,8 @@
 # Changelog
 
 ## Unreleased
-### Changed
-- Custom `sdist` command extends from `setuptools` instead of `distutils`. [#125](https://github.com/PyO3/setuptools-rust/pull/125)
+### Fixed
+- Fix some files unexpectedly missing from `sdist` command output. [#125](https://github.com/PyO3/setuptools-rust/pull/125)
 
 ## 0.12.0 (2020-03-08)
 ### Packaging
