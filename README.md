@@ -13,7 +13,7 @@ they were written in C.
 ## Setup
 
 For a complete example, see
-[html-py-ever](https://github.com/PyO3/setuptools-rust/tree/master/examples/html-py-ever).
+[html-py-ever](https://github.com/PyO3/setuptools-rust/tree/main/examples/html-py-ever).
 
 First, you need to create a bunch of files:
 
@@ -104,7 +104,7 @@ By default, `develop` will create a debug build, while `install` will create a r
 
 ### Binary wheels on linux
 
-To build binary wheels on linux, you need to use the [manylinux docker container](https://github.com/pypa/manylinux). You also need a `build-wheels.sh` similar to [the one in the example](https://github.com/PyO3/setuptools-rust/blob/master/html-py-ever/build-wheels.sh), which will be run in that container.
+To build binary wheels on linux, you need to use the [manylinux docker container](https://github.com/pypa/manylinux). You also need a `build-wheels.sh` similar to [the one in the example](https://github.com/PyO3/setuptools-rust/blob/main/html-py-ever/build-wheels.sh), which will be run in that container.
 
 First, pull the `manylinux2014` Docker image:
 
@@ -149,5 +149,5 @@ To build `universal2` wheels set the `ARCHFLAGS` environment variable to contain
     extensions.
   - tomlgen\_rust - Automatically generate a Cargo.toml manifest based
     on Python package metadata. See the [example
-    project](https://github.com/PyO3/setuptools-rust/tree/master/examples/tomlgen)
+    project](https://github.com/PyO3/setuptools-rust/tree/main/examples/tomlgen)
     on GitHub for more information about this command.
