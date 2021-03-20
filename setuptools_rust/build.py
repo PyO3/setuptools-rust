@@ -27,6 +27,7 @@ from .utils import (
     binding_features,
     get_rust_target_info,
     get_rust_target_list,
+    split_platform_and_extension,
 )
 
 
@@ -65,6 +66,7 @@ class build_rust(RustCommand):
         self.build_temp = None
         self.plat_name = None
         self.target = os.getenv("CARGO_BUILD_TARGET")
+        self.cargo = os.getenv("CARGO", "cargo")
 
     def finalize_options(self) -> None:
         super().finalize_options()
@@ -246,7 +248,7 @@ class build_rust(RustCommand):
 
         if executable:
             args = (
-                ["cargo", "build", "--manifest-path", ext.path]
+                [self.cargo, "build", "--manifest-path", ext.path]
                 + feature_args
                 + target_args
                 + list(ext.args or [])
@@ -262,7 +264,7 @@ class build_rust(RustCommand):
 
         else:
             args = (
-                ["cargo", "rustc", "--lib", "--manifest-path", ext.path]
+                [self.cargo, "rustc", "--lib", "--manifest-path", ext.path]
                 + feature_args
                 + target_args
                 + list(ext.args or [])
@@ -396,13 +398,13 @@ class build_rust(RustCommand):
 
             if executable:
                 ext_path = build_ext.get_ext_fullpath(module_name)
-                # remove .so extension
-                ext_path, _ = os.path.splitext(ext_path)
-                # remove python3 extension (i.e. cpython-36m)
-                ext_path, _ = os.path.splitext(ext_path)
+                # remove extensions
+                ext_path, _, _ = split_platform_and_extension(ext_path)
 
                 # Add expected extension
-                ext_path += sysconfig.get_config_var("EXE")
+                exe = sysconfig.get_config_var("EXE")
+                if exe is not None:
+                    ext_path += exe
 
                 os.makedirs(os.path.dirname(ext_path), exist_ok=True)
                 ext.install_script(module_name.split(".")[-1], ext_path)
@@ -434,9 +436,10 @@ class build_rust(RustCommand):
             os.chmod(ext_path, mode)
 
     def get_dylib_ext_path(self, ext: RustExtension, target_fname: str) -> str:
+        assert self.plat_name is not None
         build_ext = cast(CommandBuildExt, self.get_finalized_command("build_ext"))
 
-        filename: str = build_ext.get_ext_fullpath(target_fname)
+        ext_path: str = build_ext.get_ext_fullpath(target_fname)
 
         if (ext.py_limited_api == "auto" and self._py_limited_api()) or (
             ext.py_limited_api
@@ -445,9 +448,34 @@ class build_rust(RustCommand):
             if abi3_suffix is not None:
                 so_ext = get_config_var("EXT_SUFFIX")
                 assert isinstance(so_ext, str)
-                filename = filename[: -len(so_ext)] + get_abi3_suffix()
+                ext_path = ext_path[: -len(so_ext)] + get_abi3_suffix()
 
-        return filename
+        if ".abi3." in ext_path:
+            return ext_path
+        # Examples: linux_x86_64, linux_i686, manylinux2014_aarch64, manylinux_2_24_armv7l
+        plat_name = self.plat_name.lower().replace("-", "_").replace(".", "_")
+        if not plat_name.startswith(("linux", "manylinux")):
+            return ext_path
+
+        arch_parts = []
+        arch_found = False
+        for item in plat_name.split("_"):
+            if item.startswith(("linux", "manylinux")):
+                continue
+            if item.isdigit() and not arch_found:
+                # manylinux_2_24_armv7l arch should be armv7l
+                continue
+            arch_found = True
+            arch_parts.append(item)
+        target_arch = "_".join(arch_parts)
+        host_platform = sysconfig.get_platform()
+        host_arch = host_platform.rsplit("-", 1)[1]
+        # Remove incorrect platform tag if we are cross compiling
+        if target_arch and host_arch != target_arch:
+            ext_path, _, extension = split_platform_and_extension(ext_path)
+            # rust.so, removed platform tag
+            ext_path += extension
+        return ext_path
 
     def _py_limited_api(self) -> PyLimitedApi:
         bdist_wheel = self.distribution.get_command_obj("bdist_wheel", create=False)

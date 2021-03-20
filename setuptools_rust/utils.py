@@ -1,6 +1,7 @@
+import os
 import subprocess
 from distutils.errors import DistutilsPlatformError
-from typing import List, Optional, Set, Union
+from typing import List, Optional, Set, Tuple, Union
 
 from semantic_version import Version
 from typing_extensions import Literal
@@ -58,3 +59,17 @@ def get_rust_target_list() -> List[str]:
         )
         _rust_target_list = output.splitlines()
     return _rust_target_list
+
+
+def split_platform_and_extension(ext_path: str) -> Tuple[str, str, str]:
+    """Splits an extension path into a tuple (ext_path, plat_tag, extension).
+
+    >>> split_platform_and_extension("foo/bar.platform.so")
+    ('foo/bar', '.platform', '.so')
+    """
+
+    # rust.cpython-38-x86_64-linux-gnu.so to (rust.cpython-38-x86_64-linux-gnu, .so)
+    ext_path, extension = os.path.splitext(ext_path)
+    # rust.cpython-38-x86_64-linux-gnu to (rust, .cpython-38-x86_64-linux-gnu)
+    ext_path, platform_tag = os.path.splitext(ext_path)
+    return (ext_path, platform_tag, extension)
