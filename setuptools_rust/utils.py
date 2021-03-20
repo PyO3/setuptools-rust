@@ -59,6 +59,20 @@ def get_rust_version(min_version=None):
         raise DistutilsPlatformError(f"can't get rustc version: {str(exc)}")
 
 
-def get_rust_target_info():
-    output = subprocess.check_output(["rustc", "--print", "cfg"])
+def get_rust_target_info(target_triple=None):
+    cmd = ["rustc", "--print", "cfg"]
+    if target_triple:
+        cmd.extend(['--target', target_triple])
+    output = subprocess.check_output(cmd)
     return output.splitlines()
+
+
+_rust_target_list = None
+
+def get_rust_target_list():
+    global _rust_target_list
+    if _rust_target_list is None:
+        output = subprocess.check_output(["rustc", "--print", "target-list"],
+                universal_newlines=True)
+        _rust_target_list = output.splitlines()
+    return _rust_target_list
