@@ -141,13 +141,11 @@ To build `universal2` wheels set the `ARCHFLAGS` environment variable to contain
 
 ## Commands
 
-  - build - Standard build command builds all rust extensions.
-  - build\_rust - Command builds all rust extensions.
-  - clean - Standard clean command executes cargo clean for all rust
+  - `build` - Standard build command will also build all rust extensions.
+  - `build_rust` - Command builds all rust extensions.
+  - `clean` - Standard clean command executes cargo clean for all rust
     extensions.
-  - check - Standard check command executes cargo check for all rust
-    extensions.
-  - tomlgen\_rust - Automatically generate a Cargo.toml manifest based
+  - `tomlgen_rust` - Automatically generate a Cargo.toml manifest based
     on Python package metadata. See the [example
     project](https://github.com/PyO3/setuptools-rust/tree/main/examples/tomlgen)
     on GitHub for more information about this command.
