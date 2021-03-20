@@ -124,7 +124,7 @@ class build_rust(RustCommand):
 
         # Find where to put the temporary build files created by `cargo`
         metadata_command = [
-            self.cargo,
+            "cargo",
             "metadata",
             "--manifest-path",
             ext.path,
