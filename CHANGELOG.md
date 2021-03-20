@@ -3,7 +3,7 @@
 ## Unreleased
 ### Removed
 - Remove `test_rust` command. (`python setup.py test` is deprecated.) [#129](https://github.com/PyO3/setuptools-rust/pull/129)
-- Remove `check_rust` command. [#130](https://github.com/PyO3/setuptools-rust/pull/130)
+- Remove `check_rust` command. [#131](https://github.com/PyO3/setuptools-rust/pull/131)
 
 ## 0.12.1 (2021-03-11)
 ### Fixed
