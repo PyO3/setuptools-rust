@@ -1,5 +1,4 @@
 from .build import build_rust
-from .check import check_rust
 from .clean import clean_rust
 from .extension import Binding, RustExtension, Strip
 from .tomlgen import tomlgen_rust, find_rust_extensions
@@ -11,7 +10,6 @@ __all__ = (
     "RustExtension",
     "Strip",
     "build_rust",
-    "check_rust",
     "clean_rust",
     "find_rust_extensions",
     "tomlgen_rust",

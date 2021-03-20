@@ -1,6 +1,5 @@
 import os
 from distutils import log
-from distutils.command.check import check
 from distutils.command.clean import clean
 
 from setuptools.command.build_ext import build_ext
@@ -113,14 +112,6 @@ def add_rust_extension(dist):
             if not self.dry_run:
                 self.run_command("clean_rust")
     dist.cmdclass['clean'] = clean_rust_extension
-
-    check_base_class = dist.cmdclass.get('check', check)
-
-    class check_rust_extension(check_base_class):
-        def run(self):
-            check_base_class.run(self)
-            self.run_command("check_rust")
-    dist.cmdclass["check"] = check_rust_extension
 
     install_base_class = dist.cmdclass.get('install', install)
 
