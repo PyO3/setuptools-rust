@@ -91,7 +91,7 @@ test_bench_selector_python[python.html]           36,145.0260 (>1000.0)  46,582.
 
 **building and installing**
 ```
-pip install -r setuptools-rust setuptools wheel
+pip install setuptools-rust setuptools wheel
 python3 setup.py install --user
 ```
 
