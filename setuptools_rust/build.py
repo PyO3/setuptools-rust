@@ -50,6 +50,7 @@ class build_rust(RustCommand):
         self.build_temp = None
         self.plat_name = None
         self.target = os.getenv("CARGO_BUILD_TARGET")
+        self.cargo = os.getenv("CARGO", "cargo")
 
     def finalize_options(self):
         super().finalize_options()
@@ -123,7 +124,7 @@ class build_rust(RustCommand):
 
         # Find where to put the temporary build files created by `cargo`
         metadata_command = [
-            "cargo",
+            self.cargo,
             "metadata",
             "--manifest-path",
             ext.path,
@@ -153,7 +154,7 @@ class build_rust(RustCommand):
 
         if executable:
             args = (
-                ["cargo", "build", "--manifest-path", ext.path]
+                [self.cargo, "build", "--manifest-path", ext.path]
                 + feature_args
                 + target_args
                 + list(ext.args or [])
@@ -169,7 +170,7 @@ class build_rust(RustCommand):
 
         else:
             args = (
-                ["cargo", "rustc", "--lib", "--manifest-path", ext.path]
+                [self.cargo, "rustc", "--lib", "--manifest-path", ext.path]
                 + feature_args
                 + target_args
                 + list(ext.args or [])
