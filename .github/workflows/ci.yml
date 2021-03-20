@@ -155,3 +155,32 @@ jobs:
           pip install rust_with_cffi/dist/rust_with_cffi*.whl
           python -c "from rust_with_cffi import rust; assert rust.rust_func() == 14"
           python -c "from rust_with_cffi.cffi import lib; assert lib.cffi_func() == 15"
+
+  test-cross:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - name: Install cross
+        run: cargo install cross
+      - name: Build package
+        run: pip install -e .
+      - name: Build an abi3 wheel using cross
+        shell: bash
+        env:
+          CARGO: cross
+          CARGO_BUILD_TARGET: x86_64-unknown-linux-gnu
+        run: |
+          cd examples/rust_with_cffi/
+          python --version
+          pip install wheel
+          python setup.py bdist_wheel --py-limited-api=cp35
+          ls -la dist/
