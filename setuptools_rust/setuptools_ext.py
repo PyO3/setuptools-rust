@@ -91,14 +91,23 @@ def add_rust_extension(dist):
     dist.cmdclass["sdist"] = sdist_rust_extension
 
     build_ext_base_class = dist.cmdclass.get('build_ext', build_ext)
+    build_ext_options = build_ext_base_class.user_options.copy()
+    build_ext_options.append(("target", None, "Build for the target triple"))
 
     class build_ext_rust_extension(build_ext_base_class):
+        user_options = build_ext_options
+
+        def initialize_options(self):
+            super().initialize_options()
+            self.target = None
+
         def run(self):
             if self.distribution.rust_extensions:
                 log.info("running build_rust")
                 build_rust = self.get_finalized_command("build_rust")
                 build_rust.inplace = self.inplace
                 build_rust.plat_name = self.plat_name
+                build_rust.target = self.target
                 build_rust.run()
 
             build_ext_base_class.run(self)
@@ -156,9 +165,17 @@ def add_rust_extension(dist):
 
     if bdist_wheel is not None:
         bdist_wheel_base_class = dist.cmdclass.get("bdist_wheel", bdist_wheel)
+        bdist_wheel_options = bdist_wheel_base_class.user_options.copy()
+        bdist_wheel_options.append(("target", None, "Build for the target triple"))
 
         # this is for console entries
         class bdist_wheel_rust_extension(bdist_wheel_base_class):
+            user_options = bdist_wheel_options
+
+            def initialize_options(self):
+                super().initialize_options()
+                self.target = None
+
             def finalize_options(self):
                 scripts = []
                 for ext in self.distribution.rust_extensions:
