@@ -138,6 +138,11 @@ class build_rust(RustCommand):
 
         features = set(ext.features)
         features.update(rust_features(binding=ext.binding))
+        if ext.py_limited_api and ext.binding == Binding.PyO3:
+            # Pass pyo3/abi3-pyXX feature to pyo3 automatically
+            # py_limited_api: cpXX, remove `cp` prefix
+            python_version = ext.py_limited_api[2:]
+            features.add(f"pyo3/abi3-py{python_version}")
 
         debug_build = ext.debug if ext.debug is not None else self.inplace
         debug_build = self.debug if self.debug is not None else debug_build
