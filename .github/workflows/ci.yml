@@ -137,7 +137,7 @@ jobs:
           cd examples/rust_with_cffi/
           python --version
           pip install wheel
-          python setup.py bdist_wheel --py-limited-api=cp35
+          python setup.py bdist_wheel --py-limited-api=cp36
           ls -la dist/
 
       # Now we switch to a differnet Python version and ensure we can install
