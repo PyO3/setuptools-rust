@@ -162,7 +162,6 @@ def add_rust_extension(dist):
             def finalize_options(self):
                 scripts = []
                 for ext in self.distribution.rust_extensions:
-                    ext.py_limited_api = self.py_limited_api
                     scripts.extend(ext.entry_points())
 
                 if scripts:

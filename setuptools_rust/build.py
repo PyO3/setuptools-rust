@@ -10,11 +10,13 @@ from distutils.errors import (
     DistutilsExecError,
     DistutilsFileError,
 )
+from distutils.sysconfig import get_config_var
+from setuptools.command.build_ext import get_abi3_suffix
 from subprocess import check_output
 
 from .command import RustCommand
 from .extension import Binding, RustExtension, Strip
-from .utils import rust_features, get_rust_target_info
+from .utils import binding_features, get_rust_target_info
 
 
 class build_rust(RustCommand):
@@ -136,13 +138,11 @@ class build_rust(RustCommand):
                 f"can't find Rust extension project file: {ext.path}"
             )
 
-        features = set(ext.features)
-        features.update(rust_features(binding=ext.binding))
-        if ext.py_limited_api and ext.binding == Binding.PyO3 and platform.python_implementation() != 'PyPy':
-            # Pass pyo3/abi3-pyXX feature to pyo3 automatically
-            # py_limited_api: cpXX, remove `cp` prefix
-            python_version = ext.py_limited_api[2:]
-            features.add(f"pyo3/abi3-py{python_version}")
+        bdist_wheel = self.get_finalized_command('bdist_wheel')
+        features = {
+            *ext.features,
+            *binding_features(ext, py_limited_api=bdist_wheel.py_limited_api)
+        }
 
         debug_build = ext.debug if ext.debug is not None else self.inplace
         debug_build = self.debug if self.debug is not None else debug_build
@@ -339,18 +339,26 @@ class build_rust(RustCommand):
             mode |= (mode & 0o444) >> 2  # copy R bits to X
             os.chmod(ext_path, mode)
 
-    def get_dylib_ext_path(self, ext, target_fname):
+    def get_dylib_ext_path(
+        self,
+        ext: RustExtension,
+        target_fname: str
+    ) -> str:
         build_ext = self.get_finalized_command("build_ext")
-        # Technically it's supposed to contain a
-        # `setuptools.Extension`, but in practice the only attribute it
-        # checks is `ext.py_limited_api`.
-        modpath = target_fname.split('.')[-1]
-        assert modpath not in build_ext.ext_map
-        build_ext.ext_map[modpath] = ext
-        try:
-            return build_ext.get_ext_fullpath(target_fname)
-        finally:
-            del build_ext.ext_map[modpath]
+        bdist_wheel = self.get_finalized_command("bdist_wheel")
+
+        filename = build_ext.get_ext_fullpath(target_fname)
+
+        if (
+            (ext.py_limited_api == "auto" and bdist_wheel.py_limited_api)
+            or (ext.py_limited_api)
+        ):
+            abi3_suffix = get_abi3_suffix()
+            if abi3_suffix is not None:
+                so_ext = get_config_var('EXT_SUFFIX')
+                filename = filename[:-len(so_ext)] + get_abi3_suffix()
+
+        return filename
 
     @staticmethod
     def create_universal2_binary(output_path, input_paths):

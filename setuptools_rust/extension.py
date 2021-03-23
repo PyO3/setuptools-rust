@@ -3,6 +3,7 @@ import re
 from distutils.errors import DistutilsSetupError
 from enum import IntEnum, auto
 from typing import Dict, List, Optional, Union
+from typing_extensions import Literal
 
 import semantic_version
 
@@ -72,10 +73,23 @@ class RustExtension:
         optional: if it is true, a build failure in the extension will not
             abort the build process, but instead simply not install the failing
             extension.
-        py_limited_api: Same as `py_limited_api` on
-            `setuptools.Extension`. Note that if you set this to True, your extension
-            must pass the appropriate feature flags to pyo3 (ensuring that `abi3`
-            feature is enabled).
+        py_limited_api: Similar to ``py_limited_api`` on
+            ``setuptools.Extension``, this controls whether the built extension
+            should be considered compatible with the PEP 384 "limited API".
+
+            - ``'auto'``: the ``--py-limited-api`` option of
+              ``setup.py bdist_wheel`` will control whether the extension is
+              built as a limited api extension. The corresponding
+              ``pyo3/abi3-pyXY`` feature will be set accordingly.
+              This is the recommended setting, as it allows
+              ``python setup.py install`` to build a version-specific extension
+              for best performance.
+
+            - ``True``: the extension is assumed to be compatible with the
+              limited abi. You must ensure this is the case (e.g. by setting
+              the ``pyo3/abi3`` feature).
+
+            - ``False``: the extension is version-specific.
     """
 
     def __init__(
@@ -93,7 +107,7 @@ class RustExtension:
         script: bool = False,
         native: bool = False,
         optional: bool = False,
-        py_limited_api: bool = False,
+        py_limited_api: Union[bool, Literal["auto"]] = "auto",
     ):
         if isinstance(target, dict):
             name = "; ".join("%s=%s" % (key, val) for key, val in target.items())
@@ -114,9 +128,6 @@ class RustExtension:
         self.native = native
         self.optional = optional
         self.py_limited_api = py_limited_api
-        # We pass this over to setuptools in one place, and it wants this
-        # attribute to exist.
-        self._links_to_dynamic = False
 
         if features is None:
             features = []

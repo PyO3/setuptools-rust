@@ -1,35 +1,32 @@
-import sys
 import subprocess
 from distutils.errors import DistutilsPlatformError
+from typing import Set, Union
+from typing_extensions import Literal
 
 import semantic_version
 
-from .extension import Binding
+from .extension import Binding, RustExtension
 
 
-def rust_features(ext=True, binding=Binding.PyO3):
-    version = sys.version_info
-
-    if binding in (Binding.NoBinding, Binding.Exec):
-        return ()
-    elif binding is Binding.PyO3:
-        if version >= (3, 6):
-            if ext:
-                return {"pyo3/extension-module"}
-            else:
-                return {}
-        else:
-            raise DistutilsPlatformError(f"unsupported python version: {sys.version}")
-    elif binding is Binding.RustCPython:
-        if (3, 3) < version:
-            if ext:
-                return {"cpython/python3-sys", "cpython/extension-module"}
-            else:
-                return {"cpython/python3-sys"}
-        else:
-            raise DistutilsPlatformError(f"unsupported python version: {sys.version}")
+def binding_features(
+    ext: RustExtension,
+    py_limited_api: Union[Literal["cp36", "cp37", "cp38", "cp39"], bool],
+) -> Set[str]:
+    if ext.binding in (Binding.NoBinding, Binding.Exec):
+        return set()
+    elif ext.binding is Binding.PyO3:
+        features = {"pyo3/extension-module"}
+        if ext.py_limited_api == "auto":
+            if isinstance(py_limited_api, str):
+                python_version = py_limited_api[2:]
+                features.add(f"pyo3/abi3-py{python_version}")
+            elif py_limited_api:
+                features.add(f"pyo3/abi3")
+        return features
+    elif ext.binding is Binding.RustCPython:
+        return {"cpython/python3-sys", "cpython/extension-module"}
     else:
-        raise DistutilsPlatformError(f"unknown Rust binding: '{binding}'")
+        raise DistutilsPlatformError(f"unknown Rust binding: '{ext.binding}'")
 
 
 def get_rust_version(min_version=None):
