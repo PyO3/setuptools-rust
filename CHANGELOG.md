@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+### Added
+- Add new default `"auto"` setting for `RustExtension.py_limited_api`. [#137](https://github.com/PyO3/setuptools-rust/pull/137)
+
 ### Removed
 - Remove `test_rust` command. (`python setup.py test` is deprecated.) [#129](https://github.com/PyO3/setuptools-rust/pull/129)
 - Remove `check_rust` command. [#131](https://github.com/PyO3/setuptools-rust/pull/131)
