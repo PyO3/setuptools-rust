@@ -19,7 +19,7 @@ setup(
     ],
     packages=["rust_with_cffi"],
     rust_extensions=[
-        RustExtension("rust_with_cffi.rust"),
+        RustExtension("rust_with_cffi.rust", py_limited_api="auto"),
     ],
     cffi_modules=["cffi_module.py:ffi"],
     install_requires=["cffi"],
