@@ -49,7 +49,7 @@ class build_rust(RustCommand):
         self.qbuild = None
         self.build_temp = None
         self.plat_name = None
-        self.target = None
+        self.target = os.getenv("CARGO_BUILD_TARGET")
 
     def finalize_options(self):
         super().finalize_options()
@@ -67,9 +67,7 @@ class build_rust(RustCommand):
         # we'll target a 32-bit Rust build.
         # Automatic target detection can be overridden via the CARGO_BUILD_TARGET
         # environment variable or --target command line option
-        if os.getenv("CARGO_BUILD_TARGET"):
-            return os.environ["CARGO_BUILD_TARGET"]
-        elif self.target:
+        if self.target:
             return self.target
         elif self.plat_name == "win32":
             return "i686-pc-windows-msvc"

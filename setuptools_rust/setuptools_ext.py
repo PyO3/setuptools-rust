@@ -99,7 +99,7 @@ def add_rust_extension(dist):
 
         def initialize_options(self):
             super().initialize_options()
-            self.target = None
+            self.target = os.getenv("CARGO_BUILD_TARGET")
 
         def run(self):
             if self.distribution.rust_extensions:
@@ -174,7 +174,7 @@ def add_rust_extension(dist):
 
             def initialize_options(self):
                 super().initialize_options()
-                self.target = None
+                self.target = os.getenv("CARGO_BUILD_TARGET")
 
             def finalize_options(self):
                 scripts = []
