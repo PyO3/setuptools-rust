@@ -163,7 +163,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.6
+          python-version: 3.8
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -177,10 +177,10 @@ jobs:
         shell: bash
         env:
           CARGO: cross
-          CARGO_BUILD_TARGET: x86_64-unknown-linux-gnu
+          CARGO_BUILD_TARGET: aarch64-unknown-linux-gnu
         run: |
           cd examples/namespace_package
-          docker build -t cross-pyo3:x86_64-unknown-linux-gnu .
+          docker build -t cross-pyo3:aarch64-unknown-linux-gnu .
           python -m pip install wheel
           python setup.py bdist_wheel --py-limited-api=cp36
           ls -la dist/
