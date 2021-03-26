@@ -173,14 +173,15 @@ jobs:
         run: cargo install cross
       - name: Build package
         run: pip install -e .
-      - name: Build an abi3 wheel using cross
+      - name: Build wheel using cross
         shell: bash
         env:
           CARGO: cross
           CARGO_BUILD_TARGET: aarch64-unknown-linux-gnu
+          PYO3_CROSS_LIB_DIR: /opt/python/cp38-cp38/lib
         run: |
           cd examples/namespace_package
           docker build -t cross-pyo3:aarch64-unknown-linux-gnu .
           python -m pip install wheel
-          python setup.py bdist_wheel --py-limited-api=cp36
+          python setup.py bdist_wheel --plat-name manylinux2014_aarch64
           ls -la dist/
