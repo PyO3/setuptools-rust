@@ -75,7 +75,7 @@ jobs:
               continue
               fi
 
-              tox -c $example_dir -e py
+              tox -c $example_dir -e py -vvvv
           done
 
       - name: Test macOS universal2
