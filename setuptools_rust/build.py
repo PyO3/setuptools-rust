@@ -37,6 +37,7 @@ class build_rust(RustCommand):
             "t",
             "directory for temporary files (cargo 'target' directory) ",
         ),
+        ("target", None, "Build for the target triple"),
     ]
     boolean_options = ["inplace", "debug", "release", "qbuild"]
 
@@ -48,6 +49,7 @@ class build_rust(RustCommand):
         self.qbuild = None
         self.build_temp = None
         self.plat_name = None
+        self.target = os.getenv("CARGO_BUILD_TARGET")
 
     def finalize_options(self):
         super().finalize_options()
@@ -64,9 +66,9 @@ class build_rust(RustCommand):
         # If we are on a 64-bit machine, but running a 32-bit Python, then
         # we'll target a 32-bit Rust build.
         # Automatic target detection can be overridden via the CARGO_BUILD_TARGET
-        # environment variable.
-        if os.getenv("CARGO_BUILD_TARGET"):
-            return os.environ["CARGO_BUILD_TARGET"]
+        # environment variable or --target command line option
+        if self.target:
+            return self.target
         elif self.plat_name == "win32":
             return "i686-pc-windows-msvc"
         elif self.plat_name == "win-amd64":
