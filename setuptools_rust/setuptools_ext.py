@@ -108,6 +108,7 @@ def add_rust_extension(dist):
                 build_rust.inplace = self.inplace
                 build_rust.plat_name = self.plat_name
                 build_rust.target = self.target
+                build_rust.verbose = self.verbose
                 build_rust.run()
 
             build_ext_base_class.run(self)

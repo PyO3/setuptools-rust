@@ -163,7 +163,9 @@ class build_rust(RustCommand):
             if quiet:
                 args.append("-q")
             elif self.verbose:
-                args.append("--verbose")
+                # cargo only have -vv
+                verbose_level = 'v' * min(self.verbose, 2)
+                args.append(f"-{verbose_level}")
 
         else:
             args = (
@@ -177,7 +179,9 @@ class build_rust(RustCommand):
             if quiet:
                 args.append("-q")
             elif self.verbose:
-                args.append("--verbose")
+                # cargo only have -vv
+                verbose_level = 'v' * min(self.verbose, 2)
+                args.append(f"-{verbose_level}")
 
             args.extend(["--", "--crate-type", "cdylib"])
             args.extend(ext.rustc_flags or [])
