@@ -19,11 +19,7 @@ setup(
     ],
     packages=["rust_with_cffi"],
     rust_extensions=[
-        RustExtension(
-            "rust_with_cffi.rust",
-            py_limited_api=True,
-            features=[] if platform.python_implementation() == 'PyPy' else ["pyo3/abi3"]
-        ),
+        RustExtension("rust_with_cffi.rust", py_limited_api="auto"),
     ],
     cffi_modules=["cffi_module.py:ffi"],
     install_requires=["cffi"],

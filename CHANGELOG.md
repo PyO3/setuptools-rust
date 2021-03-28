@@ -3,6 +3,7 @@
 ## Unreleased
 ### Added
 - Add `--target` command line option for specifying target triple. [#136](https://github.com/PyO3/setuptools-rust/pull/136)
+- Add new default `"auto"` setting for `RustExtension.py_limited_api`. [#137](https://github.com/PyO3/setuptools-rust/pull/137)
 - Support very verbose cargo build.rs output. [#140](https://github.com/PyO3/setuptools-rust/pull/140)
 
 ### Removed
