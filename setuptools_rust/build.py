@@ -5,10 +5,12 @@ import platform
 import shutil
 import sys
 import subprocess
+import sysconfig
 from distutils.errors import (
     CompileError,
     DistutilsExecError,
     DistutilsFileError,
+    DistutilsPlatformError,
 )
 from distutils.sysconfig import get_config_var
 from setuptools.command.build_ext import get_abi3_suffix
@@ -16,8 +18,14 @@ from subprocess import check_output
 
 from .command import RustCommand
 from .extension import Binding, RustExtension, Strip
-from .utils import binding_features, get_rust_target_info
+from .utils import binding_features, get_rust_target_info, get_rust_target_list
 
+class _TargetInfo:
+    def __init__(self, triple=None, cross_lib=None, linker=None, link_args=None):
+        self.triple = triple
+        self.cross_lib = cross_lib
+        self.linker = linker
+        self.link_args = link_args
 
 class build_rust(RustCommand):
     """ Command for building Rust crates via cargo. """
@@ -64,20 +72,65 @@ class build_rust(RustCommand):
             ("inplace", "inplace"),
         )
 
-    def get_target_triple(self):
+    def get_target_info(self):
         # If we are on a 64-bit machine, but running a 32-bit Python, then
         # we'll target a 32-bit Rust build.
         # Automatic target detection can be overridden via the CARGO_BUILD_TARGET
         # environment variable or --target command line option
         if self.target:
-            return self.target
+            return _TargetInfo(self.target)
         elif self.plat_name == "win32":
-            return "i686-pc-windows-msvc"
+            return _TargetInfo("i686-pc-windows-msvc")
         elif self.plat_name == "win-amd64":
-            return "x86_64-pc-windows-msvc"
+            return _TargetInfo("x86_64-pc-windows-msvc")
         elif self.plat_name.startswith("macosx-") and platform.machine() == "x86_64":
             # x86_64 or arm64 macOS targeting x86_64
-            return "x86_64-apple-darwin"
+            return _TargetInfo("x86_64-apple-darwin")
+        else:
+            return self.get_nix_target_info()
+
+    def get_nix_target_info(self):
+        # See https://github.com/PyO3/setuptools-rust/issues/138
+        # This is to support cross compiling on *NIX, where plat_name isn't
+        # necessarily the same as the system we are running on.  *NIX systems
+        # have more detailed information available in sysconfig. We need that
+        # because plat_name doesn't give us information on e.g., glibc vs musl.
+        host_type = sysconfig.get_config_var('HOST_GNU_TYPE')
+        build_type = sysconfig.get_config_var('BUILD_GNU_TYPE')
+
+        if not host_type or host_type == build_type:
+            # not *NIX, or not cross compiling
+            return _TargetInfo()
+
+        stdlib = sysconfig.get_path('stdlib')
+        cross_lib = os.path.dirname(stdlib)
+
+        bldshared = sysconfig.get_config_var('BLDSHARED')
+        if not bldshared:
+            linker = None
+            linker_args = None
+        else:
+            bldshared = bldshared.split()
+            linker = bldshared[0]
+            linker_args = bldshared[1:]
+
+        # hopefully an exact match
+        targets = get_rust_target_list()
+        if host_type in targets:
+            return _TargetInfo(host_type, cross_lib, linker, linker_args)
+
+        # the vendor field can be ignored, so x86_64-pc-linux-gnu is compatible
+        # with x86_64-unknown-linux-gnu
+        components = host_type.split('-')
+        if len(components) == 4:
+            components[1] = 'unknown'
+            host_type2 = '-'.join(components)
+            if host_type2 in targets:
+                return _TargetInfo(host_type2, cross_lib, linker, linker_args)
+
+        raise DistutilsPlatformError(
+                "Don't know the correct rust target for system type %s. Please "
+                "set the CARGO_BUILD_TARGET environment variable." % host_type)
 
     def run_for_extension(self, ext: RustExtension):
         arch_flags = os.getenv("ARCHFLAGS")
@@ -99,7 +152,11 @@ class build_rust(RustCommand):
     def build_extension(self, ext: RustExtension, target_triple=None):
         executable = ext.binding == Binding.Exec
 
-        rust_target_info = get_rust_target_info()
+        if target_triple is None:
+            target_info = self.get_target_info()
+        else:
+            target_info = _TargetInfo(target_triple)
+        rust_target_info = get_rust_target_info(target_info.triple)
 
         # Make sure that if pythonXX-sys is used, it builds against the current
         # executing python interpreter.
@@ -116,12 +173,15 @@ class build_rust(RustCommand):
                 "PYO3_PYTHON": os.environ.get("PYO3_PYTHON", sys.executable),
             }
         )
+
+        if target_info.cross_lib:
+            env.setdefault("PYO3_CROSS_LIB_DIR", target_info.cross_lib)
+
         rustflags = ""
 
-        target_triple = target_triple or self.get_target_triple()
         target_args = []
-        if target_triple is not None:
-            target_args = ["--target", target_triple]
+        if target_info.triple is not None:
+            target_args = ["--target", target_info.triple]
 
         # Find where to put the temporary build files created by `cargo`
         metadata_command = [
@@ -191,6 +251,12 @@ class build_rust(RustCommand):
             args.extend(["--", "--crate-type", "cdylib"])
             args.extend(ext.rustc_flags or [])
 
+            if target_info.linker is not None:
+                args.extend(["-C", "linker=" + target_info.linker])
+            # We're ignoring target_info.link_args for now because we're not
+            # sure if they will always do the right thing. Might help with some
+            # of the OS-specific logic below if it does.
+
             # OSX requires special linker argument
             if sys.platform == "darwin":
                 args.extend(
@@ -240,7 +306,7 @@ class build_rust(RustCommand):
             suffix = "release"
 
         # location of cargo compiled files
-        artifactsdir = os.path.join(target_dir, target_triple or "", suffix)
+        artifactsdir = os.path.join(target_dir, target_info.triple or "", suffix)
         dylib_paths = []
 
         if executable:
