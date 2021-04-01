@@ -193,7 +193,6 @@ jobs:
           cross-expose cffi
           pip install wheel
           pip install -e ../../
-          unset CARGO_BUILD_TARGET
           python setup.py bdist_wheel --py-limited-api=cp36
           ls -la dist/
           ' > build-wheels.sh
