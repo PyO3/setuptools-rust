@@ -50,28 +50,31 @@ class RustExtension:
     """Used to define a rust extension module and its build configuration.
 
     Args:
-        target: The full name of the extension, including any packages i.e.
-            *not* a filename or pathname, but Python dotted name. It is possible to
-            specify multiple binaries, if extension uses ``Binding.Exec`` binding mode.
-            In that case first argument has to be dictionary. Keys of the
-            dictionary corresponds to compiled rust binaries and values are full
-            name of the executable inside python package.
-        path: Path to the ``Cargo.toml`` manifest file
-        args: A list of extra argumenents to be passed to cargo.
-        features: A list of features to also build.
+        target: The full Python dotted name of the extension, including any
+            packages, i.e *not* a filename or pathname. It is possible to
+            specify multiple binaries, if extension uses ``Binding.Exec``
+            binding mode. In that case first argument has to be dictionary.
+            Keys of the dictionary corresponds to compiled rust binaries and
+            values are full name of the executable inside python package.
+        path: Path to the ``Cargo.toml`` manifest file.
+        args: A list of extra argumenents to be passed to Cargo. For example,
+            ``args=["--no-default-features"]`` will disable the default
+            features listed in ``Cargo.toml``.
+        features: A list of Cargo features to also build.
         rust_version: Minimum Rust compiler version required for this
             extension.
         quiet: Suppress Cargo's output.
         debug: Controls whether ``--debug`` or ``--release`` is passed to
-            cargo. If set to `None` (the default) then build type is auto-detect.
-            Inplace build is debug build otherwise release.
-        binding: Controls which python binding is in use.
+            Cargo. If set to `None` (the default) then build type is
+            automatic: ``inplace`` build will be a debug build, ``install``
+            and ``wheel`` builds will be release.
+        binding: Informs ``setuptools_rust`` which Python binding is in use.
         strip: Strip symbols from final file. Does nothing for debug build.
         script: Generate console script for executable if ``Binding.Exec`` is
             used.
         native: Build extension or executable with ``--target-cpu=native``.
-        optional: if it is true, a build failure in the extension will not
-            abort the build process, but instead simply not install the failing
+        optional: If it is true, a build failure in the extension will not
+            abort the build process, and instead simply not install the failing
             extension.
         py_limited_api: Similar to ``py_limited_api`` on
             ``setuptools.Extension``, this controls whether the built extension
