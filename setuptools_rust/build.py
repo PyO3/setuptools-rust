@@ -64,6 +64,9 @@ class build_rust(RustCommand):
     def finalize_options(self):
         super().finalize_options()
 
+        if self.plat_name is None:
+            self.plat_name = self.get_finalized_command('build').plat_name
+
         # Inherit settings from the `build_ext` command
         self.set_undefined_options(
             "build_ext",
