@@ -215,6 +215,9 @@ def add_rust_extension(dist):
                         self.bdist_dir,
                         "macosx-{}-universal2".format(macos_target)
                     )
+
+                if self.universal:
+                    return "py3", "none", plat
                 return python, abi, plat
         dist.cmdclass["bdist_wheel"] = bdist_wheel_rust_extension
 
