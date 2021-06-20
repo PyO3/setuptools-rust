@@ -219,6 +219,25 @@ def add_rust_extension(dist):
         dist.cmdclass["bdist_wheel"] = bdist_wheel_rust_extension
 
 
+def patch_distutils_build():
+    '''Patch distutils to use `has_ext_modules()`
+
+    See https://github.com/pypa/distutils/pull/43
+    '''
+    from distutils.command import build as _build
+
+    class build(_build.build):
+        def finalize_options(self):
+            build_lib_user_specified = self.build_lib is not None
+            super().finalize_options()
+            if not build_lib_user_specified:
+                if self.distribution.has_ext_modules():
+                    self.build_lib = self.build_platlib
+                else:
+                    self.build_lib = self.build_purelib
+
+    _build.build = build
+
 
 def rust_extensions(dist, attr, value):
     assert attr == "rust_extensions"
@@ -229,4 +248,5 @@ def rust_extensions(dist, attr, value):
     )
 
     if dist.rust_extensions:
+        patch_distutils_build()
         add_rust_extension(dist)
