@@ -104,7 +104,7 @@ By default, `develop` will create a debug build, while `install` will create a r
 
 ### Binary wheels on linux
 
-To build binary wheels on linux, you need to use the [manylinux docker container](https://github.com/pypa/manylinux). You also need a `build-wheels.sh` similar to [the one in the example](https://github.com/PyO3/setuptools-rust/blob/main/examples/html-py-ever/build-wheels.sh), which will be run in that container. `build-wheels.sh` must be executable.
+To build binary wheels on linux, you need to use the [manylinux docker container](https://github.com/pypa/manylinux). You also need a `build-wheels.sh` similar to [the one in the example](https://github.com/PyO3/setuptools-rust/blob/main/examples/html-py-ever/build-wheels.sh), which will be run in that container.
 
 First, pull the `manylinux2014` Docker image:
 
@@ -115,7 +115,7 @@ docker pull quay.io/pypa/manylinux2014_x86_64
 Then use the following command to build wheels for supported Python versions:
 
 ```bash
-docker run --rm -v `pwd`:/io quay.io/pypa/manylinux2014_x86_64 /io/build-wheels.sh
+docker run --rm -v `pwd`:/io quay.io/pypa/manylinux2014_x86_64 bash /io/build-wheels.sh
 ```
 
 This will create wheels in the `dist` directory:
