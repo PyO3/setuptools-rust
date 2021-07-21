@@ -386,11 +386,12 @@ class build_rust(RustCommand):
                 # remove python3 extension (i.e. cpython-36m)
                 ext_path, _ = os.path.splitext(ext_path)
 
+                os.makedirs(os.path.dirname(ext_path), exist_ok=True)
                 ext.install_script(ext_path)
             else:
                 ext_path = self.get_dylib_ext_path(ext, target_fname)
+                os.makedirs(os.path.dirname(ext_path), exist_ok=True)
 
-            os.makedirs(os.path.dirname(ext_path), exist_ok=True)
             shutil.copyfile(dylib_path, ext_path)
 
             if sys.platform != "win32" and not debug_build:
