@@ -184,7 +184,7 @@ class RustExtension:
             dirname, name = os.path.split(ext_path)
             file = os.path.join(dirname, "_gen_%s.py" % name)
             with open(file, "w") as f:
-                f.write(TMPL.format({"name": name}))
+                f.write(TMPL.format(name=name))
 
 
 TMPL = """
