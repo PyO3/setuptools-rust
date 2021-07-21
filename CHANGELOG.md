@@ -13,6 +13,7 @@
 ### Fixed
 - Use info from sysconfig when cross-compiling. [#139](https://github.com/PyO3/setuptools-rust/pull/139)
 - Put Rust extension module binary under `build/lib.*` directory. [#150](https://github.com/PyO3/setuptools-rust/pull/150)
+- Fix `Exec` binding with console scripts. [#154](https://github.com/PyO3/setuptools-rust/pull/154)
 
 ## 0.12.1 (2021-03-11)
 ### Fixed
