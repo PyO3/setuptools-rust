@@ -20,13 +20,14 @@ class Binding(IntEnum):
         NoBinding: Bring your own bindings for the extension.
         Exec: Build an executable instead of an extension.
     """
+
     PyO3 = auto()
     RustCPython = auto()
     NoBinding = auto()
     Exec = auto()
 
     def __repr__(self):
-         return f"{self.__class__.__name__}.{self.name}"
+        return f"{self.__class__.__name__}.{self.name}"
 
 
 class Strip(IntEnum):
@@ -38,12 +39,13 @@ class Strip(IntEnum):
         Debug: Strip debug symbols.
         All: Strip all symbols.
     """
+
     No = auto()
     Debug = auto()
     All = auto()
 
     def __repr__(self):
-         return f"{self.__class__.__name__}.{self.name}"
+        return f"{self.__class__.__name__}.{self.name}"
 
 
 class RustExtension:
@@ -142,7 +144,7 @@ class RustExtension:
         self.path = path
 
     def get_lib_name(self):
-        """ Parse Cargo.toml to get the name of the shared library. """
+        """Parse Cargo.toml to get the name of the shared library."""
         # We import in here to make sure the the setup_requires are already installed
         import toml
 

@@ -4,8 +4,9 @@ import subprocess
 from .command import RustCommand
 from .extension import RustExtension
 
+
 class clean_rust(RustCommand):
-    """Clean Rust extensions. """
+    """Clean Rust extensions."""
 
     description = "clean Rust extensions (compile/link to build directory)"
 

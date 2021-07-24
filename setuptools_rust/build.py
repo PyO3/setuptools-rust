@@ -34,8 +34,9 @@ class _TargetInfo:
         self.linker = linker
         self.link_args = link_args
 
+
 class build_rust(RustCommand):
-    """ Command for building Rust crates via cargo. """
+    """Command for building Rust crates via cargo."""
 
     description = "build Rust extensions (compile/link to build directory)"
 
@@ -72,7 +73,7 @@ class build_rust(RustCommand):
         super().finalize_options()
 
         if self.plat_name is None:
-            self.plat_name = self.get_finalized_command('build').plat_name
+            self.plat_name = self.get_finalized_command("build").plat_name
 
         # Inherit settings from the `build_ext` command
         self.set_undefined_options(
@@ -105,17 +106,17 @@ class build_rust(RustCommand):
         # necessarily the same as the system we are running on.  *NIX systems
         # have more detailed information available in sysconfig. We need that
         # because plat_name doesn't give us information on e.g., glibc vs musl.
-        host_type = sysconfig.get_config_var('HOST_GNU_TYPE')
-        build_type = sysconfig.get_config_var('BUILD_GNU_TYPE')
+        host_type = sysconfig.get_config_var("HOST_GNU_TYPE")
+        build_type = sysconfig.get_config_var("BUILD_GNU_TYPE")
 
         if not host_type or host_type == build_type:
             # not *NIX, or not cross compiling
             return _TargetInfo()
 
-        stdlib = sysconfig.get_path('stdlib')
+        stdlib = sysconfig.get_path("stdlib")
         cross_lib = os.path.dirname(stdlib)
 
-        bldshared = sysconfig.get_config_var('BLDSHARED')
+        bldshared = sysconfig.get_config_var("BLDSHARED")
         if not bldshared:
             linker = None
             linker_args = None
@@ -131,16 +132,17 @@ class build_rust(RustCommand):
 
         # the vendor field can be ignored, so x86_64-pc-linux-gnu is compatible
         # with x86_64-unknown-linux-gnu
-        components = host_type.split('-')
+        components = host_type.split("-")
         if len(components) == 4:
-            components[1] = 'unknown'
-            host_type2 = '-'.join(components)
+            components[1] = "unknown"
+            host_type2 = "-".join(components)
             if host_type2 in targets:
                 return _TargetInfo(host_type2, cross_lib, linker, linker_args)
 
         raise DistutilsPlatformError(
-                "Don't know the correct rust target for system type %s. Please "
-                "set the CARGO_BUILD_TARGET environment variable." % host_type)
+            "Don't know the correct rust target for system type %s. Please "
+            "set the CARGO_BUILD_TARGET environment variable." % host_type
+        )
 
     def run_for_extension(self, ext: RustExtension):
         arch_flags = os.getenv("ARCHFLAGS")
@@ -151,9 +153,13 @@ class build_rust(RustCommand):
             arm64_dylib_paths = self.build_extension(ext, "aarch64-apple-darwin")
             x86_64_dylib_paths = self.build_extension(ext, "x86_64-apple-darwin")
             dylib_paths = []
-            for (target_fname, arm64_dylib), (_, x86_64_dylib) in zip(arm64_dylib_paths, x86_64_dylib_paths):
+            for (target_fname, arm64_dylib), (_, x86_64_dylib) in zip(
+                arm64_dylib_paths, x86_64_dylib_paths
+            ):
                 fat_dylib_path = arm64_dylib.replace("aarch64-apple-darwin/", "")
-                self.create_universal2_binary(fat_dylib_path, [arm64_dylib, x86_64_dylib])
+                self.create_universal2_binary(
+                    fat_dylib_path, [arm64_dylib, x86_64_dylib]
+                )
                 dylib_paths.append((target_fname, fat_dylib_path))
         else:
             dylib_paths = self.build_extension(ext)
@@ -179,7 +185,9 @@ class build_rust(RustCommand):
                 # which causes pythonXX-sys to fall back to detecting the
                 # interpreter from the path.
                 "PATH": os.path.join(bindir, os.environ.get("PATH", "")),
-                "PYTHON_SYS_EXECUTABLE": os.environ.get("PYTHON_SYS_EXECUTABLE", sys.executable),
+                "PYTHON_SYS_EXECUTABLE": os.environ.get(
+                    "PYTHON_SYS_EXECUTABLE", sys.executable
+                ),
                 "PYO3_PYTHON": os.environ.get("PYO3_PYTHON", sys.executable),
             }
         )
@@ -212,7 +220,7 @@ class build_rust(RustCommand):
 
         features = {
             *ext.features,
-            *binding_features(ext, py_limited_api=self._py_limited_api())
+            *binding_features(ext, py_limited_api=self._py_limited_api()),
         }
 
         debug_build = ext.debug if ext.debug is not None else self.inplace
@@ -238,7 +246,7 @@ class build_rust(RustCommand):
                 args.append("-q")
             elif self.verbose:
                 # cargo only have -vv
-                verbose_level = 'v' * min(self.verbose, 2)
+                verbose_level = "v" * min(self.verbose, 2)
                 args.append(f"-{verbose_level}")
 
         else:
@@ -254,7 +262,7 @@ class build_rust(RustCommand):
                 args.append("-q")
             elif self.verbose:
                 # cargo only have -vv
-                verbose_level = 'v' * min(self.verbose, 2)
+                verbose_level = "v" * min(self.verbose, 2)
                 args.append(f"-{verbose_level}")
 
             args.extend(["--", "--crate-type", "cdylib"])
@@ -293,9 +301,7 @@ class build_rust(RustCommand):
         try:
             output = subprocess.check_output(args, env=env, encoding="latin-1")
         except subprocess.CalledProcessError as e:
-            raise CompileError(
-                f"cargo failed with code: {e.returncode}\n{e.output}"
-            )
+            raise CompileError(f"cargo failed with code: {e.returncode}\n{e.output}")
 
         except OSError:
             raise DistutilsExecError(
@@ -421,23 +427,18 @@ class build_rust(RustCommand):
             mode |= (mode & 0o444) >> 2  # copy R bits to X
             os.chmod(ext_path, mode)
 
-    def get_dylib_ext_path(
-        self,
-        ext: RustExtension,
-        target_fname: str
-    ) -> str:
+    def get_dylib_ext_path(self, ext: RustExtension, target_fname: str) -> str:
         build_ext = self.get_finalized_command("build_ext")
 
         filename = build_ext.get_ext_fullpath(target_fname)
 
-        if (
-            (ext.py_limited_api == "auto" and self._py_limited_api())
-            or (ext.py_limited_api)
+        if (ext.py_limited_api == "auto" and self._py_limited_api()) or (
+            ext.py_limited_api
         ):
             abi3_suffix = get_abi3_suffix()
             if abi3_suffix is not None:
-                so_ext = get_config_var('EXT_SUFFIX')
-                filename = filename[:-len(so_ext)] + get_abi3_suffix()
+                so_ext = get_config_var("EXT_SUFFIX")
+                filename = filename[: -len(so_ext)] + get_abi3_suffix()
 
         return filename
 
@@ -451,9 +452,7 @@ class build_rust(RustCommand):
             output = e.output
             if isinstance(output, bytes):
                 output = e.output.decode("latin-1").strip()
-            raise CompileError(
-                "lipo failed with code: %d\n%s" % (e.returncode, output)
-            )
+            raise CompileError("lipo failed with code: %d\n%s" % (e.returncode, output))
         except OSError:
             # lipo not found, try using the fat-macho library
             try:

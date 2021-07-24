@@ -6,6 +6,7 @@ from distutils.errors import DistutilsPlatformError
 from .extension import RustExtension
 from .utils import get_rust_version
 
+
 class RustCommand(Command, ABC):
     """Abstract base class for commands which interact with Rust Extensions."""
 
@@ -31,7 +32,7 @@ class RustCommand(Command, ABC):
                         lambda version: version is not None,
                         (ext.get_rust_version() for ext in self.extensions),
                     ),
-                    default=None
+                    default=None,
                 )
             )
         except DistutilsPlatformError as e:

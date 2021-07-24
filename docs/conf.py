@@ -12,9 +12,9 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'setuptools-rust'
-copyright = '2021, The PyO3 Contributors'
-author = 'The PyO3 Contributors'
+project = "setuptools-rust"
+copyright = "2021, The PyO3 Contributors"
+author = "The PyO3 Contributors"
 
 
 # -- General configuration ---------------------------------------------------
@@ -31,12 +31,12 @@ extensions = [
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -44,15 +44,15 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 html_theme_options = {
-    'prev_next_buttons_location': None,
+    "prev_next_buttons_location": None,
 }
 
 # -- Custom HTML link transformation to make documentation links relative --
@@ -62,7 +62,8 @@ html_theme_options = {
 
 from sphinx.transforms import SphinxTransform
 
-DOCS_URL = 'https://setuptools-rust.readthedocs.io/en/latest/'
+DOCS_URL = "https://setuptools-rust.readthedocs.io/en/latest/"
+
 
 class RelativeDocLinks(SphinxTransform):
 
@@ -70,20 +71,22 @@ class RelativeDocLinks(SphinxTransform):
 
     def apply(self):
         from docutils.nodes import reference, Text
+
         baseref = lambda o: (
-            isinstance(o, reference) and
-            o.get('refuri', '').startswith(DOCS_URL))
-        basetext = lambda o: (
-            isinstance(o, Text) and o.startswith(DOCS_URL))
+            isinstance(o, reference) and o.get("refuri", "").startswith(DOCS_URL)
+        )
+        basetext = lambda o: (isinstance(o, Text) and o.startswith(DOCS_URL))
         for node in self.document.traverse(baseref):
-            target = node['refuri'].replace(DOCS_URL, "", 1)
-            node.replace_attr('refuri', target)
+            target = node["refuri"].replace(DOCS_URL, "", 1)
+            node.replace_attr("refuri", target)
             for t in node.traverse(basetext):
                 t1 = Text(t.replace(DOCS_URL, "", 1), t.rawsource)
                 t.parent.replace(t, t1)
         return
 
+
 # end of class
+
 
 def setup(app):
     app.add_transform(RelativeDocLinks)
