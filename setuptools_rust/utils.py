@@ -1,16 +1,17 @@
 import subprocess
 from distutils.errors import DistutilsPlatformError
 from typing import Set, Union
-from typing_extensions import Literal
 
 import semantic_version
+from typing_extensions import Literal
 
 from .extension import Binding, RustExtension
 
+PyLimitedApi = Union[Literal["cp36", "cp37", "cp38", "cp39"], bool]
 
 def binding_features(
     ext: RustExtension,
-    py_limited_api: Union[Literal["cp36", "cp37", "cp38", "cp39"], bool],
+    py_limited_api: PyLimitedApi,
 ) -> Set[str]:
     if ext.binding in (Binding.NoBinding, Binding.Exec):
         return set()

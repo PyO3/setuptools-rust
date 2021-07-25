@@ -3,8 +3,8 @@ import json
 import os
 import platform
 import shutil
-import sys
 import subprocess
+import sys
 import sysconfig
 from distutils.errors import (
     CompileError,
@@ -13,12 +13,19 @@ from distutils.errors import (
     DistutilsPlatformError,
 )
 from distutils.sysconfig import get_config_var
-from setuptools.command.build_ext import get_abi3_suffix
 from subprocess import check_output
+
+from setuptools.command.build_ext import get_abi3_suffix
 
 from .command import RustCommand
 from .extension import Binding, RustExtension, Strip
-from .utils import binding_features, get_rust_target_info, get_rust_target_list
+from .utils import (
+    PyLimitedApi,
+    binding_features,
+    get_rust_target_info,
+    get_rust_target_list,
+)
+
 
 class _TargetInfo:
     def __init__(self, triple=None, cross_lib=None, linker=None, link_args=None):
@@ -203,10 +210,9 @@ class build_rust(RustCommand):
                 f"can't find Rust extension project file: {ext.path}"
             )
 
-        bdist_wheel = self.get_finalized_command('bdist_wheel')
         features = {
             *ext.features,
-            *binding_features(ext, py_limited_api=bdist_wheel.py_limited_api)
+            *binding_features(ext, py_limited_api=self._py_limited_api())
         }
 
         debug_build = ext.debug if ext.debug is not None else self.inplace
@@ -421,12 +427,11 @@ class build_rust(RustCommand):
         target_fname: str
     ) -> str:
         build_ext = self.get_finalized_command("build_ext")
-        bdist_wheel = self.get_finalized_command("bdist_wheel")
 
         filename = build_ext.get_ext_fullpath(target_fname)
 
         if (
-            (ext.py_limited_api == "auto" and bdist_wheel.py_limited_api)
+            (ext.py_limited_api == "auto" and self._py_limited_api())
             or (ext.py_limited_api)
         ):
             abi3_suffix = get_abi3_suffix()
@@ -463,3 +468,13 @@ class build_rust(RustCommand):
                 with open(input_path, "rb") as f:
                     fat.add(f.read())
             fat.write_to(output_path)
+
+    def _py_limited_api(self) -> PyLimitedApi:
+        bdist_wheel = self.distribution.get_command_obj("bdist_wheel", create=0)
+
+        if bdist_wheel is None:
+            # wheel package is not installed, not building a limited-api wheel
+            return False
+        else:
+            bdist_wheel.ensure_finalized()
+            return bdist_wheel.py_limited_api
