@@ -19,10 +19,7 @@ setup(
         "Operating System :: MacOS :: MacOS X",
     ],
     packages=["html_py_ever"],
-    install_requires=[
-        "beautifulsoup4",
-        "lxml"
-    ],
+    install_requires=["beautifulsoup4", "lxml"],
     rust_extensions=[RustExtension("html_py_ever.html_py_ever")],
     include_package_data=True,
     zip_safe=False,

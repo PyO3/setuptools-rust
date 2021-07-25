@@ -19,15 +19,18 @@ def add_rust_extension(dist):
     sdist_options = sdist_base_class.user_options.copy()
     sdist_boolean_options = sdist_base_class.boolean_options.copy()
     sdist_negative_opt = sdist_base_class.negative_opt.copy()
-    sdist_options.extend([
-        ('vendor-crates', None,
-         "vendor Rust crates"),
-        ('no-vendor-crates', None,
-         "don't vendor Rust crates."
-         "[default; enable with --vendor-crates]"),
-    ])
-    sdist_boolean_options.append('vendor-crates')
-    sdist_negative_opt['no-vendor-crates'] = 'vendor-crates'
+    sdist_options.extend(
+        [
+            ("vendor-crates", None, "vendor Rust crates"),
+            (
+                "no-vendor-crates",
+                None,
+                "don't vendor Rust crates." "[default; enable with --vendor-crates]",
+            ),
+        ]
+    )
+    sdist_boolean_options.append("vendor-crates")
+    sdist_negative_opt["no-vendor-crates"] = "vendor-crates"
 
     class sdist_rust_extension(sdist_base_class):
         user_options = sdist_options
@@ -49,9 +52,7 @@ def add_rust_extension(dist):
                     self.mkpath(dot_cargo_path)
                     cargo_config_path = os.path.join(dot_cargo_path, "config.toml")
                     vendor_path = os.path.join(dot_cargo_path, "vendor")
-                    command = [
-                        "cargo", "vendor"
-                    ]
+                    command = ["cargo", "vendor"]
                     # additional Cargo.toml for extension 1..n
                     for extra_path in manifest_paths[1:]:
                         command.append("--sync")
@@ -63,34 +64,44 @@ def add_rust_extension(dist):
                     # See https://docs.rs/clap/latest/clap/struct.Arg.html#method.multiple for detail
                     command.extend(["--manifest-path", manifest_paths[0], vendor_path])
                     cargo_config = subprocess.check_output(command)
-                    base_dir_bytes = base_dir.encode(sys.getfilesystemencoding()) + os.sep.encode()
-                    if os.sep == '\\':
+                    base_dir_bytes = (
+                        base_dir.encode(sys.getfilesystemencoding()) + os.sep.encode()
+                    )
+                    if os.sep == "\\":
                         # TOML escapes backslash \
                         base_dir_bytes += os.sep.encode()
-                    cargo_config = cargo_config.replace(base_dir_bytes, b'')
+                    cargo_config = cargo_config.replace(base_dir_bytes, b"")
                     if os.altsep:
-                        cargo_config = cargo_config.replace(base_dir_bytes + os.altsep.encode(), b'')
+                        cargo_config = cargo_config.replace(
+                            base_dir_bytes + os.altsep.encode(), b""
+                        )
 
                     # Check whether `.cargo/config`/`.cargo/config.toml` already exists
                     existing_cargo_config = None
-                    for filename in (f".cargo{os.sep}config", f".cargo{os.sep}config.toml"):
+                    for filename in (
+                        f".cargo{os.sep}config",
+                        f".cargo{os.sep}config.toml",
+                    ):
                         if filename in self.filelist.files:
                             existing_cargo_config = filename
                             break
                     if existing_cargo_config:
-                        cargo_config_path = os.path.join(base_dir, existing_cargo_config)
+                        cargo_config_path = os.path.join(
+                            base_dir, existing_cargo_config
+                        )
                         # Append vendor config to original cargo config
                         with open(existing_cargo_config, "rb") as f:
-                            cargo_config = f.read() + b'\n' + cargo_config
+                            cargo_config = f.read() + b"\n" + cargo_config
 
                     with open(cargo_config_path, "wb") as f:
                         f.write(cargo_config)
                     self.filelist.append(vendor_path)
                     self.filelist.append(cargo_config_path)
             super().make_distribution()
+
     dist.cmdclass["sdist"] = sdist_rust_extension
 
-    build_ext_base_class = dist.cmdclass.get('build_ext', build_ext)
+    build_ext_base_class = dist.cmdclass.get("build_ext", build_ext)
     build_ext_options = build_ext_base_class.user_options.copy()
     build_ext_options.append(("target", None, "Build for the target triple"))
 
@@ -112,18 +123,20 @@ def add_rust_extension(dist):
                 build_rust.run()
 
             build_ext_base_class.run(self)
-    dist.cmdclass['build_ext'] = build_ext_rust_extension
 
-    clean_base_class = dist.cmdclass.get('clean', clean)
+    dist.cmdclass["build_ext"] = build_ext_rust_extension
+
+    clean_base_class = dist.cmdclass.get("clean", clean)
 
     class clean_rust_extension(clean_base_class):
         def run(self):
             clean_base_class.run(self)
             if not self.dry_run:
                 self.run_command("clean_rust")
-    dist.cmdclass['clean'] = clean_rust_extension
 
-    install_base_class = dist.cmdclass.get('install', install)
+    dist.cmdclass["clean"] = clean_rust_extension
+
+    install_base_class = dist.cmdclass.get("install", install)
 
     # this is required because, install directly access distribution's
     # ext_modules attr to check if dist has ext modules
@@ -146,7 +159,9 @@ def add_rust_extension(dist):
                     if not self.distribution.entry_points:
                         self.distribution.entry_points = {"console_scripts": scripts}
                     else:
-                        ep_scripts = self.distribution.entry_points.get("console_scripts")
+                        ep_scripts = self.distribution.entry_points.get(
+                            "console_scripts"
+                        )
                         if ep_scripts:
                             for script in scripts:
                                 if script not in ep_scripts:
@@ -162,6 +177,7 @@ def add_rust_extension(dist):
 
             # restore ext_modules
             self.distribution.ext_modules = ext_modules
+
     dist.cmdclass["install"] = install_rust_extension
 
     if bdist_wheel is not None:
@@ -186,7 +202,9 @@ def add_rust_extension(dist):
                     if not self.distribution.entry_points:
                         self.distribution.entry_points = {"console_scripts": scripts}
                     else:
-                        ep_scripts = self.distribution.entry_points.get("console_scripts")
+                        ep_scripts = self.distribution.entry_points.get(
+                            "console_scripts"
+                        )
                         if ep_scripts:
                             for script in scripts:
                                 if script not in ep_scripts:
@@ -210,20 +228,20 @@ def add_rust_extension(dist):
                     macos_target = os.getenv("MACOSX_DEPLOYMENT_TARGET")
                     if macos_target is None:
                         # Example: macosx_11_0_arm64
-                        macos_target = '.'.join(plat.split("_")[1:3])
+                        macos_target = ".".join(plat.split("_")[1:3])
                     plat = calculate_macosx_platform_tag(
-                        self.bdist_dir,
-                        "macosx-{}-universal2".format(macos_target)
+                        self.bdist_dir, "macosx-{}-universal2".format(macos_target)
                     )
                 return python, abi, plat
+
         dist.cmdclass["bdist_wheel"] = bdist_wheel_rust_extension
 
 
 def patch_distutils_build():
-    '''Patch distutils to use `has_ext_modules()`
+    """Patch distutils to use `has_ext_modules()`
 
     See https://github.com/pypa/distutils/pull/43
-    '''
+    """
     from distutils.command import build as _build
 
     class build(_build.build):

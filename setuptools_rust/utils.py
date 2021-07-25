@@ -9,6 +9,7 @@ from .extension import Binding, RustExtension
 
 PyLimitedApi = Union[Literal["cp36", "cp37", "cp38", "cp39"], bool]
 
+
 def binding_features(
     ext: RustExtension,
     py_limited_api: PyLimitedApi,
@@ -50,7 +51,6 @@ def get_rust_version(min_version=None):
             "rustup (available at https://rustup.rs) is the recommended way "
             "to download and update the Rust compiler toolchain."
             + (
-
                 f"\n\nThis package requires Rust {min_version}."
                 if min_version is not None
                 else ""
@@ -63,17 +63,19 @@ def get_rust_version(min_version=None):
 def get_rust_target_info(target_triple=None):
     cmd = ["rustc", "--print", "cfg"]
     if target_triple:
-        cmd.extend(['--target', target_triple])
+        cmd.extend(["--target", target_triple])
     output = subprocess.check_output(cmd)
     return output.splitlines()
 
 
 _rust_target_list = None
 
+
 def get_rust_target_list():
     global _rust_target_list
     if _rust_target_list is None:
-        output = subprocess.check_output(["rustc", "--print", "target-list"],
-                universal_newlines=True)
+        output = subprocess.check_output(
+            ["rustc", "--print", "target-list"], universal_newlines=True
+        )
         _rust_target_list = output.splitlines()
     return _rust_target_list

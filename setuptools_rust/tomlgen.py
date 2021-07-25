@@ -109,11 +109,12 @@ class tomlgen_rust(setuptools.Command):
                     os.makedirs(cfgdir)
                 with open(os.path.join(cfgdir, "config"), "w") as config:
                     log.info("creating '.cargo/config' for workspace")
-                    toml.dump({
-                        'build': {
-                            'target-dir': os.path.relpath(targetdir)
+                    toml.dump(
+                        {
+                            "build": {"target-dir": os.path.relpath(targetdir)},
                         },
-                    }, config)
+                        config,
+                    )
             else:
                 log.warn("skipping '.cargo/config' -- already exists")
 
@@ -130,11 +131,11 @@ class tomlgen_rust(setuptools.Command):
 
         # Create a small package section
         toml["package"] = {
-            "name": ext.name.replace('.', '-'),
+            "name": ext.name.replace(".", "-"),
             "version": self.distribution.get_version(),
             "authors": self.authors,
             "publish": False,
-            "edition": "2018"
+            "edition": "2018",
         }
 
         # Add the relative path to the workspace if any
@@ -145,7 +146,7 @@ class tomlgen_rust(setuptools.Command):
         toml["lib"] = {
             "crate-type": ["cdylib"],
             "name": _slugify(ext.name),
-            "path": os.path.relpath(ext.libfile, tomldir)
+            "path": os.path.relpath(ext.libfile, tomldir),
         }
 
         # Find dependencies within the `setup.cfg` file of the project
@@ -162,11 +163,7 @@ class tomlgen_rust(setuptools.Command):
             os.path.dirname(os.path.relpath(ext.path)) for ext in self.extensions
         ]
 
-        return {
-            "workspace": {
-                "members": members
-            }
-        }
+        return {"workspace": {"members": members}}
 
     def iter_dependencies(self, ext=None):
         import toml
