@@ -2,7 +2,7 @@ import subprocess
 from distutils.errors import DistutilsPlatformError
 from typing import Set, Union
 
-import semantic_version
+from packaging.version import Version
 from typing_extensions import Literal
 
 from .extension import Binding, RustExtension
@@ -34,7 +34,7 @@ def binding_features(
 def get_rust_version(min_version=None):
     try:
         output = subprocess.check_output(["rustc", "-V"]).decode("latin-1")
-        return semantic_version.Version(output.split(" ")[1], partial=True)
+        return Version(output.split(" ")[1])
     except (subprocess.CalledProcessError, OSError):
         raise DistutilsPlatformError(
             "can't find Rust compiler\n\n"

@@ -5,7 +5,7 @@ from enum import IntEnum, auto
 from typing import Dict, List, Optional, Union
 from typing_extensions import Literal
 
-import semantic_version
+from packaging.specifiers import SpecifierSet
 
 
 class Binding(IntEnum):
@@ -165,7 +165,7 @@ class RustExtension:
         if self.rust_version is None:
             return None
         try:
-            return semantic_version.SimpleSpec.parse(self.rust_version)
+            return SpecifierSet(self.rust_version)
         except ValueError:
             raise DistutilsSetupError(
                 "Can not parse rust compiler version: %s", self.rust_version
