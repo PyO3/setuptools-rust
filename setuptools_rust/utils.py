@@ -31,10 +31,29 @@ def binding_features(
         raise DistutilsPlatformError(f"unknown Rust binding: '{ext.binding}'")
 
 
+def _parse_rustc_version(rustc_output):
+    """Parse output of ``rustc -V``
+
+    >>> _parse_rustc_version("rustc 1.53.0 (53cb7b09b 2021-06-17)")
+    <Version('1.53.0')>
+    >>> _parse_rustc_version("rustc 1.53.0 (Fedora 1.53.0-1.fc34)")
+    <Version('1.53.0')>
+    >>> _parse_rustc_version("rustc 1.55.0-beta.1 (739f8f0a8 2021-07-28)")
+    <Version('1.55.0b1')>
+    >>> _parse_rustc_version("rustc 1.56.0-nightly (b70888601 2021-07-28)")
+    <Version('1.56.0.dev0')>
+    """
+    version_string = rustc_output.split(" ")[1]
+    # map nightly suffix to PEP 440-compatible .dev0 suffix
+    if version_string.endswith("-nightly"):
+        version_string = version_string[:-8] + ".dev0"
+    return Version(version_string)
+
+
 def get_rust_version(min_version=None):
     try:
         output = subprocess.check_output(["rustc", "-V"]).decode("latin-1")
-        return Version(output.split(" ")[1])
+        return _parse_rustc_version(output)
     except (subprocess.CalledProcessError, OSError):
         raise DistutilsPlatformError(
             "can't find Rust compiler\n\n"
