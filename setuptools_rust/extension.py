@@ -164,8 +164,12 @@ class RustExtension:
     def get_rust_version(self):
         if self.rust_version is None:
             return None
+        # map nightly suffix to PEP 440-compatible .dev0 suffix
+        rust_version = self.rust_version
+        if rust_version.endswith("-nightly"):
+            rust_version = rust_version[:-8] + ".dev0"
         try:
-            return SpecifierSet(self.rust_version)
+            return SpecifierSet(rust_version)
         except ValueError:
             raise DistutilsSetupError(
                 "Can not parse rust compiler version: %s", self.rust_version
