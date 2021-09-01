@@ -3,14 +3,14 @@ import re
 from distutils.errors import DistutilsSetupError
 from enum import IntEnum, auto
 from typing import Dict, List, Optional, Union
-from typing_extensions import Literal
 
 import semantic_version
+from typing_extensions import Literal
 
 
 class Binding(IntEnum):
     """
-    Enumeration of possible Rust binding types supported by `setuptools-rust`.
+    Enumeration of possible Rust binding types supported by ``setuptools-rust``.
 
     Attributes:
         PyO3: This is an extension built using

@@ -3,6 +3,7 @@
    :hidden:
 
    README
+   building_wheels
    reference
 
 .. include:: README.rst
