@@ -26,7 +26,6 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",
-    "sphinx_rtd_theme",
     "m2r2",
 ]
 
@@ -44,16 +43,14 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+html_theme = "furo"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
-html_theme_options = {
-    "prev_next_buttons_location": None,
-}
+html_theme_options = {}
 
 # -- Custom HTML link transformation to make documentation links relative --
 
@@ -70,7 +67,7 @@ class RelativeDocLinks(SphinxTransform):
     default_priority = 750
 
     def apply(self):
-        from docutils.nodes import reference, Text
+        from docutils.nodes import Text, reference
 
         baseref = lambda o: (
             isinstance(o, reference) and o.get("refuri", "").startswith(DOCS_URL)
