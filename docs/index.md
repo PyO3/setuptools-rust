@@ -1,9 +1,12 @@
+```{eval-rst}
 .. toctree::
    :maxdepth: 2
    :hidden:
 
-   README
+   README.md
    building_wheels
    reference
+```
 
-.. include:: README.rst
+```{include} ../README.md
+```
