@@ -14,30 +14,16 @@ The [`rtoml` package does this, for example](https://github.com/samuelcolvin/rto
 
 Place a script called `build-wheels.sh` with the following contents in your project root (next to the `setup.py` file):
 
-```bash
-#!/bin/bash
-set -ex
-
-curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y
-export PATH="$HOME/.cargo/bin:$PATH"
-
-cd /io
-
-for PYBIN in /opt/python/cp{36,37,38,39}*/bin; do
-    "${PYBIN}/pip" install -U setuptools wheel setuptools-rust
-    "${PYBIN}/python" setup.py bdist_wheel
-done
-
-for whl in dist/*.whl; do
-    auditwheel repair "$whl" -w dist/
-done
+```{eval-rst}
+.. literalinclude:: ../examples/html-py-ever/build-wheels.sh
+   :language: bash
 ```
 
 This script can be used to produce wheels for multiple Python versions.
 
 ### Binary wheels on linux
 
-To build binary wheels on linux, you need to use the [manylinux docker container](https://github.com/pypa/manylinux). You also need a `build-wheels.sh` similar to [the one in the example](https://github.com/PyO3/setuptools-rust/blob/main/examples/html-py-ever/build-wheels.sh), which will be run in that container.
+To build binary wheels on linux, you need to use the [manylinux docker container](https://github.com/pypa/manylinux). You will run the `build-wheels.sh` from above inside that container.
 
 First, pull the `manylinux2014` Docker image:
 
