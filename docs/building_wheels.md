@@ -1,8 +1,10 @@
 # Building wheels
 
-Because `setuptools_rust` is an extension to `setuptools`, the standard `setup.py bdist_wheel` command is used to build wheels which can be uploaded to pypy.
+Because `setuptools-rust` is an extension to `setuptools`, the standard `setup.py bdist_wheel` command is used to build distributable wheels. These wheels can be uploaded to PyPI using standard tools such as [twine](https://github.com/pypa/twine).
 
-This doc suggests two ways to go about this.
+`setuptools-rust` supports building for the [PEP 384](https://www.python.org/dev/peps/pep-0384/) "stable" (aka "limited") API when the `--py-limited-api` option is passed to `setup.py bdist_wheel`. If using PyO3 bindings for `RustExtension`, then the correct [`pyo3/abi3`](https://pyo3.rs/v0.14.5/features.html#abi3) sub-feature is automatically enabled. In this way, abi3 wheels can be uploaded to make package distributors' roles easier, and  package users installing from source with `python setup.py install` can use optimizations specific to their Python version.
+
+This chapter of the documentation explains two possible ways to build wheels for multiple Python versions below.
 
 ## Using `cibuildwheel`
 
@@ -46,8 +48,6 @@ hello_rust-0.1.0-cp37-cp37m-linux_x86_64.whl          hello_rust-0.1.0-cp37-cp37
 hello_rust-0.1.0-cp38-cp38-linux_x86_64.whl           hello_rust-0.1.0-cp38-cp38-manylinux2014_x86_64.whl
 hello_rust-0.1.0-cp39-cp39-linux_x86_64.whl           hello_rust-0.1.0-cp39-cp39-manylinux2014_x86_64.whl
 ```
-
-You can then upload the `manylinux2014` wheels to pypi using [twine](https://github.com/pypa/twine).
 
 It is possible to use any of the `manylinux` docker images: `manylinux1`, `manylinux2010` or `manylinux2014`. (Just replace `manylinux2014` in the above instructions with the alternative version you wish to use.)
 
