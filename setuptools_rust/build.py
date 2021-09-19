@@ -14,6 +14,7 @@ from distutils.errors import (
 )
 from distutils.sysconfig import get_config_var
 from subprocess import check_output
+from typing import NamedTuple, Optional
 
 from setuptools.command.build_ext import get_abi3_suffix
 
@@ -25,15 +26,6 @@ from .utils import (
     get_rust_target_info,
     get_rust_target_list,
 )
-
-
-
-class _TargetInfo:
-    def __init__(self, triple=None, cross_lib=None, linker=None, link_args=None):
-        self.triple = triple
-        self.cross_lib = cross_lib
-        self.linker = linker
-        self.link_args = link_args
 
 
 class build_rust(RustCommand):
@@ -84,7 +76,7 @@ class build_rust(RustCommand):
             ("inplace", "inplace"),
         )
 
-    def get_target_info(self):
+    def get_target_info(self) -> "_TargetInfo":
         # If we are on a 64-bit machine, but running a 32-bit Python, then
         # we'll target a 32-bit Rust build.
         # Automatic target detection can be overridden via the CARGO_BUILD_TARGET
@@ -96,10 +88,34 @@ class build_rust(RustCommand):
         elif self.plat_name.startswith("macosx-") and platform.machine() == "x86_64":
             # x86_64 or arm64 macOS targeting x86_64
             return _TargetInfo("x86_64-apple-darwin")
-        else:
-            return self.get_nix_target_info()
 
-    def get_nix_target_info(self):
+        cross_compile_info = self.get_nix_cross_compile_info()
+        if cross_compile_info is not None:
+            target_info = cross_compile_info.to_target_info()
+            if target_info is not None:
+                if self.target is not None:
+                    if not target_info.is_compatible_with(self.target):
+                        self.warn(
+                            f"Forced Rust target `{self.target}` is not "
+                            f"compatible with deduced Rust target "
+                            f"`{target_info.triple}` - the built package may "
+                            f"not import successfully once installed."
+                        )
+                else:
+                    return target_info
+
+            if self.target:
+                return _TargetInfo(self.target, cross_compile_info.cross_lib)
+
+            raise DistutilsPlatformError(
+                "Don't know the correct rust target for system type %s. Please "
+                "set the CARGO_BUILD_TARGET environment variable."
+                % cross_compile_info.host_type
+            )
+
+        return _TargetInfo(self.target)
+
+    def get_nix_cross_compile_info(self) -> Optional["_CrossCompileInfo"]:
         # See https://github.com/PyO3/setuptools-rust/issues/138
         # This is to support cross compiling on *NIX, where plat_name isn't
         # necessarily the same as the system we are running on.  *NIX systems
@@ -110,7 +126,7 @@ class build_rust(RustCommand):
 
         if not host_type or host_type == build_type:
             # not *NIX, or not cross compiling
-            return _TargetInfo(self.target)
+            return None
 
         stdlib = sysconfig.get_path("stdlib")
         cross_lib = os.path.dirname(stdlib)
@@ -124,29 +140,7 @@ class build_rust(RustCommand):
             linker = bldshared[0]
             linker_args = bldshared[1:]
 
-        # hopefully an exact match
-        targets = get_rust_target_list()
-        if host_type in targets:
-            # FIXME: what if self.target != host_type
-            return _TargetInfo(host_type, cross_lib, linker, linker_args)
-
-        # the vendor field can be ignored, so x86_64-pc-linux-gnu is compatible
-        # with x86_64-unknown-linux-gnu
-        components = host_type.split("-")
-        if len(components) == 4:
-            components[1] = "unknown"
-            host_type2 = "-".join(components)
-            if host_type2 in targets:
-                # FIXME: what if self.target != host_type2
-                return _TargetInfo(host_type2, cross_lib, linker, linker_args)
-
-        if self.target:
-            return _TargetInfo(self.target, cross_lib)
-
-        raise DistutilsPlatformError(
-            "Don't know the correct rust target for system type %s. Please "
-            "set the CARGO_BUILD_TARGET environment variable." % host_type
-        )
+        return _CrossCompileInfo(host_type, cross_lib, linker, linker_args)
 
     def run_for_extension(self, ext: RustExtension):
         arch_flags = os.getenv("ARCHFLAGS")
@@ -274,7 +268,7 @@ class build_rust(RustCommand):
 
             if target_info.linker is not None:
                 args.extend(["-C", "linker=" + target_info.linker])
-            # We're ignoring target_info.link_args for now because we're not
+            # We're ignoring target_info.linker_args for now because we're not
             # sure if they will always do the right thing. Might help with some
             # of the OS-specific logic below if it does.
 
@@ -481,3 +475,63 @@ class build_rust(RustCommand):
         else:
             bdist_wheel.ensure_finalized()
             return bdist_wheel.py_limited_api
+
+
+class _TargetInfo(NamedTuple):
+    triple: str
+    cross_lib: Optional[str] = None
+    linker: Optional[str] = None
+    linker_args: Optional[str] = None
+
+    def is_compatible_with(self, target: str) -> bool:
+        if self.triple == target:
+            return True
+
+        # the vendor field can be ignored, so x86_64-pc-linux-gnu is compatible
+        # with x86_64-unknown-linux-gnu
+        if _replace_vendor_with_unknown(self.triple) == target:
+            return True
+
+        return False
+
+
+class _CrossCompileInfo(NamedTuple):
+    host_type: str
+    cross_lib: Optional[str] = None
+    linker: Optional[str] = None
+    linker_args: Optional[str] = None
+
+    def to_target_info(self) -> Optional[_TargetInfo]:
+        """Maps this cross compile info to target info.
+
+        Returns None if the corresponding target information could not be
+        deduced.
+        """
+        # hopefully an exact match
+        targets = get_rust_target_list()
+        if self.host_type in targets:
+            return _TargetInfo(
+                self.host_type, self.cross_lib, self.linker, self.linker_args
+            )
+
+        # the vendor field can be ignored, so x86_64-pc-linux-gnu is compatible
+        # with x86_64-unknown-linux-gnu
+        without_vendor = _replace_vendor_with_unknown(self.host_type)
+        if without_vendor in targets:
+            return _TargetInfo(
+                without_vendor, self.cross_lib, self.linker, self.linker_args
+            )
+
+        return None
+
+
+def _replace_vendor_with_unknown(target: str) -> Optional[str]:
+    """Replaces vendor in the target triple with unknown.
+
+    Returns None if the target is not made of 4 parts.
+    """
+    components = target.split("-")
+    if len(components) != 4:
+        return None
+    components[1] = "unknown"
+    return "-".join(components)
