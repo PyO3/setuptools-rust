@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 kuchiki = "0.8.0"
 pyo3 = { version = "0.13.2", features = ["extension-module"] }
-tendril = "0.4.1"
+tendril = "0.4.2"
 
 [lib]
 name = "html_py_ever"
