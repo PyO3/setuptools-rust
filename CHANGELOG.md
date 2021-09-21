@@ -9,6 +9,7 @@
 ### Removed
 - Remove `test_rust` command. (`python setup.py test` is deprecated.) [#129](https://github.com/PyO3/setuptools-rust/pull/129)
 - Remove `check_rust` command. [#131](https://github.com/PyO3/setuptools-rust/pull/131)
+- Move `tomlgen_rust` command to separate `setuptools-rust-tomlgen` package. [#167](https://github.com/PyO3/setuptools-rust/pull/167)
 
 ### Fixed
 - Use info from sysconfig when cross-compiling. [#139](https://github.com/PyO3/setuptools-rust/pull/139)

@@ -87,7 +87,3 @@ By default, `develop` will create a debug build, while `install` will create a r
   - `build_rust` - Command builds all rust extensions.
   - `clean` - Standard clean command executes cargo clean for all rust
     extensions.
-  - `tomlgen_rust` - Automatically generate a Cargo.toml manifest based
-    on Python package metadata. See the [example
-    project](https://github.com/PyO3/setuptools-rust/tree/main/examples/tomlgen)
-    on GitHub for more information about this command.
