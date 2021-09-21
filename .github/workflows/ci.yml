@@ -82,7 +82,7 @@ jobs:
           done
 
       - name: Test macOS universal2
-        if: matrix.platform.os == 'macos-latest'
+        if: matrix.platform.os == 'macos-latest' && !startsWith(matrix.python-version, 'pypy')
         shell: bash
         env:
           DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
