@@ -77,7 +77,7 @@ Processing dependencies for hello_rust==1.0
 Finished processing dependencies for hello_rust==1.0
 ```
 
-Or you can use commands like ``bdist_wheel`` (after installing ``wheel``). See also [the notes in the documentation about building wheels](https://setuptools-rust.readthedocs.io/en/latest/building_wheels.html).
+Or you can use commands like `bdist_wheel` (after installing `wheel`). See also [the notes in the documentation about building wheels](https://setuptools-rust.readthedocs.io/en/latest/building_wheels.html).
 
 By default, `develop` will create a debug build, while `install` will create a release build.
 
