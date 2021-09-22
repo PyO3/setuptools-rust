@@ -5,6 +5,7 @@ from enum import IntEnum, auto
 from typing import Dict, List, Optional, Union
 
 import semantic_version
+import tomli
 from typing_extensions import Literal
 
 
@@ -145,10 +146,8 @@ class RustExtension:
 
     def get_lib_name(self):
         """Parse Cargo.toml to get the name of the shared library."""
-        # We import in here to make sure the the setup_requires are already installed
-        import toml
-
-        cfg = toml.load(self.path)
+        with open(self.path, "rb") as f:
+            cfg = tomli.load(f)
         name = cfg.get("lib", {}).get("name")
         if name is None:
             name = cfg.get("package", {}).get("name")
