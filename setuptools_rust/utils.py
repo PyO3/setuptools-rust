@@ -1,8 +1,8 @@
 import subprocess
 from distutils.errors import DistutilsPlatformError
-from typing import Set, Union
+from typing import Optional, Set, Union
 
-import semantic_version
+from semantic_version import Version
 from typing_extensions import Literal
 
 from .extension import Binding, RustExtension
@@ -31,33 +31,12 @@ def binding_features(
         raise DistutilsPlatformError(f"unknown Rust binding: '{ext.binding}'")
 
 
-def get_rust_version(min_version=None):
+def get_rust_version() -> Optional[Version]:
     try:
         output = subprocess.check_output(["rustc", "-V"]).decode("latin-1")
-        return semantic_version.Version(output.split(" ")[1], partial=True)
+        return Version(output.split(" ")[1])
     except (subprocess.CalledProcessError, OSError):
-        raise DistutilsPlatformError(
-            "can't find Rust compiler\n\n"
-            "If you are using an outdated pip version, it is possible a "
-            "prebuilt wheel is available for this package but pip is not able "
-            "to install from it. Installing from the wheel would avoid the "
-            "need for a Rust compiler.\n\n"
-            "To update pip, run:\n\n"
-            "    pip install --upgrade pip\n\n"
-            "and then retry package installation.\n\n"
-            "If you did intend to build this package from source, try "
-            "installing a Rust compiler from your system package manager and "
-            "ensure it is on the PATH during installation. Alternatively, "
-            "rustup (available at https://rustup.rs) is the recommended way "
-            "to download and update the Rust compiler toolchain."
-            + (
-                f"\n\nThis package requires Rust {min_version}."
-                if min_version is not None
-                else ""
-            )
-        )
-    except Exception as exc:
-        raise DistutilsPlatformError(f"can't get rustc version: {str(exc)}")
+        return None
 
 
 def get_rust_target_info(target_triple=None):

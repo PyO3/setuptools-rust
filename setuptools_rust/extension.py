@@ -4,8 +4,8 @@ from distutils.errors import DistutilsSetupError
 from enum import IntEnum, auto
 from typing import Dict, List, Optional, Union
 
-import semantic_version
 import tomli
+from semantic_version import SimpleSpec
 from typing_extensions import Literal
 
 
@@ -160,11 +160,11 @@ class RustExtension:
         name = re.sub(r"[./\\-]", "_", name)
         return name
 
-    def get_rust_version(self):
+    def get_rust_version(self) -> Optional[SimpleSpec]:
         if self.rust_version is None:
             return None
         try:
-            return semantic_version.SimpleSpec.parse(self.rust_version)
+            return SimpleSpec(self.rust_version)
         except ValueError:
             raise DistutilsSetupError(
                 "Can not parse rust compiler version: %s", self.rust_version
