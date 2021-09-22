@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-
 from distutils.cmd import Command
 from distutils.errors import DistutilsPlatformError
 
@@ -26,15 +25,35 @@ class RustCommand(Command, ABC):
 
         all_optional = all(ext.optional for ext in self.extensions)
         try:
-            version = get_rust_version(
-                min_version=max(
+            version = get_rust_version()
+            if version is None:
+                min_version = max(
                     filter(
                         lambda version: version is not None,
                         (ext.get_rust_version() for ext in self.extensions),
                     ),
                     default=None,
                 )
-            )
+                raise DistutilsPlatformError(
+                    "can't find Rust compiler\n\n"
+                    "If you are using an outdated pip version, it is possible a "
+                    "prebuilt wheel is available for this package but pip is not able "
+                    "to install from it. Installing from the wheel would avoid the "
+                    "need for a Rust compiler.\n\n"
+                    "To update pip, run:\n\n"
+                    "    pip install --upgrade pip\n\n"
+                    "and then retry package installation.\n\n"
+                    "If you did intend to build this package from source, try "
+                    "installing a Rust compiler from your system package manager and "
+                    "ensure it is on the PATH during installation. Alternatively, "
+                    "rustup (available at https://rustup.rs) is the recommended way "
+                    "to download and update the Rust compiler toolchain."
+                    + (
+                        f"\n\nThis package requires Rust {min_version}."
+                        if min_version is not None
+                        else ""
+                    )
+                )
         except DistutilsPlatformError as e:
             if not all_optional:
                 raise

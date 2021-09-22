@@ -4,7 +4,8 @@ from distutils.errors import DistutilsSetupError
 from enum import IntEnum, auto
 from typing import Dict, List, Optional, Union
 
-import semantic_version
+import tomli
+from semantic_version import SimpleSpec
 from typing_extensions import Literal
 
 
@@ -145,10 +146,8 @@ class RustExtension:
 
     def get_lib_name(self):
         """Parse Cargo.toml to get the name of the shared library."""
-        # We import in here to make sure the the setup_requires are already installed
-        import toml
-
-        cfg = toml.load(self.path)
+        with open(self.path, "rb") as f:
+            cfg = tomli.load(f)
         name = cfg.get("lib", {}).get("name")
         if name is None:
             name = cfg.get("package", {}).get("name")
@@ -161,11 +160,11 @@ class RustExtension:
         name = re.sub(r"[./\\-]", "_", name)
         return name
 
-    def get_rust_version(self):
+    def get_rust_version(self) -> Optional[SimpleSpec]:
         if self.rust_version is None:
             return None
         try:
-            return semantic_version.SimpleSpec.parse(self.rust_version)
+            return SimpleSpec(self.rust_version)
         except ValueError:
             raise DistutilsSetupError(
                 "Can not parse rust compiler version: %s", self.rust_version
