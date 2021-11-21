@@ -180,25 +180,23 @@ class RustExtension:
 
         return entry_points
 
-    def install_script(self, ext_path):
+    def install_script(self, module_name: str, exe_path: str):
         if self.script and self.binding == Binding.Exec:
-            dirname, name = os.path.split(ext_path)
-            file = os.path.join(dirname, "_gen_%s.py" % name)
+            dirname, executable = os.path.split(exe_path)
+            file = os.path.join(dirname, "_gen_%s.py" % module_name)
             with open(file, "w") as f:
-                f.write(TMPL.format(name=name))
+                f.write(TMPL.format(executable=repr(executable)))
 
 
 TMPL = """
 import os
 import sys
 
-
 def run():
     path = os.path.split(__file__)[0]
-    name = os.path.split(sys.argv[0])[1]
-    file = os.path.join(path, name)
+    file = os.path.join(path, {executable})
     if os.path.isfile(file):
         os.execv(file, sys.argv)
     else:
-        print("can't execute '{name}'")
+        raise RuntimeError("can't find " + file)
 """

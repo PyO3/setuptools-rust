@@ -14,7 +14,7 @@ from distutils.errors import (
 )
 from distutils.sysconfig import get_config_var
 from subprocess import check_output
-from typing import NamedTuple, Optional
+from typing import List, NamedTuple, Optional, Tuple
 
 from setuptools.command.build_ext import get_abi3_suffix
 
@@ -324,31 +324,18 @@ class build_rust(RustCommand):
 
         if executable:
             for name, dest in ext.target.items():
-                if name:
-                    path = os.path.join(artifactsdir, name)
-                    if os.access(path, os.X_OK):
-                        dylib_paths.append((dest, path))
-                        continue
-                    else:
-                        raise DistutilsExecError(
-                            "Rust build failed; "
-                            f"unable to find executable '{name}' in '{target_dir}'"
-                        )
+                if not name:
+                    name = dest.split(".")[-1]
+                name += sysconfig.get_config_var("EXE")
+
+                path = os.path.join(artifactsdir, name)
+                if os.access(path, os.X_OK):
+                    dylib_paths.append((dest, path))
                 else:
-                    # search executable
-                    for name in os.listdir(artifactsdir):
-                        path = os.path.join(artifactsdir, name)
-                        if name.startswith(".") or not os.path.isfile(path):
-                            continue
-
-                        if os.access(path, os.X_OK):
-                            dylib_paths.append((ext.name, path))
-                            break
-
-            if not dylib_paths:
-                raise DistutilsExecError(
-                    f"Rust build failed; unable to find executable in {target_dir}"
-                )
+                    raise DistutilsExecError(
+                        "Rust build failed; "
+                        f"unable to find executable '{name}' in '{artifactsdir}'"
+                    )
         else:
             if sys.platform == "win32" or sys.platform == "cygwin":
                 dylib_ext = "dll"
@@ -372,7 +359,7 @@ class build_rust(RustCommand):
                 )
         return dylib_paths
 
-    def install_extension(self, ext: RustExtension, dylib_paths):
+    def install_extension(self, ext: RustExtension, dylib_paths: List[Tuple[str, str]]):
         executable = ext.binding == Binding.Exec
         debug_build = ext.debug if ext.debug is not None else self.inplace
         debug_build = self.debug if self.debug is not None else debug_build
@@ -383,23 +370,26 @@ class build_rust(RustCommand):
         build_ext = self.get_finalized_command("build_ext")
         build_ext.inplace = self.inplace
 
-        for target_fname, dylib_path in dylib_paths:
-            if not target_fname:
-                target_fname = os.path.basename(
+        for module_name, dylib_path in dylib_paths:
+            if not module_name:
+                module_name = os.path.basename(
                     os.path.splitext(os.path.basename(dylib_path)[3:])[0]
                 )
 
             if executable:
-                ext_path = build_ext.get_ext_fullpath(target_fname)
+                ext_path = build_ext.get_ext_fullpath(module_name)
                 # remove .so extension
                 ext_path, _ = os.path.splitext(ext_path)
                 # remove python3 extension (i.e. cpython-36m)
                 ext_path, _ = os.path.splitext(ext_path)
 
+                # Add expected extension
+                ext_path += sysconfig.get_config_var("EXE")
+
                 os.makedirs(os.path.dirname(ext_path), exist_ok=True)
-                ext.install_script(ext_path)
+                ext.install_script(module_name.split(".")[-1], ext_path)
             else:
-                ext_path = self.get_dylib_ext_path(ext, target_fname)
+                ext_path = self.get_dylib_ext_path(ext, module_name)
                 os.makedirs(os.path.dirname(ext_path), exist_ok=True)
 
             shutil.copyfile(dylib_path, ext_path)
