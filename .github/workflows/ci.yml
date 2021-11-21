@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false  # If one platform fails, allow the rest to keep testing.
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9, 3.10-dev, pypy-3.6, pypy-3.7]
+        python-version: [3.6, 3.7, 3.8, 3.9, "3.10", pypy-3.6, pypy-3.7]
         platform: [
           { os: "macos-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
           { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
@@ -37,6 +37,9 @@ jobs:
           # No 64-bit pypy 3.6 on Windows
           - python-version: pypy-3.6
             platform: { os: "windows-latest", python-architecture: "x64" }
+          # Macos 11 actions runners don't support pypy-3.6
+          - python-version: pypy-3.6
+            platform: { os: "macos-latest" }
           # No 32-bit pypy 3.7 on Windows
           - python-version: pypy-3.7
             platform: { os: "windows-latest", python-architecture: "x86" }
@@ -119,7 +122,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.6
+          python-version: 3.9
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -139,21 +142,25 @@ jobs:
         run: |
           cd examples/rust_with_cffi/
           python --version
-          pip install wheel
-          python setup.py bdist_wheel --py-limited-api=cp36
+          pip install -U pip wheel setuptools
+          python setup.py bdist_wheel --py-limited-api=cp39
           ls -la dist/
+        env:
+          # https://github.com/actions/setup-python/issues/26
+          MACOSX_DEPLOYMENT_TARGET: 10.9
 
       # Now we switch to a differnet Python version and ensure we can install
       # the wheel we just built.
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: "3.10"
 
       - name: Install abi3 wheel and run tests
         shell: bash
         run: |
           cd examples/
+          pip install -U pip wheel setuptools
           python --version
           pip install rust_with_cffi/dist/rust_with_cffi*.whl
           python -c "from rust_with_cffi import rust; assert rust.rust_func() == 14"
