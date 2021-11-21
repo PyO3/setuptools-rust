@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.0 (2021-11-21)
 ### Added
 - Add `--target` command line option for specifying target triple. [#136](https://github.com/PyO3/setuptools-rust/pull/136)
 - Add new default `"auto"` setting for `RustExtension.py_limited_api`. [#137](https://github.com/PyO3/setuptools-rust/pull/137)
