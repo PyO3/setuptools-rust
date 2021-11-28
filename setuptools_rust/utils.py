@@ -1,13 +1,13 @@
 import subprocess
 from distutils.errors import DistutilsPlatformError
-from typing import Optional, Set, Union
+from typing import List, Optional, Set, Union
 
 from semantic_version import Version
 from typing_extensions import Literal
 
 from .extension import Binding, RustExtension
 
-PyLimitedApi = Union[Literal["cp36", "cp37", "cp38", "cp39"], bool]
+PyLimitedApi = Literal["cp36", "cp37", "cp38", "cp39", True, False]
 
 
 def binding_features(
@@ -31,7 +31,7 @@ def binding_features(
         raise DistutilsPlatformError(f"unknown Rust binding: '{ext.binding}'")
 
 
-def get_rust_version() -> Optional[Version]:
+def get_rust_version() -> Optional[Version]:  # type: ignore[no-any-unimported]
     try:
         output = subprocess.check_output(["rustc", "-V"]).decode("latin-1")
         return Version(output.split(" ")[1])
@@ -39,18 +39,18 @@ def get_rust_version() -> Optional[Version]:
         return None
 
 
-def get_rust_target_info(target_triple=None):
+def get_rust_target_info(target_triple: Optional[str] = None) -> List[str]:
     cmd = ["rustc", "--print", "cfg"]
     if target_triple:
         cmd.extend(["--target", target_triple])
-    output = subprocess.check_output(cmd)
+    output = subprocess.check_output(cmd, universal_newlines=True)
     return output.splitlines()
 
 
 _rust_target_list = None
 
 
-def get_rust_target_list():
+def get_rust_target_list() -> List[str]:
     global _rust_target_list
     if _rust_target_list is None:
         output = subprocess.check_output(

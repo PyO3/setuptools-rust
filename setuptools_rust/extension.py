@@ -27,7 +27,7 @@ class Binding(IntEnum):
     NoBinding = auto()
     Exec = auto()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self.name}"
 
 
@@ -45,7 +45,7 @@ class Strip(IntEnum):
     Debug = auto()
     All = auto()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self.name}"
 
 
@@ -144,7 +144,7 @@ class RustExtension:
         path = os.path.relpath(path)
         self.path = path
 
-    def get_lib_name(self):
+    def get_lib_name(self) -> str:
         """Parse Cargo.toml to get the name of the shared library."""
         with open(self.path, "rb") as f:
             cfg = tomli.load(f)
@@ -157,10 +157,14 @@ class RustExtension:
                 "Cargo.toml missing value for 'name' key "
                 "in both the [package] section and the [lib] section"
             )
+        if not isinstance(name, str):
+            raise Exception(
+                f"Expected string for Rust library name in Cargo.toml, got {name}"
+            )
         name = re.sub(r"[./\\-]", "_", name)
         return name
 
-    def get_rust_version(self) -> Optional[SimpleSpec]:
+    def get_rust_version(self) -> Optional[SimpleSpec]:  # type: ignore[no-any-unimported]
         if self.rust_version is None:
             return None
         try:
@@ -170,7 +174,7 @@ class RustExtension:
                 "Can not parse rust compiler version: %s", self.rust_version
             )
 
-    def entry_points(self):
+    def entry_points(self) -> List[str]:
         entry_points = []
         if self.script and self.binding == Binding.Exec:
             for name, mod in self.target.items():
@@ -180,7 +184,7 @@ class RustExtension:
 
         return entry_points
 
-    def install_script(self, module_name: str, exe_path: str):
+    def install_script(self, module_name: str, exe_path: str) -> None:
         if self.script and self.binding == Binding.Exec:
             dirname, executable = os.path.split(exe_path)
             file = os.path.join(dirname, "_gen_%s.py" % module_name)
