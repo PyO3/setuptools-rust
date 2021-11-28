@@ -1,5 +1,5 @@
-import sys
 import subprocess
+import sys
 
 from .command import RustCommand
 from .extension import RustExtension
@@ -10,11 +10,11 @@ class clean_rust(RustCommand):
 
     description = "clean Rust extensions (compile/link to build directory)"
 
-    def initialize_options(self):
+    def initialize_options(self) -> None:
         super().initialize_options()
         self.inplace = False
 
-    def run_for_extension(self, ext: RustExtension):
+    def run_for_extension(self, ext: RustExtension) -> None:
         # build cargo command
         args = ["cargo", "clean", "--manifest-path", ext.path]
 

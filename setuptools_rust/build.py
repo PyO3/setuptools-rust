@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import sysconfig
+from distutils.command.build import build as CommandBuild
 from distutils.errors import (
     CompileError,
     DistutilsExecError,
@@ -14,8 +15,9 @@ from distutils.errors import (
 )
 from distutils.sysconfig import get_config_var
 from subprocess import check_output
-from typing import List, NamedTuple, Optional, Tuple
+from typing import List, NamedTuple, Optional, cast
 
+from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
 
 from .command import RustCommand
@@ -52,7 +54,9 @@ class build_rust(RustCommand):
     ]
     boolean_options = ["inplace", "debug", "release", "qbuild"]
 
-    def initialize_options(self):
+    plat_name: Optional[str]
+
+    def initialize_options(self) -> None:
         super().initialize_options()
         self.inplace = None
         self.debug = None
@@ -62,11 +66,14 @@ class build_rust(RustCommand):
         self.plat_name = None
         self.target = os.getenv("CARGO_BUILD_TARGET")
 
-    def finalize_options(self):
+    def finalize_options(self) -> None:
         super().finalize_options()
 
         if self.plat_name is None:
-            self.plat_name = self.get_finalized_command("build").plat_name
+            self.plat_name = cast(
+                CommandBuild, self.get_finalized_command("build")
+            ).plat_name
+            assert isinstance(self.plat_name, str)
 
         # Inherit settings from the `build_ext` command
         self.set_undefined_options(
@@ -77,6 +84,8 @@ class build_rust(RustCommand):
         )
 
     def get_target_info(self) -> "_TargetInfo":
+        assert self.plat_name is not None
+
         # If we are on a 64-bit machine, but running a 32-bit Python, then
         # we'll target a 32-bit Rust build.
         # Automatic target detection can be overridden via the CARGO_BUILD_TARGET
@@ -115,7 +124,8 @@ class build_rust(RustCommand):
                 % cross_compile_info.host_type
             )
 
-        return _TargetInfo.for_triple(self.target)
+        # FIXME!
+        return _TargetInfo.for_triple(self.target)  # type: ignore[arg-type]
 
     def get_nix_cross_compile_info(self) -> Optional["_CrossCompileInfo"]:
         # See https://github.com/PyO3/setuptools-rust/issues/138
@@ -143,7 +153,9 @@ class build_rust(RustCommand):
 
         return _CrossCompileInfo(host_type, cross_lib, linker, linker_args)
 
-    def run_for_extension(self, ext: RustExtension):
+    def run_for_extension(self, ext: RustExtension) -> None:
+        assert self.plat_name is not None
+
         arch_flags = os.getenv("ARCHFLAGS")
         universal2 = False
         if self.plat_name.startswith("macosx-") and arch_flags:
@@ -156,15 +168,15 @@ class build_rust(RustCommand):
                 arm64_dylib_paths, x86_64_dylib_paths
             ):
                 fat_dylib_path = arm64_dylib.replace("aarch64-apple-darwin/", "")
-                self.create_universal2_binary(
-                    fat_dylib_path, [arm64_dylib, x86_64_dylib]
-                )
-                dylib_paths.append((target_fname, fat_dylib_path))
+                create_universal2_binary(fat_dylib_path, [arm64_dylib, x86_64_dylib])
+                dylib_paths.append(_BuiltModule(target_fname, fat_dylib_path))
         else:
             dylib_paths = self.build_extension(ext)
         self.install_extension(ext, dylib_paths)
 
-    def build_extension(self, ext: RustExtension, target_triple=None):
+    def build_extension(
+        self, ext: RustExtension, target_triple: Optional[str] = None
+    ) -> List["_BuiltModule"]:
         executable = ext.binding == Binding.Exec
 
         if target_triple is None:
@@ -333,7 +345,7 @@ class build_rust(RustCommand):
 
                 path = os.path.join(artifactsdir, name)
                 if os.access(path, os.X_OK):
-                    dylib_paths.append((dest, path))
+                    dylib_paths.append(_BuiltModule(dest, path))
                 else:
                     raise DistutilsExecError(
                         "Rust build failed; "
@@ -351,7 +363,7 @@ class build_rust(RustCommand):
 
             try:
                 dylib_paths.append(
-                    (
+                    _BuiltModule(
                         ext.name,
                         next(glob.iglob(os.path.join(artifactsdir, wildcard_so))),
                     )
@@ -362,15 +374,18 @@ class build_rust(RustCommand):
                 )
         return dylib_paths
 
-    def install_extension(self, ext: RustExtension, dylib_paths: List[Tuple[str, str]]):
+    def install_extension(
+        self, ext: RustExtension, dylib_paths: List["_BuiltModule"]
+    ) -> None:
         executable = ext.binding == Binding.Exec
         debug_build = ext.debug if ext.debug is not None else self.inplace
         debug_build = self.debug if self.debug is not None else debug_build
         if self.release:
             debug_build = False
+
         # Ask build_ext where the shared library would go if it had built it,
         # then copy it there.
-        build_ext = self.get_finalized_command("build_ext")
+        build_ext = cast(CommandBuildExt, self.get_finalized_command("build_ext"))
         build_ext.inplace = self.inplace
 
         for module_name, dylib_path in dylib_paths:
@@ -419,9 +434,9 @@ class build_rust(RustCommand):
             os.chmod(ext_path, mode)
 
     def get_dylib_ext_path(self, ext: RustExtension, target_fname: str) -> str:
-        build_ext = self.get_finalized_command("build_ext")
+        build_ext = cast(CommandBuildExt, self.get_finalized_command("build_ext"))
 
-        filename = build_ext.get_ext_fullpath(target_fname)
+        filename: str = build_ext.get_ext_fullpath(target_fname)
 
         if (ext.py_limited_api == "auto" and self._py_limited_api()) or (
             ext.py_limited_api
@@ -429,45 +444,60 @@ class build_rust(RustCommand):
             abi3_suffix = get_abi3_suffix()
             if abi3_suffix is not None:
                 so_ext = get_config_var("EXT_SUFFIX")
+                assert isinstance(so_ext, str)
                 filename = filename[: -len(so_ext)] + get_abi3_suffix()
 
         return filename
 
-    @staticmethod
-    def create_universal2_binary(output_path, input_paths):
-        # Try lipo first
-        command = ["lipo", "-create", "-output", output_path, *input_paths]
-        try:
-            subprocess.check_output(command)
-        except subprocess.CalledProcessError as e:
-            output = e.output
-            if isinstance(output, bytes):
-                output = e.output.decode("latin-1").strip()
-            raise CompileError("lipo failed with code: %d\n%s" % (e.returncode, output))
-        except OSError:
-            # lipo not found, try using the fat-macho library
-            try:
-                from fat_macho import FatWriter
-            except ImportError:
-                raise DistutilsExecError(
-                    "failed to locate `lipo` or import `fat_macho.FatWriter`. "
-                    "Try installing with `pip install fat-macho` "
-                )
-            fat = FatWriter()
-            for input_path in input_paths:
-                with open(input_path, "rb") as f:
-                    fat.add(f.read())
-            fat.write_to(output_path)
-
     def _py_limited_api(self) -> PyLimitedApi:
-        bdist_wheel = self.distribution.get_command_obj("bdist_wheel", create=0)
+        bdist_wheel = self.distribution.get_command_obj("bdist_wheel", create=False)
 
         if bdist_wheel is None:
             # wheel package is not installed, not building a limited-api wheel
             return False
         else:
-            bdist_wheel.ensure_finalized()
-            return bdist_wheel.py_limited_api
+            from wheel.bdist_wheel import bdist_wheel as CommandBdistWheel
+
+            bdist_wheel_command = cast(CommandBdistWheel, bdist_wheel)  # type: ignore[no-any-unimported]
+            bdist_wheel_command.ensure_finalized()
+            return cast(PyLimitedApi, bdist_wheel_command.py_limited_api)
+
+
+def create_universal2_binary(output_path: str, input_paths: List[str]) -> None:
+    # Try lipo first
+    command = ["lipo", "-create", "-output", output_path, *input_paths]
+    try:
+        subprocess.check_output(command)
+    except subprocess.CalledProcessError as e:
+        output = e.output
+        if isinstance(output, bytes):
+            output = e.output.decode("latin-1").strip()
+        raise CompileError("lipo failed with code: %d\n%s" % (e.returncode, output))
+    except OSError:
+        # lipo not found, try using the fat-macho library
+        try:
+            from fat_macho import FatWriter
+        except ImportError:
+            raise DistutilsExecError(
+                "failed to locate `lipo` or import `fat_macho.FatWriter`. "
+                "Try installing with `pip install fat-macho` "
+            )
+        fat = FatWriter()
+        for input_path in input_paths:
+            with open(input_path, "rb") as f:
+                fat.add(f.read())
+        fat.write_to(output_path)
+
+
+class _BuiltModule(NamedTuple):
+    """
+    Attributes:
+        - module_name: dotted python import path of the module
+        - path: the location the module has been installed at
+    """
+
+    module_name: str
+    path: str
 
 
 class _TargetInfo(NamedTuple):

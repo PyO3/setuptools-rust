@@ -1,12 +1,17 @@
 import os
+import subprocess
+import sys
 from distutils import log
 from distutils.command.clean import clean
+from typing import List, Tuple, Type, cast
 
 from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
 from setuptools.command.sdist import sdist
-import sys
-import subprocess
+from setuptools.dist import Distribution
+from typing_extensions import Literal
+
+from .extension import RustExtension
 
 try:
     from wheel.bdist_wheel import bdist_wheel
@@ -14,8 +19,8 @@ except ImportError:
     bdist_wheel = None
 
 
-def add_rust_extension(dist):
-    sdist_base_class = dist.cmdclass.get("sdist", sdist)
+def add_rust_extension(dist: Distribution) -> None:
+    sdist_base_class = cast(Type[sdist], dist.cmdclass.get("sdist", sdist))
     sdist_options = sdist_base_class.user_options.copy()
     sdist_boolean_options = sdist_base_class.boolean_options.copy()
     sdist_negative_opt = sdist_base_class.negative_opt.copy()
@@ -32,16 +37,16 @@ def add_rust_extension(dist):
     sdist_boolean_options.append("vendor-crates")
     sdist_negative_opt["no-vendor-crates"] = "vendor-crates"
 
-    class sdist_rust_extension(sdist_base_class):
+    class sdist_rust_extension(sdist_base_class):  # type: ignore[misc,valid-type]
         user_options = sdist_options
         boolean_options = sdist_boolean_options
         negative_opt = sdist_negative_opt
 
-        def initialize_options(self):
+        def initialize_options(self) -> None:
             super().initialize_options()
             self.vendor_crates = 0
 
-        def make_distribution(self):
+        def make_distribution(self) -> None:
             if self.vendor_crates:
                 manifest_paths = []
                 for ext in self.distribution.rust_extensions:
@@ -101,18 +106,20 @@ def add_rust_extension(dist):
 
     dist.cmdclass["sdist"] = sdist_rust_extension
 
-    build_ext_base_class = dist.cmdclass.get("build_ext", build_ext)
+    build_ext_base_class = cast(
+        Type[build_ext], dist.cmdclass.get("build_ext", build_ext)
+    )
     build_ext_options = build_ext_base_class.user_options.copy()
     build_ext_options.append(("target", None, "Build for the target triple"))
 
-    class build_ext_rust_extension(build_ext_base_class):
+    class build_ext_rust_extension(build_ext_base_class):  # type: ignore[misc,valid-type]
         user_options = build_ext_options
 
-        def initialize_options(self):
+        def initialize_options(self) -> None:
             super().initialize_options()
             self.target = os.getenv("CARGO_BUILD_TARGET")
 
-        def run(self):
+        def run(self) -> None:
             if self.distribution.rust_extensions:
                 log.info("running build_rust")
                 build_rust = self.get_finalized_command("build_rust")
@@ -126,22 +133,22 @@ def add_rust_extension(dist):
 
     dist.cmdclass["build_ext"] = build_ext_rust_extension
 
-    clean_base_class = dist.cmdclass.get("clean", clean)
+    clean_base_class = cast(Type[clean], dist.cmdclass.get("clean", clean))
 
-    class clean_rust_extension(clean_base_class):
-        def run(self):
+    class clean_rust_extension(clean_base_class):  # type: ignore[misc,valid-type]
+        def run(self) -> None:
             clean_base_class.run(self)
             if not self.dry_run:
                 self.run_command("clean_rust")
 
     dist.cmdclass["clean"] = clean_rust_extension
 
-    install_base_class = dist.cmdclass.get("install", install)
+    install_base_class = cast(Type[install], dist.cmdclass.get("install", install))
 
     # this is required because, install directly access distribution's
     # ext_modules attr to check if dist has ext modules
-    class install_rust_extension(install_base_class):
-        def finalize_options(self):
+    class install_rust_extension(install_base_class):  # type: ignore[misc,valid-type]
+        def finalize_options(self) -> None:
             ext_modules = self.distribution.ext_modules
 
             # all ext modules
@@ -181,19 +188,21 @@ def add_rust_extension(dist):
     dist.cmdclass["install"] = install_rust_extension
 
     if bdist_wheel is not None:
-        bdist_wheel_base_class = dist.cmdclass.get("bdist_wheel", bdist_wheel)
+        bdist_wheel_base_class = cast(  # type: ignore[no-any-unimported]
+            Type[bdist_wheel], dist.cmdclass.get("bdist_wheel", bdist_wheel)
+        )
         bdist_wheel_options = bdist_wheel_base_class.user_options.copy()
         bdist_wheel_options.append(("target", None, "Build for the target triple"))
 
         # this is for console entries
-        class bdist_wheel_rust_extension(bdist_wheel_base_class):
+        class bdist_wheel_rust_extension(bdist_wheel_base_class):  # type: ignore[misc,valid-type]
             user_options = bdist_wheel_options
 
-            def initialize_options(self):
+            def initialize_options(self) -> None:
                 super().initialize_options()
                 self.target = os.getenv("CARGO_BUILD_TARGET")
 
-            def finalize_options(self):
+            def finalize_options(self) -> None:
                 scripts = []
                 for ext in self.distribution.rust_extensions:
                     scripts.extend(ext.entry_points())
@@ -216,7 +225,7 @@ def add_rust_extension(dist):
 
                 bdist_wheel_base_class.finalize_options(self)
 
-            def get_tag(self):
+            def get_tag(self) -> Tuple[str, str, str]:
                 python, abi, plat = super().get_tag()
                 arch_flags = os.getenv("ARCHFLAGS")
                 universal2 = False
@@ -237,7 +246,7 @@ def add_rust_extension(dist):
         dist.cmdclass["bdist_wheel"] = bdist_wheel_rust_extension
 
 
-def patch_distutils_build():
+def patch_distutils_build() -> None:
     """Patch distutils to use `has_ext_modules()`
 
     See https://github.com/pypa/distutils/pull/43
@@ -245,26 +254,34 @@ def patch_distutils_build():
     from distutils.command import build as _build
 
     class build(_build.build):
-        def finalize_options(self):
+        # Missing type def from distutils.cmd.Command; add it here for now
+        distribution: Distribution
+
+        def finalize_options(self) -> None:
             build_lib_user_specified = self.build_lib is not None
             super().finalize_options()
             if not build_lib_user_specified:
-                if self.distribution.has_ext_modules():
+                if self.distribution.has_ext_modules():  # type: ignore[attr-defined]
                     self.build_lib = self.build_platlib
                 else:
                     self.build_lib = self.build_purelib
 
-    _build.build = build
+    _build.build = build  # type: ignore[misc]
 
 
-def rust_extensions(dist, attr, value):
+def rust_extensions(
+    dist: Distribution, attr: Literal["rust_extensions"], value: List[RustExtension]
+) -> None:
     assert attr == "rust_extensions"
+    has_rust_extensions = len(value) > 0
 
-    orig_has_ext_modules = dist.has_ext_modules
-    dist.has_ext_modules = lambda: (
-        orig_has_ext_modules() or bool(dist.rust_extensions)
-    )
+    # Monkey patch has_ext_modules to include Rust extensions; pairs with
+    # patch_distutils_build above.
+    #
+    # has_ext_modules is missing from Distribution typing.
+    orig_has_ext_modules = dist.has_ext_modules  # type: ignore[attr-defined]
+    dist.has_ext_modules = lambda: (orig_has_ext_modules() or has_rust_extensions)  # type: ignore[attr-defined]
 
-    if dist.rust_extensions:
+    if has_rust_extensions:
         patch_distutils_build()
         add_rust_extension(dist)

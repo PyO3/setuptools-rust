@@ -20,6 +20,20 @@ jobs:
 
       - run: black --check .
 
+  mypy:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      - run: pip install tox
+
+      - run: tox -e mypy
+
   build:
     name:  ${{ matrix.python-version }} ${{ matrix.platform.os }}-${{ matrix.platform.python-architecture }}
     runs-on: ${{ matrix.platform.os }}
