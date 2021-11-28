@@ -15,7 +15,7 @@ from distutils.errors import (
 )
 from distutils.sysconfig import get_config_var
 from subprocess import check_output
-from typing import List, NamedTuple, Optional, cast
+from typing import Dict, List, NamedTuple, Optional, cast
 
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
@@ -85,76 +85,6 @@ class build_rust(RustCommand):
             ("inplace", "inplace"),
         )
 
-    def get_target_info(self) -> "_TargetInfo":
-        assert self.plat_name is not None
-
-        # If we are on a 64-bit machine, but running a 32-bit Python, then
-        # we'll target a 32-bit Rust build.
-        # Automatic target detection can be overridden via the CARGO_BUILD_TARGET
-        # environment variable or --target command line option
-        if self.plat_name == "win32":
-            return _TargetInfo.for_triple("i686-pc-windows-msvc")
-        elif self.plat_name == "win-amd64":
-            return _TargetInfo.for_triple("x86_64-pc-windows-msvc")
-        elif self.plat_name.startswith("macosx-") and platform.machine() == "x86_64":
-            # x86_64 or arm64 macOS targeting x86_64
-            return _TargetInfo.for_triple("x86_64-apple-darwin")
-
-        cross_compile_info = self.get_nix_cross_compile_info()
-        if cross_compile_info is not None:
-            target_info = cross_compile_info.to_target_info()
-            if target_info is not None:
-                if self.target is not None:
-                    if not target_info.is_compatible_with(self.target):
-                        self.warn(
-                            f"Forced Rust target `{self.target}` is not "
-                            f"compatible with deduced Rust target "
-                            f"`{target_info.triple}` - the built package may "
-                            f"not import successfully once installed."
-                        )
-                else:
-                    return target_info
-
-            if self.target:
-                return _TargetInfo(
-                    self.target, cross_compile_info.cross_lib, None, None
-                )
-
-            raise DistutilsPlatformError(
-                "Don't know the correct rust target for system type %s. Please "
-                "set the CARGO_BUILD_TARGET environment variable."
-                % cross_compile_info.host_type
-            )
-
-        # FIXME!
-        return _TargetInfo.for_triple(self.target)  # type: ignore[arg-type]
-
-    def get_nix_cross_compile_info(self) -> Optional["_CrossCompileInfo"]:
-        # See https://github.com/PyO3/setuptools-rust/issues/138
-        # This is to support cross compiling on *NIX, where plat_name isn't
-        # necessarily the same as the system we are running on.  *NIX systems
-        # have more detailed information available in sysconfig. We need that
-        # because plat_name doesn't give us information on e.g., glibc vs musl.
-        host_type = sysconfig.get_config_var("HOST_GNU_TYPE")
-        build_type = sysconfig.get_config_var("BUILD_GNU_TYPE")
-
-        if not host_type or host_type == build_type:
-            # not *NIX, or not cross compiling
-            return None
-
-        stdlib = sysconfig.get_path("stdlib")
-        assert stdlib is not None
-        cross_lib = os.path.dirname(stdlib)
-
-        bldshared = sysconfig.get_config_var("BLDSHARED")
-        if not bldshared:
-            linker = None
-            linker_args = None
-        else:
-            [linker, linker_args] = bldshared.split(maxsplit=1)
-
-        return _CrossCompileInfo(host_type, cross_lib, linker, linker_args)
-
     def run_for_extension(self, ext: RustExtension) -> None:
         assert self.plat_name is not None
 
@@ -173,146 +103,97 @@ class build_rust(RustCommand):
                 create_universal2_binary(fat_dylib_path, [arm64_dylib, x86_64_dylib])
                 dylib_paths.append(_BuiltModule(target_fname, fat_dylib_path))
         else:
-            dylib_paths = self.build_extension(ext)
+            dylib_paths = self.build_extension(ext, self.target)
         self.install_extension(ext, dylib_paths)
 
     def build_extension(
-        self, ext: RustExtension, target_triple: Optional[str] = None
+        self, ext: RustExtension, forced_target_triple: Optional[str]
     ) -> List["_BuiltModule"]:
-        executable = ext.binding == Binding.Exec
 
-        if target_triple is None:
-            target_info = self.get_target_info()
+        target_info = self._detect_rust_target(forced_target_triple)
+        if target_info is not None:
+            target_triple = target_info.triple
+            cross_lib = target_info.cross_lib
+            linker = target_info.linker
+            # We're ignoring target_info.linker_args for now because we're not
+            # sure if they will always do the right thing. Might help with some
+            # of the OS-specific logic if it does.
+
         else:
-            target_info = _TargetInfo.for_triple(target_triple)
-        rust_target_info = get_rust_target_info(target_info.triple)
+            target_triple = None
+            cross_lib = None
+            linker = None
 
-        # Make sure that if pythonXX-sys is used, it builds against the current
-        # executing python interpreter.
-        bindir = os.path.dirname(sys.executable)
+        rust_target_info = get_rust_target_info(target_triple)
 
-        env = os.environ.copy()
-        env.update(
-            {
-                # disables rust's pkg-config seeking for specified packages,
-                # which causes pythonXX-sys to fall back to detecting the
-                # interpreter from the path.
-                "PATH": os.path.join(bindir, os.environ.get("PATH", "")),
-                "PYTHON_SYS_EXECUTABLE": os.environ.get(
-                    "PYTHON_SYS_EXECUTABLE", sys.executable
-                ),
-                "PYO3_PYTHON": os.environ.get("PYO3_PYTHON", sys.executable),
-            }
-        )
-
-        if target_info.cross_lib:
-            env.setdefault("PYO3_CROSS_LIB_DIR", target_info.cross_lib)
-
-        rustflags = ""
-
-        target_args = []
-        if target_info.triple is not None:
-            target_args = ["--target", target_info.triple]
-
-        # Find where to put the temporary build files created by `cargo`
-        metadata_command = [
-            "cargo",
-            "metadata",
-            "--manifest-path",
-            ext.path,
-            "--format-version",
-            "1",
-        ]
-        metadata = json.loads(check_output(metadata_command))
-        target_dir = metadata["target_directory"]
+        env = _prepare_build_environment(cross_lib)
 
         if not os.path.exists(ext.path):
             raise DistutilsFileError(
                 f"can't find Rust extension project file: {ext.path}"
             )
 
-        features = {
-            *ext.features,
-            *binding_features(ext, py_limited_api=self._py_limited_api()),
-        }
-
-        debug_build = ext.debug if ext.debug is not None else self.inplace
-        debug_build = self.debug if self.debug is not None else debug_build
-        if self.release:
-            debug_build = False
+        # Find where to put the temporary build files created by `cargo`
+        target_dir = _base_cargo_target_dir(ext)
+        if target_triple is not None:
+            target_dir = os.path.join(target_dir, target_triple)
 
         quiet = self.qbuild or ext.quiet
+        debug = self._is_debug_build(ext)
+        cargo_args = self._cargo_args(
+            ext=ext, target_triple=target_triple, release=not debug, quiet=quiet
+        )
 
-        # build cargo command
-        feature_args = ["--features", " ".join(features)] if features else []
-
-        if executable:
-            args = (
-                [self.cargo, "build", "--manifest-path", ext.path]
-                + feature_args
-                + target_args
-                + list(ext.args or [])
-            )
-            if not debug_build:
-                args.append("--release")
-            if quiet:
-                args.append("-q")
-            elif self.verbose:
-                # cargo only have -vv
-                verbose_level = "v" * min(self.verbose, 2)
-                args.append(f"-{verbose_level}")
+        if ext._uses_exec_binding():
+            command = [self.cargo, "build", "--manifest-path", ext.path, *cargo_args]
 
         else:
-            args = (
-                [self.cargo, "rustc", "--lib", "--manifest-path", ext.path]
-                + feature_args
-                + target_args
-                + list(ext.args or [])
-            )
-            if not debug_build:
-                args.append("--release")
-            if quiet:
-                args.append("-q")
-            elif self.verbose:
-                # cargo only have -vv
-                verbose_level = "v" * min(self.verbose, 2)
-                args.append(f"-{verbose_level}")
+            rustc_args = [
+                "--crate-type",
+                "cdylib",
+            ]
 
-            args.extend(["--", "--crate-type", "cdylib"])
-            args.extend(ext.rustc_flags or [])
+            if ext.rustc_flags is not None:
+                rustc_args.extend(ext.rustc_flags)
 
-            if target_info.linker is not None:
-                args.extend(["-C", "linker=" + target_info.linker])
-            # We're ignoring target_info.linker_args for now because we're not
-            # sure if they will always do the right thing. Might help with some
-            # of the OS-specific logic below if it does.
+            if linker is not None:
+                rustc_args.extend(["-C", "linker=" + linker])
 
-            # OSX requires special linker argument
+            # OSX requires special linker arguments
             if sys.platform == "darwin":
-                args.extend(
-                    ["-C", "link-arg=-undefined", "-C", "link-arg=dynamic_lookup"]
+                ext_basename = os.path.basename(self.get_dylib_ext_path(ext, ext.name))
+                rustc_args.extend(
+                    [
+                        "-C",
+                        f"link-args=-undefined dynamic_lookup -Wl,-install_name,@rpath/{ext_basename}",
+                    ]
                 )
+
+            if ext.native:
+                rustc_args.extend(["-C", "target-cpu=native"])
+
             # Tell musl targets not to statically link libc. See
             # https://github.com/rust-lang/rust/issues/59302 for details.
             if b'target_env="musl"' in rust_target_info:
-                rustflags += " -C target-feature=-crt-static"
+                rustc_args.extend(["-C", "target-feature=-crt-static"])
+
+            command = [
+                self.cargo,
+                "rustc",
+                "--lib",
+                "--manifest-path",
+                ext.path,
+                *cargo_args,
+                "--",
+                *rustc_args,
+            ]
 
         if not quiet:
-            print(" ".join(args), file=sys.stderr)
-
-        if ext.native:
-            rustflags += " -C target-cpu=native"
-
-        if not executable and sys.platform == "darwin":
-            ext_basename = os.path.basename(self.get_dylib_ext_path(ext, ext.name))
-            rustflags += f" -C link-args=-Wl,-install_name,@rpath/{ext_basename}"
-
-        if rustflags:
-            env["RUSTFLAGS"] = (env.get("RUSTFLAGS", "") + " " + rustflags).strip()
+            print(" ".join(command), file=sys.stderr)
 
         # Execute cargo
         try:
-            output = subprocess.check_output(args, env=env, encoding="latin-1")
+            output = subprocess.check_output(command, env=env, encoding="latin-1")
         except subprocess.CalledProcessError as e:
             raise CompileError(f"cargo failed with code: {e.returncode}\n{e.output}")
 
@@ -328,16 +209,11 @@ class build_rust(RustCommand):
 
         # Find the shared library that cargo hopefully produced and copy
         # it into the build directory as if it were produced by build_ext.
-        if debug_build:
-            suffix = "debug"
-        else:
-            suffix = "release"
 
-        # location of cargo compiled files
-        artifactsdir = os.path.join(target_dir, target_info.triple or "", suffix)
+        artifacts_dir = os.path.join(target_dir, "debug" if debug else "release")
         dylib_paths = []
 
-        if executable:
+        if ext._uses_exec_binding():
             for name, dest in ext.target.items():
                 if not name:
                     name = dest.split(".")[-1]
@@ -345,13 +221,13 @@ class build_rust(RustCommand):
                 if exe is not None:
                     name += exe
 
-                path = os.path.join(artifactsdir, name)
+                path = os.path.join(artifacts_dir, name)
                 if os.access(path, os.X_OK):
                     dylib_paths.append(_BuiltModule(dest, path))
                 else:
                     raise DistutilsExecError(
                         "Rust build failed; "
-                        f"unable to find executable '{name}' in '{artifactsdir}'"
+                        f"unable to find executable '{name}' in '{artifacts_dir}'"
                     )
         else:
             if sys.platform == "win32" or sys.platform == "cygwin":
@@ -367,19 +243,18 @@ class build_rust(RustCommand):
                 dylib_paths.append(
                     _BuiltModule(
                         ext.name,
-                        next(glob.iglob(os.path.join(artifactsdir, wildcard_so))),
+                        next(glob.iglob(os.path.join(artifacts_dir, wildcard_so))),
                     )
                 )
             except StopIteration:
                 raise DistutilsExecError(
-                    f"Rust build failed; unable to find any {wildcard_so} in {artifactsdir}"
+                    f"Rust build failed; unable to find any {wildcard_so} in {artifacts_dir}"
                 )
         return dylib_paths
 
     def install_extension(
         self, ext: RustExtension, dylib_paths: List["_BuiltModule"]
     ) -> None:
-        executable = ext.binding == Binding.Exec
         debug_build = ext.debug if ext.debug is not None else self.inplace
         debug_build = self.debug if self.debug is not None else debug_build
         if self.release:
@@ -396,7 +271,7 @@ class build_rust(RustCommand):
                     os.path.splitext(os.path.basename(dylib_path)[3:])[0]
                 )
 
-            if executable:
+            if ext._uses_exec_binding():
                 ext_path = build_ext.get_ext_fullpath(module_name)
                 # remove extensions
                 ext_path, _, _ = split_platform_and_extension(ext_path)
@@ -490,6 +365,112 @@ class build_rust(RustCommand):
             bdist_wheel_command.ensure_finalized()
             return cast(PyLimitedApi, bdist_wheel_command.py_limited_api)
 
+    def _detect_rust_target(
+        self, forced_target_triple: Optional[str]
+    ) -> Optional["_TargetInfo"]:
+        cross_compile_info = detect_unix_cross_compile_info()
+        if cross_compile_info is not None:
+            cross_target_info = cross_compile_info.to_target_info()
+            if forced_target_triple is not None:
+                if (
+                    cross_target_info is not None
+                    and not cross_target_info.is_compatible_with(forced_target_triple)
+                ):
+                    self.warn(
+                        f"Forced Rust target `{forced_target_triple}` is not "
+                        f"compatible with deduced Rust target "
+                        f"`{cross_target_info.triple}` - the built package "
+                        f" may not import successfully once installed."
+                    )
+
+                # Forcing the target in a cross-compile environment; use
+                # the cross-compile information in combination with the
+                # forced target
+                return _TargetInfo(
+                    forced_target_triple,
+                    cross_compile_info.cross_lib,
+                    cross_compile_info.linker,
+                    cross_compile_info.linker_args,
+                )
+            elif cross_target_info is not None:
+                return cross_target_info
+            else:
+                raise DistutilsPlatformError(
+                    "Don't know the correct rust target for system type "
+                    f"{cross_compile_info.host_type}. Please set the "
+                    "CARGO_BUILD_TARGET environment variable."
+                )
+
+        elif forced_target_triple is not None:
+            return _TargetInfo.for_triple(forced_target_triple)
+
+        else:
+            # Automatic target detection can be overridden via the CARGO_BUILD_TARGET
+            # environment variable or --target command line option
+            return self._detect_local_rust_target()
+
+    def _detect_local_rust_target(self) -> Optional["_TargetInfo"]:
+        """Attempts to infer the correct Rust target from build environment for
+        some edge cases."""
+        assert self.plat_name is not None
+
+        # If we are on a 64-bit machine, but running a 32-bit Python, then
+        # we'll target a 32-bit Rust build.
+        if self.plat_name == "win32":
+            return _TargetInfo.for_triple("i686-pc-windows-msvc")
+        elif self.plat_name == "win-amd64":
+            return _TargetInfo.for_triple("x86_64-pc-windows-msvc")
+        elif self.plat_name.startswith("macosx-") and platform.machine() == "x86_64":
+            # x86_64 or arm64 macOS targeting x86_64
+            return _TargetInfo.for_triple("x86_64-apple-darwin")
+        else:
+            return None
+
+    def _is_debug_build(self, ext: RustExtension) -> bool:
+        if self.release:
+            return False
+        elif self.debug is not None:
+            return self.debug
+        elif ext.debug is not None:
+            return ext.debug
+        else:
+            return bool(self.inplace)
+
+    def _cargo_args(
+        self,
+        ext: RustExtension,
+        target_triple: Optional[str],
+        release: bool,
+        quiet: bool,
+    ) -> List[str]:
+        args = []
+        if target_triple is not None:
+            args.extend(["--target", target_triple])
+
+        if release:
+            args.append("--release")
+
+        if quiet:
+            args.append("-q")
+
+        elif self.verbose:
+            # cargo only have -vv
+            verbose_level = "v" * min(self.verbose, 2)
+            args.append(f"-{verbose_level}")
+
+        features = {
+            *ext.features,
+            *binding_features(ext, py_limited_api=self._py_limited_api()),
+        }
+
+        if features:
+            args.extend(["--features", " ".join(features)])
+
+        if ext.args is not None:
+            args.extend(ext.args)
+
+        return args
+
 
 def create_universal2_binary(output_path: str, input_paths: List[str]) -> None:
     # Try lipo first
@@ -580,6 +561,33 @@ class _CrossCompileInfo(NamedTuple):
         return None
 
 
+def detect_unix_cross_compile_info() -> Optional["_CrossCompileInfo"]:
+    # See https://github.com/PyO3/setuptools-rust/issues/138
+    # This is to support cross compiling on *NIX, where plat_name isn't
+    # necessarily the same as the system we are running on.  *NIX systems
+    # have more detailed information available in sysconfig. We need that
+    # because plat_name doesn't give us information on e.g., glibc vs musl.
+    host_type = sysconfig.get_config_var("HOST_GNU_TYPE")
+    build_type = sysconfig.get_config_var("BUILD_GNU_TYPE")
+
+    if not host_type or host_type == build_type:
+        # not *NIX, or not cross compiling
+        return None
+
+    stdlib = sysconfig.get_path("stdlib")
+    assert stdlib is not None
+    cross_lib = os.path.dirname(stdlib)
+
+    bldshared = sysconfig.get_config_var("BLDSHARED")
+    if not bldshared:
+        linker = None
+        linker_args = None
+    else:
+        [linker, linker_args] = bldshared.split(maxsplit=1)
+
+    return _CrossCompileInfo(host_type, cross_lib, linker, linker_args)
+
+
 def _replace_vendor_with_unknown(target: str) -> Optional[str]:
     """Replaces vendor in the target triple with unknown.
 
@@ -590,3 +598,52 @@ def _replace_vendor_with_unknown(target: str) -> Optional[str]:
         return None
     components[1] = "unknown"
     return "-".join(components)
+
+
+def _prepare_build_environment(cross_lib: Optional[str]) -> Dict[str, str]:
+    """Prepares environment variables to use when executing cargo build."""
+
+    # Make sure that if pythonXX-sys is used, it builds against the current
+    # executing python interpreter.
+    bindir = os.path.dirname(sys.executable)
+
+    env = os.environ.copy()
+    env.update(
+        {
+            # disables rust's pkg-config seeking for specified packages,
+            # which causes pythonXX-sys to fall back to detecting the
+            # interpreter from the path.
+            "PATH": os.path.join(bindir, os.environ.get("PATH", "")),
+            "PYTHON_SYS_EXECUTABLE": os.environ.get(
+                "PYTHON_SYS_EXECUTABLE", sys.executable
+            ),
+            "PYO3_PYTHON": os.environ.get("PYO3_PYTHON", sys.executable),
+        }
+    )
+
+    if cross_lib:
+        env.setdefault("PYO3_CROSS_LIB_DIR", cross_lib)
+
+    return env
+
+
+def _base_cargo_target_dir(ext: RustExtension) -> str:
+    """Returns the root target directory cargo will use.
+
+    If --target is passed to cargo in the command line, the target directory
+    will have the target appended as a child.
+    """
+    metadata_command = [
+        "cargo",
+        "metadata",
+        "--manifest-path",
+        ext.path,
+        "--format-version",
+        "1",
+    ]
+    metadata = json.loads(check_output(metadata_command))
+    target_directory = metadata["target_directory"]
+    assert isinstance(
+        target_directory, str
+    ), "expected cargo metadata to return a string target directory"
+    return target_directory
