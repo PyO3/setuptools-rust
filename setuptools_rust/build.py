@@ -82,12 +82,12 @@ class build_rust(RustCommand):
         # Automatic target detection can be overridden via the CARGO_BUILD_TARGET
         # environment variable or --target command line option
         if self.plat_name == "win32":
-            return _TargetInfo("i686-pc-windows-msvc")
+            return _TargetInfo.for_triple("i686-pc-windows-msvc")
         elif self.plat_name == "win-amd64":
-            return _TargetInfo("x86_64-pc-windows-msvc")
+            return _TargetInfo.for_triple("x86_64-pc-windows-msvc")
         elif self.plat_name.startswith("macosx-") and platform.machine() == "x86_64":
             # x86_64 or arm64 macOS targeting x86_64
-            return _TargetInfo("x86_64-apple-darwin")
+            return _TargetInfo.for_triple("x86_64-apple-darwin")
 
         cross_compile_info = self.get_nix_cross_compile_info()
         if cross_compile_info is not None:
@@ -105,7 +105,9 @@ class build_rust(RustCommand):
                     return target_info
 
             if self.target:
-                return _TargetInfo(self.target, cross_compile_info.cross_lib)
+                return _TargetInfo(
+                    self.target, cross_compile_info.cross_lib, None, None
+                )
 
             raise DistutilsPlatformError(
                 "Don't know the correct rust target for system type %s. Please "
@@ -113,7 +115,7 @@ class build_rust(RustCommand):
                 % cross_compile_info.host_type
             )
 
-        return _TargetInfo(self.target)
+        return _TargetInfo.for_triple(self.target)
 
     def get_nix_cross_compile_info(self) -> Optional["_CrossCompileInfo"]:
         # See https://github.com/PyO3/setuptools-rust/issues/138
@@ -129,6 +131,7 @@ class build_rust(RustCommand):
             return None
 
         stdlib = sysconfig.get_path("stdlib")
+        assert stdlib is not None
         cross_lib = os.path.dirname(stdlib)
 
         bldshared = sysconfig.get_config_var("BLDSHARED")
@@ -136,9 +139,7 @@ class build_rust(RustCommand):
             linker = None
             linker_args = None
         else:
-            bldshared = bldshared.split()
-            linker = bldshared[0]
-            linker_args = bldshared[1:]
+            [linker, linker_args] = bldshared.split(maxsplit=1)
 
         return _CrossCompileInfo(host_type, cross_lib, linker, linker_args)
 
@@ -169,7 +170,7 @@ class build_rust(RustCommand):
         if target_triple is None:
             target_info = self.get_target_info()
         else:
-            target_info = _TargetInfo(target_triple)
+            target_info = _TargetInfo.for_triple(target_triple)
         rust_target_info = get_rust_target_info(target_info.triple)
 
         # Make sure that if pythonXX-sys is used, it builds against the current
@@ -326,7 +327,9 @@ class build_rust(RustCommand):
             for name, dest in ext.target.items():
                 if not name:
                     name = dest.split(".")[-1]
-                name += sysconfig.get_config_var("EXE")
+                exe = sysconfig.get_config_var("EXE")
+                if exe is not None:
+                    name += exe
 
                 path = os.path.join(artifactsdir, name)
                 if os.access(path, os.X_OK):
@@ -469,9 +472,13 @@ class build_rust(RustCommand):
 
 class _TargetInfo(NamedTuple):
     triple: str
-    cross_lib: Optional[str] = None
-    linker: Optional[str] = None
-    linker_args: Optional[str] = None
+    cross_lib: Optional[str]
+    linker: Optional[str]
+    linker_args: Optional[str]
+
+    @staticmethod
+    def for_triple(triple: str) -> "_TargetInfo":
+        return _TargetInfo(triple, None, None, None)
 
     def is_compatible_with(self, target: str) -> bool:
         if self.triple == target:
@@ -487,9 +494,9 @@ class _TargetInfo(NamedTuple):
 
 class _CrossCompileInfo(NamedTuple):
     host_type: str
-    cross_lib: Optional[str] = None
-    linker: Optional[str] = None
-    linker_args: Optional[str] = None
+    cross_lib: Optional[str]
+    linker: Optional[str]
+    linker_args: Optional[str]
 
     def to_target_info(self) -> Optional[_TargetInfo]:
         """Maps this cross compile info to target info.
@@ -507,7 +514,7 @@ class _CrossCompileInfo(NamedTuple):
         # the vendor field can be ignored, so x86_64-pc-linux-gnu is compatible
         # with x86_64-unknown-linux-gnu
         without_vendor = _replace_vendor_with_unknown(self.host_type)
-        if without_vendor in targets:
+        if without_vendor is not None and without_vendor in targets:
             return _TargetInfo(
                 without_vendor, self.cross_lib, self.linker, self.linker_args
             )
