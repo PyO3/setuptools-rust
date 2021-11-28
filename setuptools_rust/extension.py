@@ -191,6 +191,9 @@ class RustExtension:
             with open(file, "w") as f:
                 f.write(TMPL.format(executable=repr(executable)))
 
+    def _uses_exec_binding(self) -> bool:
+        return self.binding == Binding.Exec
+
 
 TMPL = """
 import os

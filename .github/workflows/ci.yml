@@ -95,7 +95,7 @@ jobs:
           PYTHON: ${{ matrix.python-version }}
         run: |
           for example_dir in examples/*; do
-              tox -c $example_dir -e py
+              tox -c $example_dir -e py -vvvv
           done
 
       - name: Test macOS universal2
@@ -224,3 +224,48 @@ jobs:
             pip3 install rust_with_cffi/dist/rust_with_cffi*.whl
             python3 -c "from rust_with_cffi import rust; assert rust.rust_func() == 14"
             python3 -c "from rust_with_cffi.cffi import lib; assert lib.cffi_func() == 15"
+
+  test-cross:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - name: Install cross
+        run: cargo install cross
+      - name: Build package
+        run: pip install -e .
+      - name: Build wheel using cross
+        shell: bash
+        env:
+          CARGO: cross
+          CARGO_BUILD_TARGET: aarch64-unknown-linux-gnu
+          PYO3_CROSS_LIB_DIR: /opt/python/cp38-cp38/lib
+        run: |
+          cd examples/namespace_package
+          docker build -t cross-pyo3:aarch64-unknown-linux-gnu .
+          python -m pip install wheel
+          python setup.py bdist_wheel --plat-name manylinux2014_aarch64
+          ls -la dist/
+      - uses: uraimo/run-on-arch-action@v2.0.5
+        name: Install built wheel
+        with:
+          arch: aarch64
+          distro: ubuntu20.04
+          dockerRunArgs: |
+            --volume "${PWD}/examples/namespace_package:/io"
+          install: |
+            apt-get update
+            apt-get install -y --no-install-recommends python3 python3-pip
+            pip3 install -U pip
+          run: |
+            pip3 install namespace_package --no-index --find-links /io/dist/ --force-reinstall
+            python3 -c "from namespace_package import rust; assert rust.rust_func() == 14"
+            python3 -c "from namespace_package import python; assert python.python_func() == 15"

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- Add support for cross-compiling using [`cross`](https://github.com/rust-embedded/cross). [#185](https://github.com/PyO3/setuptools-rust/pull/185)
+
 ### Fixed
 - Fix incompatibility with Python 3.6.0 using default values for NamedTuple classes. [#184](https://github.com/PyO3/setuptools-rust/pull/184)
 
