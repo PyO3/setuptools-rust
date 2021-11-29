@@ -124,7 +124,7 @@ class build_rust(RustCommand):
             cross_lib = None
             linker = None
 
-        rust_target_info = get_rust_target_info(target_triple)
+        rustc_cfgs = _get_rustc_cfgs(target_triple)
 
         env = _prepare_build_environment(cross_lib)
 
@@ -174,7 +174,7 @@ class build_rust(RustCommand):
 
             # Tell musl targets not to statically link libc. See
             # https://github.com/rust-lang/rust/issues/59302 for details.
-            if b'target_env="musl"' in rust_target_info:
+            if rustc_cfgs.get("target_env") == "musl":
                 rustc_args.extend(["-C", "target-feature=-crt-static"])
 
             command = [
@@ -368,7 +368,7 @@ class build_rust(RustCommand):
     def _detect_rust_target(
         self, forced_target_triple: Optional[str]
     ) -> Optional["_TargetInfo"]:
-        cross_compile_info = detect_unix_cross_compile_info()
+        cross_compile_info = _detect_unix_cross_compile_info()
         if cross_compile_info is not None:
             cross_target_info = cross_compile_info.to_target_info()
             if forced_target_triple is not None:
@@ -417,8 +417,12 @@ class build_rust(RustCommand):
         # If we are on a 64-bit machine, but running a 32-bit Python, then
         # we'll target a 32-bit Rust build.
         if self.plat_name == "win32":
+            if _get_rustc_cfgs(None).get("target_env") == "gnu":
+                return _TargetInfo.for_triple("i686-pc-windows-gnu")
             return _TargetInfo.for_triple("i686-pc-windows-msvc")
         elif self.plat_name == "win-amd64":
+            if _get_rustc_cfgs(None).get("target_env") == "gnu":
+                return _TargetInfo.for_triple("x86_64-pc-windows-gnu")
             return _TargetInfo.for_triple("x86_64-pc-windows-msvc")
         elif self.plat_name.startswith("macosx-") and platform.machine() == "x86_64":
             # x86_64 or arm64 macOS targeting x86_64
@@ -561,7 +565,7 @@ class _CrossCompileInfo(NamedTuple):
         return None
 
 
-def detect_unix_cross_compile_info() -> Optional["_CrossCompileInfo"]:
+def _detect_unix_cross_compile_info() -> Optional["_CrossCompileInfo"]:
     # See https://github.com/PyO3/setuptools-rust/issues/138
     # This is to support cross compiling on *NIX, where plat_name isn't
     # necessarily the same as the system we are running on.  *NIX systems
@@ -586,6 +590,21 @@ def detect_unix_cross_compile_info() -> Optional["_CrossCompileInfo"]:
         [linker, linker_args] = bldshared.split(maxsplit=1)
 
     return _CrossCompileInfo(host_type, cross_lib, linker, linker_args)
+
+
+_RustcCfgs = Dict[str, Optional[str]]
+
+
+def _get_rustc_cfgs(target_triple: Optional[str]) -> _RustcCfgs:
+    cfgs: _RustcCfgs = {}
+    for entry in get_rust_target_info(target_triple):
+        maybe_split = entry.split("=", maxsplit=1)
+        if len(maybe_split) == 2:
+            cfgs[maybe_split[0]] = maybe_split[1].strip('"')
+        else:
+            assert len(maybe_split) == 1
+            cfgs[maybe_split[0]] = None
+    return cfgs
 
 
 def _replace_vendor_with_unknown(target: str) -> Optional[str]:

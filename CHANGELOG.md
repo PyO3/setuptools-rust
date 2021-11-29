@@ -7,6 +7,7 @@
 
 ### Fixed
 - Fix incompatibility with Python 3.6.0 using default values for NamedTuple classes. [#184](https://github.com/PyO3/setuptools-rust/pull/184)
+- Stop forcing the `msvc` Rust toolchain for Windows environments using the `gnu` toolchain. [#187](https://github.com/PyO3/setuptools-rust/pull/187)
 
 ## 1.0.0 (2021-11-21)
 ### Added
