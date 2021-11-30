@@ -74,7 +74,10 @@ class RustExtension:
         binding: Informs ``setuptools_rust`` which Python binding is in use.
         strip: Strip symbols from final file. Does nothing for debug build.
         script: Generate console script for executable if ``Binding.Exec`` is
-            used.
+            used.Default script name is the python executable name which is 
+            snake case.If the value is a dict, the script_name get from dict.
+            The key is the python executable name and the values are your 
+            target script name.
         native: Build extension or executable with ``--target-cpu=native``.
         optional: If it is true, a build failure in the extension will not
             abort the build process, and instead simply not install the failing
@@ -110,7 +113,7 @@ class RustExtension:
         debug: Optional[bool] = None,
         binding: Binding = Binding.PyO3,
         strip: Strip = Strip.No,
-        script: bool = False,
+        script: Union[bool, Dict[str, str]] = False,
         native: bool = False,
         optional: bool = False,
         py_limited_api: Union[bool, Literal["auto"]] = "auto",
@@ -177,9 +180,11 @@ class RustExtension:
     def entry_points(self) -> List[str]:
         entry_points = []
         if self.script and self.binding == Binding.Exec:
+            script_name_mapping = self.script if isinstance(self.script, dict) else {}
             for name, mod in self.target.items():
                 base_mod, name = mod.rsplit(".")
-                script = "%s=%s.%s:run" % (name, base_mod, "_gen_%s" % name)
+                script_name = script_name_mapping.get(name, name)
+                script = "%s=%s.%s:run" % (script_name, base_mod, "_gen_%s" % name)
                 entry_points.append(script)
 
         return entry_points
