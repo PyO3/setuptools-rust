@@ -1,7 +1,6 @@
 # Changelog
 
-## Unreleased
-
+## 1.1.0 (2021-11-30)
 ### Added
 - Add support for cross-compiling using [`cross`](https://github.com/rust-embedded/cross). [#185](https://github.com/PyO3/setuptools-rust/pull/185)
 
