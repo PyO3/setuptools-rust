@@ -113,7 +113,7 @@ class RustExtension:
         script: bool = False,
         native: bool = False,
         optional: bool = False,
-        py_limited_api: Union[bool, Literal["auto"]] = "auto",
+        py_limited_api: Literal["auto", True, False] = "auto",
     ):
         if isinstance(target, dict):
             name = "; ".join("%s=%s" % (key, val) for key, val in target.items())

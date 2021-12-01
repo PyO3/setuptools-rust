@@ -5,6 +5,7 @@
 - Fix regression from `setuptools-rust` 1.1.0 which broke builds for the `x86_64-unknown-linux-musl` target. [#194](https://github.com/PyO3/setuptools-rust/pull/194)
 - Fix `--target` command line option being unable to take a value. [#195](https://github.com/PyO3/setuptools-rust/pull/195)
 - Fix regression from `setuptools-rust` 1.0.0 which broke builds on arm64 macos conda builds. [#196](https://github.com/PyO3/setuptools-rust/pull/196)
+- Fix regression from `setuptools-rust` 1.1.0 which incorrectly converted library extension suffixes to the "abi3" suffix when `py_limited_api` was unspecified. [#197](https://github.com/PyO3/setuptools-rust/pull/197)
 
 ## 1.1.0 (2021-11-30)
 ### Added

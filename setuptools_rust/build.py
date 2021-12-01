@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import sysconfig
+from distutils import log
 from distutils.command.build import build as CommandBuild
 from distutils.errors import (
     CompileError,
@@ -15,10 +16,11 @@ from distutils.errors import (
 )
 from distutils.sysconfig import get_config_var
 from subprocess import check_output
-from typing import Dict, List, NamedTuple, Optional, cast
+from typing import Dict, List, NamedTuple, Optional, Union, cast
 
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
+from typing_extensions import Literal
 
 from .command import RustCommand
 from .extension import Binding, RustExtension, Strip
@@ -298,6 +300,7 @@ class build_rust(RustCommand):
                 ext_path = self.get_dylib_ext_path(ext, module_name)
                 os.makedirs(os.path.dirname(ext_path), exist_ok=True)
 
+            log.info("Copying rust artifact from %s to %s", dylib_path, ext_path)
             shutil.copyfile(dylib_path, ext_path)
 
             if sys.platform != "win32" and not debug_build:
@@ -327,9 +330,7 @@ class build_rust(RustCommand):
 
         ext_path: str = build_ext.get_ext_fullpath(target_fname)
 
-        if (ext.py_limited_api == "auto" and self._py_limited_api()) or (
-            ext.py_limited_api
-        ):
+        if _is_py_limited_api(ext.py_limited_api, self._py_limited_api()):
             abi3_suffix = get_abi3_suffix()
             if abi3_suffix is not None:
                 so_ext = get_config_var("EXT_SUFFIX")
@@ -683,3 +684,30 @@ def _base_cargo_target_dir(ext: RustExtension) -> str:
         target_directory, str
     ), "expected cargo metadata to return a string target directory"
     return target_directory
+
+
+def _is_py_limited_api(
+    ext_setting: Literal["auto", True, False],
+    wheel_setting: Optional[PyLimitedApi],
+) -> bool:
+    """Returns whether this extension is being built for the limited api.
+
+    >>> _is_py_limited_api("auto", None)
+    False
+
+    >>> _is_py_limited_api("auto", True)
+    True
+
+    >>> _is_py_limited_api(True, False)
+    True
+
+    >>> _is_py_limited_api(False, True)
+    False
+    """
+
+    # If the extension explicitly states to use py_limited_api or not, use that.
+    if ext_setting != "auto":
+        return ext_setting
+
+    # "auto" setting - use whether the bdist_wheel option is truthy.
+    return bool(wheel_setting)
