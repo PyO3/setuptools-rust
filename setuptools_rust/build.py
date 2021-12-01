@@ -589,6 +589,12 @@ def _detect_unix_cross_compile_info() -> Optional["_CrossCompileInfo"]:
         # not *NIX, or not cross compiling
         return None
 
+    if "apple-darwin" in host_type and (build_type and "apple-darwin" in build_type):
+        # On macos and the build and host differ. This is probably an arm
+        # Python which was built on x86_64. Don't try to handle this for now.
+        # (See https://github.com/PyO3/setuptools-rust/issues/192)
+        return None
+
     stdlib = sysconfig.get_path("stdlib")
     assert stdlib is not None
     cross_lib = os.path.dirname(stdlib)
