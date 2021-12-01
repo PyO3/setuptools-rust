@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+### Fixed
+- Fix regression from `setuptools-rust` 1.1.0 which broke builds for the `x86_64-unknown-linux-musl` target. [#194](https://github.com/PyO3/setuptools-rust/pull/194)
+
 ## 1.1.0 (2021-11-30)
 ### Added
 - Add support for cross-compiling using [`cross`](https://github.com/rust-embedded/cross). [#185](https://github.com/PyO3/setuptools-rust/pull/185)

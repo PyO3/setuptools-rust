@@ -175,7 +175,18 @@ class build_rust(RustCommand):
             # Tell musl targets not to statically link libc. See
             # https://github.com/rust-lang/rust/issues/59302 for details.
             if rustc_cfgs.get("target_env") == "musl":
-                rustc_args.extend(["-C", "target-feature=-crt-static"])
+                # This must go in the env otherwise rustc will refuse to build
+                # the cdylib, see https://github.com/rust-lang/cargo/issues/10143
+                MUSL_FLAGS = "-C target-feature=-crt-static"
+                rustflags = env.get("RUSTFLAGS")
+                if rustflags is not None:
+                    env["RUSTFLAGS"] = f"{rustflags} {MUSL_FLAGS}"
+                else:
+                    env["RUSTFLAGS"] = MUSL_FLAGS
+
+                # Include this in the command-line anyway, so that when verbose
+                # logging enabled the user will see that this flag is in use.
+                rustc_args.extend(MUSL_FLAGS.split())
 
             command = [
                 self.cargo,
