@@ -51,7 +51,7 @@ class build_rust(RustCommand):
             "t",
             "directory for temporary files (cargo 'target' directory) ",
         ),
-        ("target", None, "Build for the target triple"),
+        ("target=", None, "Build for the target triple"),
     ]
     boolean_options = ["inplace", "debug", "release", "qbuild"]
 
