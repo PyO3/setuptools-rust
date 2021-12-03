@@ -74,10 +74,10 @@ class RustExtension:
         binding: Informs ``setuptools_rust`` which Python binding is in use.
         strip: Strip symbols from final file. Does nothing for debug build.
         script: Generate console script for executable if ``Binding.Exec`` is
-            used.Default script name is the python executable name which is 
-            snake case.If the value is a dict, the script_name get from dict.
-            The key is the python executable name and the values are your 
-            target script name.
+            used.Default script name is the python executable name which is
+            snake case.If the value is a dict, the script_name will retrieve
+            from dict.The key is the python executable name and the values are
+            your target script name.
         native: Build extension or executable with ``--target-cpu=native``.
         optional: If it is true, a build failure in the extension will not
             abort the build process, and instead simply not install the failing
