@@ -1,10 +1,11 @@
+import json
 import os
 import re
+import subprocess
 from distutils.errors import DistutilsSetupError
 from enum import IntEnum, auto
 from typing import Dict, List, Optional, Union
 
-import tomli
 from semantic_version import SimpleSpec
 from typing_extensions import Literal
 
@@ -146,23 +147,23 @@ class RustExtension:
 
     def get_lib_name(self) -> str:
         """Parse Cargo.toml to get the name of the shared library."""
-        with open(self.path, "rb") as f:
-            cfg = tomli.load(f)
-        name = cfg.get("lib", {}).get("name")
-        if name is None:
-            name = cfg.get("package", {}).get("name")
-        if name is None:
-            raise Exception(
-                "Can not parse library name from Cargo.toml. "
-                "Cargo.toml missing value for 'name' key "
-                "in both the [package] section and the [lib] section"
+        data = json.loads(
+            subprocess.check_output(
+                [
+                    "cargo",
+                    "metadata",
+                    "--manifest-path",
+                    self.path,
+                    "--format-version",
+                    "1",
+                ]
             )
-        if not isinstance(name, str):
-            raise Exception(
-                f"Expected string for Rust library name in Cargo.toml, got {name}"
-            )
-        name = re.sub(r"[./\\-]", "_", name)
-        return name
+        )
+        root_key = data["resolve"]["root"]
+        [pkg] = [p for p in data["packages"] if p["id"] == root_key]
+        name = pkg["targets"][0]["name"]
+        assert isinstance(name, str)
+        return re.sub(r"[./\\-]", "_", name)
 
     def get_rust_version(self) -> Optional[SimpleSpec]:  # type: ignore[no-any-unimported]
         if self.rust_version is None:
