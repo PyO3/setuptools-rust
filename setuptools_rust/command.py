@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
+from distutils import log
 from distutils.cmd import Command
 from distutils.errors import DistutilsPlatformError
-from typing import List
+from typing import List, Optional
 
 from setuptools.dist import Distribution
 
@@ -21,14 +22,34 @@ class RustCommand(Command, ABC):
         self.extensions: List[RustExtension] = []
 
     def finalize_options(self) -> None:
-        self.extensions = [
-            ext
-            for ext in self.distribution.rust_extensions  # type: ignore[attr-defined]
-            if isinstance(ext, RustExtension)
-        ]
+        extensions: Optional[List[RustExtension]] = getattr(
+            self.distribution, "rust_extensions", None
+        )
+        if extensions is None:
+            # extensions is None if the setup.py file did not contain
+            # rust_extensions keyword; just no-op if this is the case.
+            return
+
+        if not isinstance(extensions, list):
+            ty = type(extensions)
+            raise ValueError(
+                "expected list of RustExtension objects for rust_extensions "
+                f"argument to setup(), got `{ty}`"
+            )
+        for (i, extension) in enumerate(extensions):
+
+            if not isinstance(extension, RustExtension):
+                ty = type(extension)
+                raise ValueError(
+                    "expected RustExtension object for rust_extensions "
+                    f"argument to setup(), got `{ty}` at position {i}"
+                )
+        # Extensions have been verified to be at the correct type
+        self.extensions = extensions
 
     def run(self) -> None:
         if not self.extensions:
+            log.info("%s: no rust_extensions defined", self.get_command_name())
             return
 
         all_optional = all(ext.optional for ext in self.extensions)
