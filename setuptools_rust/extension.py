@@ -4,7 +4,7 @@ import re
 import subprocess
 from distutils.errors import DistutilsSetupError
 from enum import IntEnum, auto
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, NewType, Optional, Union
 
 from semantic_version import SimpleSpec
 from typing_extensions import Literal
@@ -145,22 +145,13 @@ class RustExtension:
         path = os.path.relpath(path)
         self.path = path
 
+        self._cargo_metadata: Optional[_CargoMetadata] = None
+
     def get_lib_name(self) -> str:
         """Parse Cargo.toml to get the name of the shared library."""
-        data = json.loads(
-            subprocess.check_output(
-                [
-                    "cargo",
-                    "metadata",
-                    "--manifest-path",
-                    self.path,
-                    "--format-version",
-                    "1",
-                ]
-            )
-        )
-        root_key = data["resolve"]["root"]
-        [pkg] = [p for p in data["packages"] if p["id"] == root_key]
+        metadata = self._metadata()
+        root_key = metadata["resolve"]["root"]
+        [pkg] = [p for p in metadata["packages"] if p["id"] == root_key]
         name = pkg["targets"][0]["name"]
         assert isinstance(name, str)
         return re.sub(r"[./\\-]", "_", name)
@@ -190,13 +181,33 @@ class RustExtension:
             dirname, executable = os.path.split(exe_path)
             file = os.path.join(dirname, "_gen_%s.py" % module_name)
             with open(file, "w") as f:
-                f.write(TMPL.format(executable=repr(executable)))
+                f.write(_TMPL.format(executable=repr(executable)))
+
+    def _metadata(self) -> "_CargoMetadata":
+        """Returns cargo metedata for this extension package.
+
+        Cached - will only execute cargo on first invocation.
+        """
+        if self._cargo_metadata is None:
+            metadata_command = [
+                "cargo",
+                "metadata",
+                "--manifest-path",
+                self.path,
+                "--format-version",
+                "1",
+            ]
+            self._cargo_metadata = json.loads(subprocess.check_output(metadata_command))
+        return self._cargo_metadata
 
     def _uses_exec_binding(self) -> bool:
         return self.binding == Binding.Exec
 
 
-TMPL = """
+_CargoMetadata = NewType("_CargoMetadata", Dict[str, Any])
+
+
+_TMPL = """
 import os
 import sys
 

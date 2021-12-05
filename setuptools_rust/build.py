@@ -670,19 +670,10 @@ def _base_cargo_target_dir(ext: RustExtension) -> str:
     If --target is passed to cargo in the command line, the target directory
     will have the target appended as a child.
     """
-    metadata_command = [
-        "cargo",
-        "metadata",
-        "--manifest-path",
-        ext.path,
-        "--format-version",
-        "1",
-    ]
-    metadata = json.loads(check_output(metadata_command))
-    target_directory = metadata["target_directory"]
+    target_directory = ext._metadata()["target_directory"]
     assert isinstance(
         target_directory, str
-    ), "expected cargo metadata to return a string target directory"
+    ), "expected cargo metadata to contain a string target directory"
     return target_directory
 
 
