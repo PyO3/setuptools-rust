@@ -1,8 +1,8 @@
 # Changelog
 
-## 1.1.2 (UNRELEASED)
+## 1.1.2 (2021-12-05)
 ### Changed
-- Removed dependency on `tomli` to simplify installation.
+- Removed dependency on `tomli` to simplify installation. [#200](https://github.com/PyO3/setuptools-rust/pull/200)
 - Improve error messages on invalid inputs to `rust_extensions` keyword. [#203](https://github.com/PyO3/setuptools-rust/pull/203)
 
 ## 1.1.1 (2021-12-01)
