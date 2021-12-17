@@ -58,10 +58,14 @@ class RustExtension:
             packages, i.e *not* a filename or pathname. It is possible to
             specify multiple binaries, if extension uses ``Binding.Exec``
             binding mode. In that case first argument has to be dictionary.
-            Keys of the dictionary corresponds to compiled rust binaries and
-            values are full name of the executable inside python package.
+            Keys of the dictionary correspond to the rust binary names and
+            values are the full dotted name to place the executable inside
+            the python package. To install executables with kebab-case names,
+            the final part of the dotted name can be in kebab-case. For
+            example, `hello_world.hello-world` will install an executable
+            named `hello-world`.
         path: Path to the ``Cargo.toml`` manifest file.
-        args: A list of extra argumenents to be passed to Cargo. For example,
+        args: A list of extra arguments to be passed to Cargo. For example,
             ``args=["--no-default-features"]`` will disable the default
             features listed in ``Cargo.toml``.
         features: A list of Cargo features to also build.
@@ -169,9 +173,9 @@ class RustExtension:
     def entry_points(self) -> List[str]:
         entry_points = []
         if self.script and self.binding == Binding.Exec:
-            for name, mod in self.target.items():
+            for executable, mod in self.target.items():
                 base_mod, name = mod.rsplit(".")
-                script = "%s=%s.%s:run" % (name, base_mod, "_gen_%s" % name)
+                script = "%s=%s.%s:run" % (name, base_mod, _script_name(executable))
                 entry_points.append(script)
 
         return entry_points
@@ -179,9 +183,10 @@ class RustExtension:
     def install_script(self, module_name: str, exe_path: str) -> None:
         if self.script and self.binding == Binding.Exec:
             dirname, executable = os.path.split(exe_path)
-            file = os.path.join(dirname, "_gen_%s.py" % module_name)
+            script_name = _script_name(module_name)
+            file = os.path.join(dirname, f"{script_name}.py")
             with open(file, "w") as f:
-                f.write(_TMPL.format(executable=repr(executable)))
+                f.write(_SCRIPT_TEMPLATE.format(executable=repr(executable)))
 
     def _metadata(self) -> "_CargoMetadata":
         """Returns cargo metedata for this extension package.
@@ -207,7 +212,26 @@ class RustExtension:
 _CargoMetadata = NewType("_CargoMetadata", Dict[str, Any])
 
 
-_TMPL = """
+def _script_name(executable: str) -> str:
+    """Generates the name of the installed Python script for an executable.
+
+    Because Python modules must be snake_case, this generated script name will
+    replace `-` with `_`.
+
+    >>> _script_name("hello-world")
+    '_gen_hello_world'
+
+    >>> _script_name("foo_bar")
+    '_gen_foo_bar'
+
+    >>> _script_name("_gen_foo_bar")
+    '_gen__gen_foo_bar'
+    """
+    script = executable.replace("-", "_")
+    return f"_gen_{script}"
+
+
+_SCRIPT_TEMPLATE = """
 import os
 import sys
 

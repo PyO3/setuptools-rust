@@ -7,7 +7,7 @@ setup(
     version="1.0",
     rust_extensions=[
         RustExtension(
-            {"hello-world": "hello_world.hello_world"},
+            {"hello-world": "hello_world.hello-world"},
             binding=Binding.Exec,
             script=True,
         )
