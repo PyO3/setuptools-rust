@@ -7,3 +7,7 @@ write_to = "setuptools_rust/version.py"
 
 [tool.isort]
 profile = "black"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--doctest-modules"
