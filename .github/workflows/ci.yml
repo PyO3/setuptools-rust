@@ -59,7 +59,7 @@ jobs:
       # If one platform fails, allow the rest to keep testing if `CI-no-fail-fast` label is present
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
-        python-version: [3.7, 3.8, 3.9, "3.10", pypy-3.7, pypy-3.8]
+        python-version: ["3.7", "3.8", "3.9", "3.10", pypy-3.7, pypy-3.8]
         platform: [
           { os: "macos-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
           { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
@@ -96,11 +96,7 @@ jobs:
         run: rustup target add aarch64-apple-darwin
 
       - name: Install test dependencies
-        run: pip install --upgrade tox
-
-      - name: Install wheel (workaround python 3.10 CI issue)
-        if: matrix.python-version == '3.10-dev'
-        run: pip install --upgrade wheel
+        run: pip install --upgrade nox
 
       - name: Build package
         run: pip install -e .
@@ -109,10 +105,7 @@ jobs:
         shell: bash
         env:
           PYTHON: ${{ matrix.python-version }}
-        run: |
-          for example_dir in examples/*; do
-              tox -c $example_dir -e py -vvvv
-          done
+        run: nox -s test-examples
 
       - name: Test macOS universal2
         if: matrix.platform.os == 'macos-latest' && !startsWith(matrix.python-version, 'pypy')

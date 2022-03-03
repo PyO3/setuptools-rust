@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+### Packaging
+- Drop support for Python 3.6. [#209](https://github.com/PyO3/setuptools-rust/pull/209)
+
 ### Added
 - Add support for `kebab-case` executable names. [#205](https://github.com/PyO3/setuptools-rust/pull/205)
 - Add support for custom cargo profiles. [#216](https://github.com/PyO3/setuptools-rust/pull/216)
