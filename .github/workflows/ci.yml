@@ -94,7 +94,7 @@ jobs:
         run: rustup target add aarch64-apple-darwin
 
       - name: Install test dependencies
-        run: pip install --upgrade tox setuptools
+        run: pip install --upgrade tox
 
       - name: Install wheel (workaround python 3.10 CI issue)
         if: matrix.python-version == '3.10-dev'
@@ -170,7 +170,7 @@ jobs:
         run: |
           cd examples/rust_with_cffi/
           python --version
-          pip install -U wheel setuptools
+          pip install -U wheel
           python setup.py bdist_wheel --py-limited-api=cp39
           ls -la dist/
         env:
@@ -188,7 +188,7 @@ jobs:
         shell: bash
         run: |
           cd examples/
-          pip install -U wheel setuptools
+          pip install -U wheel
           python --version
           pip install rust_with_cffi/dist/rust_with_cffi*.whl
           python -c "from rust_with_cffi import rust; assert rust.rust_func() == 14"
