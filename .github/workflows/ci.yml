@@ -59,7 +59,7 @@ jobs:
       # If one platform fails, allow the rest to keep testing if `CI-no-fail-fast` label is present
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9, "3.10", pypy-3.6, pypy-3.7]
+        python-version: [3.7, 3.8, 3.9, "3.10", pypy-3.7, pypy-3.8]
         platform: [
           { os: "macos-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
           { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
@@ -67,14 +67,11 @@ jobs:
           { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" },
         ]
         exclude:
-          # No 64-bit pypy 3.6 on Windows
-          - python-version: pypy-3.6
-            platform: { os: "windows-latest", python-architecture: "x64" }
-          # Macos 11 actions runners don't support pypy-3.6
-          - python-version: pypy-3.6
-            platform: { os: "macos-latest" }
           # No 32-bit pypy 3.7 on Windows
           - python-version: pypy-3.7
+            platform: { os: "windows-latest", python-architecture: "x86" }
+          # No 32-bit pypy 3.8 on Windows
+          - python-version: pypy-3.8
             platform: { os: "windows-latest", python-architecture: "x86" }
 
     steps:
@@ -219,8 +216,8 @@ jobs:
           source ~/.cargo/env
           rustup target add ${{ matrix.platform.target }}
           cd examples/rust_with_cffi/
-          python3.6 -m pip install crossenv
-          python3.6 -m crossenv "/opt/python/cp36-cp36m/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 venv
+          python3.9 -m pip install crossenv
+          python3.9 -m crossenv "/opt/python/cp39-cp39/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 venv
           . venv/bin/activate
           build-pip install cffi wheel
           cross-expose cffi
