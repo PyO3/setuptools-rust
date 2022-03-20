@@ -210,7 +210,7 @@ jobs:
         ]
     steps:
       - uses: actions/checkout@master
-      - name: Build Wheels
+      - name: Build wheels
         run: |
           echo 'curl -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
           source ~/.cargo/env
@@ -223,7 +223,7 @@ jobs:
           cross-expose cffi
           pip install wheel
           pip install -e ../../
-          python setup.py bdist_wheel --py-limited-api=cp36
+          python setup.py bdist_wheel --py-limited-api=cp37
           ls -la dist/
           ' > build-wheels.sh
 
