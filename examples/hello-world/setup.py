@@ -10,6 +10,7 @@ setup(
             {"hello-world": "hello_world.hello-world"},
             binding=Binding.Exec,
             script=True,
+            args=["--profile", "release-lto"],
         )
     ],
     # rust extensions are not zip safe, just like C-extensions.
