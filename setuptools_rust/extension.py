@@ -170,6 +170,26 @@ class RustExtension:
                 "Can not parse rust compiler version: %s", self.rust_version
             )
 
+    def get_cargo_profile(self) -> Optional[str]:
+        args = self.args or []
+        try:
+            index = args.index("--profile")
+            return args[index + 1]
+        except ValueError:
+            pass
+        except IndexError:
+            raise DistutilsSetupError("Can not parse cargo profile from %s", args)
+
+        # Handle `--profile=<profile>`
+        profile_args = [p for p in args if p.startswith("--profile=")]
+        if profile_args:
+            profile = profile_args[0].split("=", 1)[1]
+            if not profile:
+                raise DistutilsSetupError("Can not parse cargo profile from %s", args)
+            return profile
+        else:
+            return None
+
     def entry_points(self) -> List[str]:
         entry_points = []
         if self.script and self.binding == Binding.Exec:

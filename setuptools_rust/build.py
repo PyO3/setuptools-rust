@@ -1,5 +1,4 @@
 import glob
-import json
 import os
 import platform
 import shutil
@@ -15,15 +14,14 @@ from distutils.errors import (
     DistutilsPlatformError,
 )
 from distutils.sysconfig import get_config_var
-from subprocess import check_output
-from typing import Dict, List, NamedTuple, Optional, Union, cast
+from typing import Dict, List, NamedTuple, Optional, cast
 
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
 from typing_extensions import Literal
 
 from .command import RustCommand
-from .extension import Binding, RustExtension, Strip
+from .extension import RustExtension, Strip
 from .utils import (
     PyLimitedApi,
     binding_features,
@@ -223,7 +221,18 @@ class build_rust(RustCommand):
         # Find the shared library that cargo hopefully produced and copy
         # it into the build directory as if it were produced by build_ext.
 
-        artifacts_dir = os.path.join(target_dir, "debug" if debug else "release")
+        profile = ext.get_cargo_profile()
+        if profile:
+            # https://doc.rust-lang.org/cargo/reference/profiles.html
+            if profile in {"dev", "test"}:
+                profile_dir = "debug"
+            elif profile == "bench":
+                profile_dir = "release"
+            else:
+                profile_dir = profile
+        else:
+            profile_dir = "debug" if debug else "release"
+        artifacts_dir = os.path.join(target_dir, profile_dir)
         dylib_paths = []
 
         if ext._uses_exec_binding():
@@ -464,7 +473,9 @@ class build_rust(RustCommand):
             args.extend(["--target", target_triple])
 
         if release:
-            args.append("--release")
+            profile = ext.get_cargo_profile()
+            if not profile:
+                args.append("--release")
 
         if quiet:
             args.append("-q")
