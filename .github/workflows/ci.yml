@@ -52,7 +52,8 @@ jobs:
     name:  ${{ matrix.python-version }} ${{ matrix.platform.os }}-${{ matrix.platform.python-architecture }}
     runs-on: ${{ matrix.platform.os }}
     strategy:
-      fail-fast: false  # If one platform fails, allow the rest to keep testing.
+      # If one platform fails, allow the rest to keep testing if `CI-no-fail-fast` label is present
+      fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9, "3.10", pypy-3.6, pypy-3.7]
         platform: [
@@ -143,6 +144,8 @@ jobs:
   test-abi3:
     runs-on: ${{ matrix.os }}
     strategy:
+      # If one platform fails, allow the rest to keep testing if `CI-no-fail-fast` label is present
+      fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
@@ -197,6 +200,8 @@ jobs:
   test-cross-compile:
     runs-on: ubuntu-latest
     strategy:
+      # If one platform fails, allow the rest to keep testing if `CI-no-fail-fast` label is present
+      fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
         platform: [
           { target: "aarch64-unknown-linux-gnu", arch: "aarch64" },
