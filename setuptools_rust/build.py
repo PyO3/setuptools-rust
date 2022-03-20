@@ -1,5 +1,4 @@
 import glob
-import json
 import os
 import platform
 import shutil
@@ -15,15 +14,14 @@ from distutils.errors import (
     DistutilsPlatformError,
 )
 from distutils.sysconfig import get_config_var
-from subprocess import check_output
-from typing import Dict, List, NamedTuple, Optional, Union, cast
+from typing import Dict, List, NamedTuple, Optional, cast
 
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
 from typing_extensions import Literal
 
 from .command import RustCommand
-from .extension import Binding, RustExtension, Strip
+from .extension import RustExtension, Strip
 from .utils import (
     PyLimitedApi,
     binding_features,

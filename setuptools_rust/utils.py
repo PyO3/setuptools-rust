@@ -1,7 +1,7 @@
 import os
 import subprocess
 from distutils.errors import DistutilsPlatformError
-from typing import List, Optional, Set, Tuple, Union
+from typing import List, Optional, Set, Tuple
 
 from semantic_version import Version
 from typing_extensions import Literal
