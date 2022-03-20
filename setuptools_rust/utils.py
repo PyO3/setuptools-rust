@@ -8,7 +8,7 @@ from typing_extensions import Literal
 
 from .extension import Binding, RustExtension
 
-PyLimitedApi = Literal["cp36", "cp37", "cp38", "cp39", True, False]
+PyLimitedApi = Literal["cp36", "cp37", "cp38", "cp39", "cp310", True, False]
 
 
 def binding_features(
