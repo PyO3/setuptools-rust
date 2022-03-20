@@ -221,7 +221,18 @@ class build_rust(RustCommand):
         # Find the shared library that cargo hopefully produced and copy
         # it into the build directory as if it were produced by build_ext.
 
-        artifacts_dir = os.path.join(target_dir, "debug" if debug else "release")
+        profile = ext.get_cargo_profile()
+        if profile:
+            # https://doc.rust-lang.org/cargo/reference/profiles.html
+            if profile in {"dev", "test"}:
+                profile_dir = "debug"
+            elif profile == "bench":
+                profile_dir = "release"
+            else:
+                profile_dir = profile
+        else:
+            profile_dir = "debug" if debug else "release"
+        artifacts_dir = os.path.join(target_dir, profile_dir)
         dylib_paths = []
 
         if ext._uses_exec_binding():
@@ -462,7 +473,9 @@ class build_rust(RustCommand):
             args.extend(["--target", target_triple])
 
         if release:
-            args.append("--release")
+            profile = ext.get_cargo_profile()
+            if not profile:
+                args.append("--release")
 
         if quiet:
             args.append("-q")
