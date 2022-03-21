@@ -92,6 +92,12 @@ class build_rust(RustCommand):
         universal2 = False
         if self.plat_name.startswith("macosx-") and arch_flags:
             universal2 = "x86_64" in arch_flags and "arm64" in arch_flags
+            if not universal2 and not self.target:
+                if "arm64" in arch_flags:
+                    self.target = "aarch64-apple-darwin"
+                elif "x86_64" in arch_flags:
+                    self.target = "x86_64-apple-darwin"
+
         if universal2:
             arm64_dylib_paths = self.build_extension(ext, "aarch64-apple-darwin")
             x86_64_dylib_paths = self.build_extension(ext, "x86_64-apple-darwin")

@@ -5,6 +5,9 @@
 - Add support for `kebab-case` executable names. [#205](https://github.com/PyO3/setuptools-rust/pull/205)
 - Add support for custom cargo profiles. [#216](https://github.com/PyO3/setuptools-rust/pull/216)
 
+### Fixed
+- Fix building macOS arm64 wheel with cibuildwheel. [#217](https://github.com/PyO3/setuptools-rust/pull/217)
+
 ## 1.1.2 (2021-12-05)
 ### Changed
 - Removed dependency on `tomli` to simplify installation. [#200](https://github.com/PyO3/setuptools-rust/pull/200)
