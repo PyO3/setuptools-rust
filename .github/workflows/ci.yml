@@ -13,7 +13,7 @@ jobs:
   fmt:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -27,7 +27,7 @@ jobs:
   mypy:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -41,7 +41,7 @@ jobs:
   pytest:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -75,7 +75,7 @@ jobs:
             platform: { os: "windows-latest", python-architecture: "x86" }
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -248,7 +248,7 @@ jobs:
   test-cross:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -293,7 +293,7 @@ jobs:
   test-zigbuild:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -338,3 +338,22 @@ jobs:
             pip3 install namespace_package --no-index --find-links /io/dist/ --force-reinstall
             python3 -c "from namespace_package import rust; assert rust.rust_func() == 14"
             python3 -c "from namespace_package import python; assert python.python_func() == 15"
+
+  test-cibuildwheel:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: aarch64-apple-darwin
+          override: true
+      - uses: pypa/cibuildwheel@v2.3.1
+        env:
+          CIBW_BUILD: cp39-*
+          CIBW_BEFORE_BUILD: pip install -e .
+          CIBW_ARCHS_MACOS: "x86_64 universal2 arm64"
+          CIBW_BUILD_VERBOSITY: 1
+        with:
+          package-dir: examples/namespace_package
