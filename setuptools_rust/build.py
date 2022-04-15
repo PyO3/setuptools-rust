@@ -55,7 +55,7 @@ class build_rust(RustCommand):
     ]
     boolean_options = ["inplace", "debug", "release", "qbuild"]
 
-    plat_name: Optional[str]
+    plat_name: Optional[str] = None
 
     def initialize_options(self) -> None:
         super().initialize_options()
@@ -113,7 +113,7 @@ class build_rust(RustCommand):
         self.install_extension(ext, dylib_paths)
 
     def build_extension(
-        self, ext: RustExtension, forced_target_triple: Optional[str]
+        self, ext: RustExtension, forced_target_triple: Optional[str] = None
     ) -> List["_BuiltModule"]:
 
         target_info = self._detect_rust_target(forced_target_triple)
@@ -393,7 +393,7 @@ class build_rust(RustCommand):
             return cast(PyLimitedApi, bdist_wheel_command.py_limited_api)
 
     def _detect_rust_target(
-        self, forced_target_triple: Optional[str]
+        self, forced_target_triple: Optional[str] = None
     ) -> Optional["_TargetInfo"]:
         cross_compile_info = _detect_unix_cross_compile_info()
         if cross_compile_info is not None:
