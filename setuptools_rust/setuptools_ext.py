@@ -240,44 +240,19 @@ def add_rust_extension(dist: Distribution) -> None:
         dist.cmdclass["bdist_wheel"] = bdist_wheel_rust_extension
 
 
-def patch_distutils_build() -> None:
-    """Patch distutils to use `has_ext_modules()`
-
-    See https://github.com/pypa/distutils/pull/43
-    """
-    from distutils.command import build as _build
-
-    class build(_build.build):
-        # Missing type def from distutils.cmd.Command; add it here for now
-        distribution: Distribution
-
-        def finalize_options(self) -> None:
-            build_lib_user_specified = self.build_lib is not None
-            super().finalize_options()
-            if not build_lib_user_specified:
-                if self.distribution.has_ext_modules():  # type: ignore[attr-defined]
-                    self.build_lib = self.build_platlib
-                else:
-                    self.build_lib = self.build_purelib
-
-    _build.build = build  # type: ignore[misc]
-
-
 def rust_extensions(
     dist: Distribution, attr: Literal["rust_extensions"], value: List[RustExtension]
 ) -> None:
     assert attr == "rust_extensions"
     has_rust_extensions = len(value) > 0
 
-    # Monkey patch has_ext_modules to include Rust extensions; pairs with
-    # patch_distutils_build above.
+    # Monkey patch has_ext_modules to include Rust extensions.
     #
     # has_ext_modules is missing from Distribution typing.
     orig_has_ext_modules = dist.has_ext_modules  # type: ignore[attr-defined]
     dist.has_ext_modules = lambda: (orig_has_ext_modules() or has_rust_extensions)  # type: ignore[attr-defined]
 
     if has_rust_extensions:
-        patch_distutils_build()
         add_rust_extension(dist)
 
 

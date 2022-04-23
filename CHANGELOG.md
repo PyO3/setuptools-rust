@@ -2,8 +2,12 @@
 
 ## Unreleased
 
+### Packaging
+- Increase minimum `setuptools` version to 1.58. [#222](https://github.com/PyO3/setuptools-rust/pull/222)
+
 ### Fixed
-- Fix building sdist with vendored dependencies on Windows. [#223](https://github.com/PyO3/setuptools-rust/pull/223)
+- Fix crash when `python-distutils-extra` linux package is installed. [#222](https://github.com/PyO3/setuptools-rust/pull/222)
+- Fix sdist built with vendored dependencies on Windows having incorrect cargo config. [#223](https://github.com/PyO3/setuptools-rust/pull/223)
 
 ## 1.2.0 (2022-03-22)
 ### Packaging
