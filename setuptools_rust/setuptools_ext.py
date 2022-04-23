@@ -69,7 +69,9 @@ def add_rust_extension(dist: Distribution) -> None:
                     # set --manifest-path before vendor_path and after --sync to workaround that
                     # See https://docs.rs/clap/latest/clap/struct.Arg.html#method.multiple for detail
                     command.extend(["--manifest-path", manifest_paths[0], vendor_path])
-                    cargo_config = subprocess.run(command, check=True)
+                    subprocess.run(command, check=True)
+
+                    cargo_config = _CARGO_VENDOR_CONFIG
 
                     # Check whether `.cargo/config`/`.cargo/config.toml` already exists
                     existing_cargo_config = None
@@ -80,15 +82,14 @@ def add_rust_extension(dist: Distribution) -> None:
                         if filename in self.filelist.files:
                             existing_cargo_config = filename
                             break
+
                     if existing_cargo_config:
                         cargo_config_path = os.path.join(
                             base_dir, existing_cargo_config
                         )
                         # Append vendor config to original cargo config
                         with open(existing_cargo_config, "rb") as f:
-                            cargo_config = f.read() + b"\n" + cargo_config
-                    else:
-                        cargo_config = _CARGO_VENDOR_CONFIG
+                            cargo_config += f.read() + b"\n"
 
                     with open(cargo_config_path, "wb") as f:
                         f.write(cargo_config)

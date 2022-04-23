@@ -34,9 +34,9 @@ jobs:
         with:
           python-version: "3.x"
 
-      - run: pip install tox
+      - run: pip install nox
 
-      - run: tox -e mypy
+      - run: nox -s mypy
 
   pytest:
     runs-on: "ubuntu-latest"
@@ -48,9 +48,9 @@ jobs:
         with:
           python-version: "3.x"
 
-      - run: pip install tox
+      - run: pip install nox
 
-      - run: tox -e pytest
+      - run: nox -s test
 
   build:
     name:  ${{ matrix.python-version }} ${{ matrix.platform.os }}-${{ matrix.platform.python-architecture }}

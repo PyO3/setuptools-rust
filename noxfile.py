@@ -23,3 +23,15 @@ def test_sdist_vendor(session: nox.Session):
         tf.extractall(str(dist))
     os.chdir(dist / "namespace_package-0.1.0")
     session.run("cargo", "build", "--offline", external=True)
+
+
+@nox.session()
+def mypy(session: nox.Session):
+    session.install("mypy", "fat_macho", "types-setuptools", ".")
+    session.run("mypy", "setuptools_rust", *session.posargs)
+
+
+@nox.session()
+def test(session: nox.Session):
+    session.install("pytest", ".")
+    session.run("pytest", "setuptools_rust", *session.posargs)
