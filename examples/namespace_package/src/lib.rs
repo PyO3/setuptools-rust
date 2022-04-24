@@ -8,7 +8,7 @@ fn rust_func() -> usize {
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn rust(py: Python, m: &PyModule) -> PyResult<()> {
+fn rust(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pyfunction!(rust_func))?;
 
     Ok(())

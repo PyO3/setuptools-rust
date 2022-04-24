@@ -3,6 +3,7 @@ import subprocess
 import sys
 from distutils import log
 from distutils.command.clean import clean
+from pathlib import Path
 from typing import List, Tuple, Type, cast
 
 from setuptools.command.build_ext import build_ext
@@ -68,18 +69,9 @@ def add_rust_extension(dist: Distribution) -> None:
                     # set --manifest-path before vendor_path and after --sync to workaround that
                     # See https://docs.rs/clap/latest/clap/struct.Arg.html#method.multiple for detail
                     command.extend(["--manifest-path", manifest_paths[0], vendor_path])
-                    cargo_config = subprocess.check_output(command)
-                    base_dir_bytes = (
-                        base_dir.encode(sys.getfilesystemencoding()) + os.sep.encode()
-                    )
-                    if os.sep == "\\":
-                        # TOML escapes backslash \
-                        base_dir_bytes += os.sep.encode()
-                    cargo_config = cargo_config.replace(base_dir_bytes, b"")
-                    if os.altsep:
-                        cargo_config = cargo_config.replace(
-                            base_dir_bytes + os.altsep.encode(), b""
-                        )
+                    subprocess.run(command, check=True)
+
+                    cargo_config = _CARGO_VENDOR_CONFIG
 
                     # Check whether `.cargo/config`/`.cargo/config.toml` already exists
                     existing_cargo_config = None
@@ -90,18 +82,18 @@ def add_rust_extension(dist: Distribution) -> None:
                         if filename in self.filelist.files:
                             existing_cargo_config = filename
                             break
+
                     if existing_cargo_config:
                         cargo_config_path = os.path.join(
                             base_dir, existing_cargo_config
                         )
                         # Append vendor config to original cargo config
                         with open(existing_cargo_config, "rb") as f:
-                            cargo_config = f.read() + b"\n" + cargo_config
+                            cargo_config += f.read() + b"\n"
 
                     with open(cargo_config_path, "wb") as f:
                         f.write(cargo_config)
-                    self.filelist.append(vendor_path)
-                    self.filelist.append(cargo_config_path)
+
             super().make_distribution()
 
     dist.cmdclass["sdist"] = sdist_rust_extension
@@ -287,3 +279,12 @@ def rust_extensions(
     if has_rust_extensions:
         patch_distutils_build()
         add_rust_extension(dist)
+
+
+_CARGO_VENDOR_CONFIG = b"""
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = ".cargo/vendor"
+"""
