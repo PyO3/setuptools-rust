@@ -69,6 +69,7 @@ class RustExtension:
             ``args=["--no-default-features"]`` will disable the default
             features listed in ``Cargo.toml``.
         features: A list of Cargo features to also build.
+        rustc_flags: A list of additional flags passed to rustc.
         rust_version: Minimum Rust compiler version required for this
             extension.
         quiet: Suppress Cargo's output.
