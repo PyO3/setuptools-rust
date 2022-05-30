@@ -187,7 +187,7 @@ jobs:
           python -c "from rust_with_cffi import rust; assert rust.rust_func() == 14"
           python -c "from rust_with_cffi.cffi import lib; assert lib.cffi_func() == 15"
 
-  test-cross-compile:
+  test-crossenv:
     runs-on: ubuntu-latest
     strategy:
       # If one platform fails, allow the rest to keep testing if `CI-no-fail-fast` label is present
@@ -204,6 +204,10 @@ jobs:
           echo 'curl -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
           source ~/.cargo/env
           rustup target add ${{ matrix.platform.target }}
+
+          # https://github.com/pypa/setuptools_scm/issues/707
+          git config --global --add safe.directory /io
+
           cd examples/rust_with_cffi/
           python3.9 -m pip install crossenv
           python3.9 -m crossenv "/opt/python/cp39-cp39/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 venv
