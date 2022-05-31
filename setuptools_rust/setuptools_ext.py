@@ -48,8 +48,14 @@ def add_rust_extension(dist: Distribution) -> None:
         def make_distribution(self) -> None:
             if self.vendor_crates:
                 manifest_paths = []
+
+                # Require lockfile to be up to date, if any one of our extensions
+                # requires it.
+                locked = False
                 for ext in self.distribution.rust_extensions:
                     manifest_paths.append(ext.path)
+                    locked |= ext.locked
+
                 if manifest_paths:
                     base_dir = self.distribution.get_fullname()
                     dot_cargo_path = os.path.join(base_dir, ".cargo")
@@ -57,6 +63,8 @@ def add_rust_extension(dist: Distribution) -> None:
                     cargo_config_path = os.path.join(dot_cargo_path, "config.toml")
                     vendor_path = os.path.join(dot_cargo_path, "vendor")
                     command = ["cargo", "vendor"]
+                    if locked:
+                        command.append("--locked")
                     # additional Cargo.toml for extension 1..n
                     for extra_path in manifest_paths[1:]:
                         command.append("--sync")

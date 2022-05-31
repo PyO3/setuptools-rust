@@ -73,6 +73,7 @@ class RustExtension:
         rust_version: Minimum Rust compiler version required for this
             extension.
         quiet: Suppress Cargo's output.
+        locked: Require Cargo.lock is up to date.
         debug: Controls whether ``--debug`` or ``--release`` is passed to
             Cargo. If set to `None` (the default) then build type is
             automatic: ``inplace`` build will be a debug build, ``install``
@@ -113,6 +114,7 @@ class RustExtension:
         rustc_flags: Optional[List[str]] = None,
         rust_version: Optional[str] = None,
         quiet: bool = False,
+        locked: bool = False,
         debug: Optional[bool] = None,
         binding: Binding = Binding.PyO3,
         strip: Strip = Strip.No,
@@ -134,6 +136,7 @@ class RustExtension:
         self.binding = binding
         self.rust_version = rust_version
         self.quiet = quiet
+        self.locked = locked
         self.debug = debug
         self.strip = strip
         self.script = script
@@ -223,6 +226,8 @@ class RustExtension:
                 "--format-version",
                 "1",
             ]
+            if self.locked:
+                metadata_command.append("--locked")
             self._cargo_metadata = json.loads(subprocess.check_output(metadata_command))
         return self._cargo_metadata
 

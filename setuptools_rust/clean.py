@@ -17,6 +17,8 @@ class clean_rust(RustCommand):
     def run_for_extension(self, ext: RustExtension) -> None:
         # build cargo command
         args = ["cargo", "clean", "--manifest-path", ext.path]
+        if ext.locked:
+            args.append("--locked")
 
         if not ext.quiet:
             print(" ".join(args), file=sys.stderr)

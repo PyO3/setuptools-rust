@@ -46,6 +46,7 @@ class build_rust(RustCommand):
         ("debug", "d", "Force debug to true for all Rust extensions "),
         ("release", "r", "Force debug to false for all Rust extensions "),
         ("qbuild", None, "Force enable quiet option for all Rust extensions "),
+        ("locked", None, "Force enable locked option for all Rust extensions "),
         (
             "build-temp",
             "t",
@@ -63,6 +64,7 @@ class build_rust(RustCommand):
         self.debug = None
         self.release = None
         self.qbuild = None
+        self.locked = None
         self.build_temp = None
         self.plat_name = None
         self.target = os.getenv("CARGO_BUILD_TARGET")
@@ -145,9 +147,14 @@ class build_rust(RustCommand):
             target_dir = os.path.join(target_dir, target_triple)
 
         quiet = self.qbuild or ext.quiet
+        locked = self.locked or ext.locked
         debug = self._is_debug_build(ext)
         cargo_args = self._cargo_args(
-            ext=ext, target_triple=target_triple, release=not debug, quiet=quiet
+            ext=ext,
+            target_triple=target_triple,
+            release=not debug,
+            quiet=quiet,
+            locked=locked,
         )
 
         if ext._uses_exec_binding():
@@ -476,6 +483,7 @@ class build_rust(RustCommand):
         target_triple: Optional[str],
         release: bool,
         quiet: bool,
+        locked: bool,
     ) -> List[str]:
         args = []
         if target_triple is not None:
@@ -488,6 +496,9 @@ class build_rust(RustCommand):
 
         if quiet:
             args.append("-q")
+
+        if locked:
+            args.append("--locked")
 
         elif self.verbose:
             # cargo only have -vv
