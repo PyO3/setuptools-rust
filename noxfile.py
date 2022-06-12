@@ -119,6 +119,10 @@ def build_emscripten_interpreter(session: nox.Session):
 @nox.session(name="test-emscripten-namespace-package-wheel")
 def test_emscripten_namespace_package_wheel(session: nox.Session):
     session.install("wheel")
+    import wheel
+
+    wheel_path = Path(wheel.__path__[0]).parent
+
     info = EmscriptenInfo()
     dist_dir = Path("examples/namespace_package/dist/").resolve()
     pkg = "namespace_package-0.1.0"
@@ -130,6 +134,7 @@ def test_emscripten_namespace_package_wheel(session: nox.Session):
             "unpack",
             f"{pkg}-{info.wheel_suffix}",
             external=True,
+            env={"PYTHONPATH": wheel_path},
         )
 
     with session.chdir("emscripten/interpreter"):

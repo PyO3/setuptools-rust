@@ -258,7 +258,11 @@ class build_rust(RustCommand):
                         f"unable to find executable '{name}' in '{artifacts_dir}'"
                     )
         else:
-            print("\n\n=====================\nsysconfig.get_platform():", sysconfig.get_platform(),"\n===================\n")
+            print(
+                "\n\n=====================\nsysconfig.get_platform():",
+                sysconfig.get_platform(),
+                "\n===================\n",
+            )
             if sys.platform == "win32" or "cygwin" in sysconfig.get_platform():
                 dylib_ext = "dll"
             elif "darwin" in sysconfig.get_platform():
