@@ -59,9 +59,11 @@ class EmscriptenInfo:
         self.pymajorminormicro = f"{self.pymajorminor}.{self.pymicro}"
         self.emscripten_version = "3.1.13"
 
-        underscore_emscripten_version = self.emscripten_version.replace('.', '_')
+        underscore_emscripten_version = self.emscripten_version.replace(".", "_")
         cp = f"cp{self.pymajor}{self.pyminor}"
-        self.wheel_suffix = f"{cp}-{cp}-emscripten_{underscore_emscripten_version}_wasm32.whl"
+        self.wheel_suffix = (
+            f"{cp}-{cp}-emscripten_{underscore_emscripten_version}_wasm32.whl"
+        )
 
     def build(self, session, target):
         session.run(
@@ -82,12 +84,29 @@ def build_emscripten_libpython(session: nox.Session):
     info = EmscriptenInfo()
     info.build(session, "libpython")
 
+
 @nox.session(name="build-emscripten-namespace-package-wheel")
 def build_emscripten_namespace_package_wheel(session: nox.Session):
     session.install(".")
     info = EmscriptenInfo()
-    session.run("rustup", "target", "add", "wasm32-unknown-emscripten", "--toolchain", "nightly", external=True)
-    session.run("rustup", "component", "add", "rust-src", "--toolchain", "nightly", external=True)
+    session.run(
+        "rustup",
+        "target",
+        "add",
+        "wasm32-unknown-emscripten",
+        "--toolchain",
+        "nightly",
+        external=True,
+    )
+    session.run(
+        "rustup",
+        "component",
+        "add",
+        "rust-src",
+        "--toolchain",
+        "nightly",
+        external=True,
+    )
     info.build(session, "namespace_package_wheel")
 
 
@@ -96,6 +115,7 @@ def build_emscripten_interpreter(session: nox.Session):
     info = EmscriptenInfo()
     info.build(session, "python-interpreter")
 
+
 @nox.session(name="test-emscripten-namespace-package-wheel")
 def test_emscripten_namespace_package_wheel(session: nox.Session):
     session.install("wheel")
@@ -103,7 +123,20 @@ def test_emscripten_namespace_package_wheel(session: nox.Session):
     dist_dir = Path("examples/namespace_package/dist/").resolve()
     pkg = "namespace_package-0.1.0"
     with session.chdir(dist_dir):
-        session.run(sys.executable, "-m", "wheel", "unpack", f"{pkg}-{info.wheel_suffix}", external=True)
-    
+        session.run(
+            sys.executable,
+            "-m",
+            "wheel",
+            "unpack",
+            f"{pkg}-{info.wheel_suffix}",
+            external=True,
+        )
+
     with session.chdir("emscripten/interpreter"):
-        session.run("node", "--experimental-wasm-bigint", "main.js", str(dist_dir/pkg), external=True)
+        session.run(
+            "node",
+            "--experimental-wasm-bigint",
+            "main.js",
+            str(dist_dir / pkg),
+            external=True,
+        )
