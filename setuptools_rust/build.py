@@ -263,11 +263,12 @@ class build_rust(RustCommand):
                 sysconfig.get_platform(),
                 "\n===================\n",
             )
-            if sys.platform == "win32" or "cygwin" in sysconfig.get_platform():
+            platform = sysconfig.get_platform()
+            if "win32" in platform or "cygwin" in platform:
                 dylib_ext = "dll"
-            elif "darwin" in sysconfig.get_platform():
+            elif platform.startswith("macosx"):
                 dylib_ext = "dylib"
-            elif "wasm32" in sysconfig.get_platform():
+            elif "wasm32" in platform:
                 dylib_ext = "wasm"
             else:
                 dylib_ext = "so"
