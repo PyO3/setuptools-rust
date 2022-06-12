@@ -264,6 +264,8 @@ class build_rust(RustCommand):
                 dylib_ext = "dylib"
             elif "wasm32" in sysconfig.get_platform():
                 dylib_ext = "wasm"
+            else:
+                dylib_ext = "so"
 
             wildcard_so = "*{}.{}".format(ext.get_lib_name(), dylib_ext)
 
