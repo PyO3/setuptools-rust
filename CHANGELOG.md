@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- If the sysconfig for `BLDSHARED` has no flags, `setuptools-rust` won't crash anymore. [#241](https://github.com/PyO3/setuptools-rust/pull/241)
+
 ## 1.3.0 (2022-04-26)
 
 ### Packaging
