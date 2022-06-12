@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-      - emscripten
+      - emscripten-ci
   pull_request:
 
 concurrency:
