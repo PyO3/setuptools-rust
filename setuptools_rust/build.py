@@ -264,7 +264,7 @@ class build_rust(RustCommand):
                 "\n===================\n",
             )
             platform = sysconfig.get_platform()
-            if "win32" in platform or "cygwin" in platform:
+            if "win" in platform:
                 dylib_ext = "dll"
             elif platform.startswith("macosx"):
                 dylib_ext = "dylib"
