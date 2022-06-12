@@ -502,6 +502,9 @@ class build_rust(RustCommand):
         if ext.args is not None:
             args.extend(ext.args)
 
+        if "_SETUPTOOLSRUST_EXTRA_CARGO_ARGS" in os.environ:
+            args.append(" ".split(os.environ["_SETUPTOOLSRUST_EXTRA_CARGO_ARGS"]))
+
         return args
 
 
