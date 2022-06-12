@@ -258,12 +258,12 @@ class build_rust(RustCommand):
                         f"unable to find executable '{name}' in '{artifacts_dir}'"
                     )
         else:
-            if sys.platform == "win32" or sys.platform == "cygwin":
+            if sys.platform == "win32" or "cygwin" in sysconfig.get_platform():
                 dylib_ext = "dll"
-            elif sys.platform == "darwin":
+            elif "darwin" in sysconfig.get_platform():
                 dylib_ext = "dylib"
-            else:
-                dylib_ext = "so"
+            elif "wasm32" in sysconfig.get_platform():
+                dylib_ext = "wasm"
 
             wildcard_so = "*{}.{}".format(ext.get_lib_name(), dylib_ext)
 
@@ -502,6 +502,9 @@ class build_rust(RustCommand):
         if ext.args is not None:
             args.extend(ext.args)
 
+        if "_SETUPTOOLSRUST_BUILD_STD" in os.environ:
+            args.append("-Zbuild-std")
+
         return args
 
 
@@ -622,7 +625,7 @@ def _detect_unix_cross_compile_info() -> Optional["_CrossCompileInfo"]:
         linker = None
         linker_args = None
     else:
-        [linker, linker_args] = bldshared.split(maxsplit=1)
+        [linker, _, linker_args] = bldshared.partition(" ")
 
     return _CrossCompileInfo(host_type, cross_lib, linker, linker_args)
 

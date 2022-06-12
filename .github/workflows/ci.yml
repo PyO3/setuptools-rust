@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - emscripten
   pull_request:
 
 concurrency:
@@ -331,6 +332,44 @@ jobs:
             pip3 install namespace_package --no-index --find-links /io/dist/ --force-reinstall
             python3 -c "from namespace_package import rust; assert rust.rust_func() == 14"
             python3 -c "from namespace_package import python; assert python.python_func() == 15"
+
+  emscripten:
+    name: emscripten
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        id: setup-python
+        with:
+          python-version: 3.11-dev
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          target: wasm32-unknown-emscripten
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 14
+      - run: pip install nox
+      - uses: actions/cache@v3
+        id: cache
+        with:
+          path: |
+            .nox/emscripten
+          key: ${{ hashFiles('emscripten/*') }} - ${{ hashFiles('noxfile.py') }} - ${{ steps.setup-python.outputs.python-path }}
+      - uses: Swatinem/rust-cache@v1
+        with:
+          key: cargo-emscripten-wasm32
+      - name: Build libpython
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: nox -s build-emscripten-libpython
+      - name: Build interpreter
+        run: nox -s build-emscripten-interpreter
+      - name: Build namespace wheel
+        run: nox -s build-emscripten-namespace-package-wheel
+      - name: Test
+        run: nox -s test-emscripten
+
 
   test-cibuildwheel:
     runs-on: macos-latest

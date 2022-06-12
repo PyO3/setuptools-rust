@@ -1,0 +1,4 @@
+builddir
+main.*
+!main.c
+pybuilddir.txt
