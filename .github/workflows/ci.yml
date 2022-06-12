@@ -368,7 +368,7 @@ jobs:
       - name: Build namespace wheel
         run: nox -s build-emscripten-namespace-package-wheel
       - name: Test
-        run: nox -s test-emscripten
+        run: nox -s test-emscripten-namespace-package-wheel
 
 
   test-cibuildwheel:
