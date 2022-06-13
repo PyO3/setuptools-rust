@@ -258,10 +258,13 @@ class build_rust(RustCommand):
                         f"unable to find executable '{name}' in '{artifacts_dir}'"
                     )
         else:
-            if sys.platform == "win32" or sys.platform == "cygwin":
+            platform = sysconfig.get_platform()
+            if "win" in platform:
                 dylib_ext = "dll"
-            elif sys.platform == "darwin":
+            elif platform.startswith("macosx"):
                 dylib_ext = "dylib"
+            elif "wasm32" in platform:
+                dylib_ext = "wasm"
             else:
                 dylib_ext = "so"
 
