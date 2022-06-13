@@ -622,7 +622,7 @@ def _detect_unix_cross_compile_info() -> Optional["_CrossCompileInfo"]:
         linker = None
         linker_args = None
     else:
-        [linker, linker_args] = bldshared.split(maxsplit=1)
+        [linker, _, linker_args] = bldshared.partition(" ")
 
     return _CrossCompileInfo(host_type, cross_lib, linker, linker_args)
 
