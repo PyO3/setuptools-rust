@@ -1,9 +1,7 @@
 import os
 import subprocess
-import sys
 from distutils import log
 from distutils.command.clean import clean
-from pathlib import Path
 from typing import List, Tuple, Type, cast
 
 from setuptools.command.build_ext import build_ext

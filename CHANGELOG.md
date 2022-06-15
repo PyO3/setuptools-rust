@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Packaging
+- Increase minimum `setuptools` version to 62.4. [#222](https://github.com/PyO3/setuptools-rust/pull/246)
+
 ### Fixed
 - If the sysconfig for `BLDSHARED` has no flags, `setuptools-rust` won't crash anymore. [#241](https://github.com/PyO3/setuptools-rust/pull/241)
 

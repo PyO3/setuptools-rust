@@ -6,7 +6,6 @@ import subprocess
 import sys
 import sysconfig
 from distutils import log
-from distutils.command.build import build as CommandBuild
 from distutils.errors import (
     CompileError,
     DistutilsExecError,
@@ -16,6 +15,7 @@ from distutils.errors import (
 from distutils.sysconfig import get_config_var
 from typing import Dict, List, NamedTuple, Optional, cast
 
+from setuptools.command.build import build as CommandBuild  # type: ignore[import]
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
 from typing_extensions import Literal
@@ -72,7 +72,7 @@ class build_rust(RustCommand):
         super().finalize_options()
 
         if self.plat_name is None:
-            self.plat_name = cast(
+            self.plat_name = cast(  # type: ignore[no-any-unimported]
                 CommandBuild, self.get_finalized_command("build")
             ).plat_name
             assert isinstance(self.plat_name, str)

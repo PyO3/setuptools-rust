@@ -201,7 +201,8 @@ jobs:
       - uses: actions/checkout@master
       - name: Build wheels
         run: |
-          echo 'curl -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          echo 'set -ex
+          curl -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
           source ~/.cargo/env
           rustup target add ${{ matrix.platform.target }}
 
@@ -212,7 +213,7 @@ jobs:
           python3.9 -m pip install crossenv
           python3.9 -m crossenv "/opt/python/cp39-cp39/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 venv
           . venv/bin/activate
-          build-pip install cffi wheel
+          build-pip install cffi wheel "setuptools>=62.4"
           cross-expose cffi
           pip install wheel
           pip install -e ../../
