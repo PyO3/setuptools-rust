@@ -21,7 +21,7 @@ from setuptools.command.build_ext import get_abi3_suffix
 from typing_extensions import Literal
 
 from .command import RustCommand
-from .extension import RustExtension, Strip
+from .extension import RustBin, RustExtension, Strip
 from .utils import (
     PyLimitedApi,
     binding_features,
@@ -313,7 +313,18 @@ class build_rust(RustCommand):
                     ext_path += exe
 
                 os.makedirs(os.path.dirname(ext_path), exist_ok=True)
-                ext.install_script(module_name.split(".")[-1], ext_path)
+                if isinstance(ext, RustBin):
+                    executable_name = module_name
+                    if exe is not None:
+                        executable_name += exe
+                    wheel = self.get_finalized_command("bdist_wheel")
+                    scripts_dir = os.path.join(
+                        build_ext.build_lib, wheel.data_dir, "scripts"  # type: ignore[attr-defined]
+                    )
+                    os.makedirs(scripts_dir, exist_ok=True)
+                    ext_path = os.path.join(scripts_dir, executable_name)
+                else:
+                    ext.install_script(module_name.split(".")[-1], ext_path)
             else:
                 ext_path = self.get_dylib_ext_path(ext, module_name)
                 os.makedirs(os.path.dirname(ext_path), exist_ok=True)

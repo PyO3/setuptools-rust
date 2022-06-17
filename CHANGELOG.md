@@ -7,6 +7,10 @@
 
 ### Added
 - Add `cargo_manifest_args` to support locked, frozen and offline builds. [#234](https://github.com/PyO3/setuptools-rust/pull/234)
+- Add `RustBin` for packaging binaries in scripts data directory. [#248](https://github.com/PyO3/setuptools-rust/pull/248)
+
+### Changed
+- `Exec` binding `RustExtension` with `script=True` is deprecated in favor of `RustBin`. [#248](https://github.com/PyO3/setuptools-rust/pull/248)
 
 ### Fixed
 - If the sysconfig for `BLDSHARED` has no flags, `setuptools-rust` won't crash anymore. [#241](https://github.com/PyO3/setuptools-rust/pull/241)

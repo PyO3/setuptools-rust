@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import warnings
 import subprocess
 from distutils.errors import DistutilsSetupError
 from enum import IntEnum, auto
@@ -160,6 +161,12 @@ class RustExtension:
 
         self._cargo_metadata: Optional[_CargoMetadata] = None
 
+        if binding == Binding.Exec and script:
+            warnings.warn(
+                "'Binding.Exec' with 'script=True' is deprecated, use 'RustBin' instead.",
+                DeprecationWarning,
+            )
+
     def get_lib_name(self) -> str:
         """Parse Cargo.toml to get the name of the shared library."""
         metadata = self._metadata()
@@ -238,6 +245,67 @@ class RustExtension:
 
     def _uses_exec_binding(self) -> bool:
         return self.binding == Binding.Exec
+
+
+class RustBin(RustExtension):
+    """Used to define a Rust binary and its build configuration.
+
+    Args:
+        target: Rust binary target name.
+        path: Path to the ``Cargo.toml`` manifest file.
+        args: A list of extra arguments to be passed to Cargo. For example,
+            ``args=["--no-default-features"]`` will disable the default
+            features listed in ``Cargo.toml``.
+        cargo_manifest_args: A list of extra arguments to be passed to Cargo.
+            These arguments will be passed to every ``cargo`` command, not just
+            ``cargo build``. For valid options, see
+            `the Cargo Book <https://doc.rust-lang.org/cargo/commands/cargo-build.html#manifest-options>`_.
+            For example, ``cargo_manifest_args=["--locked"]`` will require
+            ``Cargo.lock`` files are up to date.
+        features: A list of Cargo features to also build.
+        rustc_flags: A list of additional flags passed to rustc.
+        rust_version: Minimum Rust compiler version required for this
+            extension.
+        quiet: Suppress Cargo's output.
+        debug: Controls whether ``--debug`` or ``--release`` is passed to
+            Cargo. If set to `None` (the default) then build type is
+            automatic: ``inplace`` build will be a debug build, ``install``
+            and ``wheel`` builds will be release.
+        strip: Strip symbols from final file. Does nothing for debug build.
+        native: Build extension or executable with ``--target-cpu=native``.
+    """
+
+    def __init__(
+        self,
+        target: str,
+        path: str = "Cargo.toml",
+        args: Optional[List[str]] = None,
+        cargo_manifest_args: Optional[List[str]] = None,
+        features: Optional[List[str]] = None,
+        rustc_flags: Optional[List[str]] = None,
+        rust_version: Optional[str] = None,
+        quiet: bool = False,
+        debug: Optional[bool] = None,
+        strip: Strip = Strip.No,
+        native: bool = False,
+    ):
+        super().__init__(
+            target,
+            path,
+            args,
+            cargo_manifest_args,
+            features,
+            rustc_flags,
+            rust_version,
+            quiet,
+            debug,
+            binding=Binding.Exec,
+            strip=strip,
+            native=native,
+        )
+
+    def entry_points(self) -> List[str]:
+        return []
 
 
 _CargoMetadata = NewType("_CargoMetadata", Dict[str, Any])
