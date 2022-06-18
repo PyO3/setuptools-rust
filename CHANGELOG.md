@@ -5,6 +5,9 @@
 ### Packaging
 - Increase minimum `setuptools` version to 62.4. [#222](https://github.com/PyO3/setuptools-rust/pull/246)
 
+### Added
+- Add `cargo_manifest_args` to support locked, frozen and offline builds. [#234](https://github.com/PyO3/setuptools-rust/pull/234)
+
 ### Fixed
 - If the sysconfig for `BLDSHARED` has no flags, `setuptools-rust` won't crash anymore. [#241](https://github.com/PyO3/setuptools-rust/pull/241)
 
