@@ -2,7 +2,7 @@ import os
 import subprocess
 from distutils import log
 from distutils.command.clean import clean
-from typing import List, Tuple, Type, cast
+from typing import List, Set, Tuple, Type, cast
 
 from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
@@ -49,12 +49,16 @@ def add_rust_extension(dist: Distribution) -> None:
             if self.vendor_crates:
                 manifest_paths = []
 
-                # Require lockfile to be up to date, if any one of our extensions
-                # requires it.
-                locked = False
+                # Collate cargo manifest options together.
+                # We can cheat here, as the only valid options are the simple strings
+                # --frozen, --locked, or --offline.
+                #
+                # https://doc.rust-lang.org/cargo/commands/cargo-build.html#manifest-options
+                cargo_manifest_args: Set[str] = set()
                 for ext in self.distribution.rust_extensions:
                     manifest_paths.append(ext.path)
-                    locked |= ext.locked
+                    if ext.cargo_manifest_args:
+                        cargo_manifest_args.union(ext.cargo_manifest_args)
 
                 if manifest_paths:
                     base_dir = self.distribution.get_fullname()
@@ -63,8 +67,8 @@ def add_rust_extension(dist: Distribution) -> None:
                     cargo_config_path = os.path.join(dot_cargo_path, "config.toml")
                     vendor_path = os.path.join(dot_cargo_path, "vendor")
                     command = ["cargo", "vendor"]
-                    if locked:
-                        command.append("--locked")
+                    if cargo_manifest_args:
+                        command.extend(sorted(cargo_manifest_args))
                     # additional Cargo.toml for extension 1..n
                     for extra_path in manifest_paths[1:]:
                         command.append("--sync")
