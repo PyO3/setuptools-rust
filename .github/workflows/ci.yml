@@ -300,8 +300,7 @@ jobs:
           override: true
       - name: Install cargo-zigbuild
         run: |
-          cargo install cargo-zigbuild
-          python3 -m pip install ziglang
+          python3 -m pip install cargo-zigbuild
       - name: Build package
         run: pip install -e .
       - name: Build wheel using cargo-zigbuild
