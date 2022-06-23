@@ -58,7 +58,7 @@ def add_rust_extension(dist: Distribution) -> None:
                 for ext in self.distribution.rust_extensions:
                     manifest_paths.append(ext.path)
                     if ext.cargo_manifest_args:
-                        cargo_manifest_args.union(ext.cargo_manifest_args)
+                        cargo_manifest_args.update(ext.cargo_manifest_args)
 
                 if manifest_paths:
                     base_dir = self.distribution.get_fullname()
