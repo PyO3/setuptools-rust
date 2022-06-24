@@ -505,6 +505,9 @@ class build_rust(RustCommand):
         if ext.args is not None:
             args.extend(ext.args)
 
+        if ext.cargo_manifest_args is not None:
+            args.extend(ext.cargo_manifest_args)
+
         return args
 
 

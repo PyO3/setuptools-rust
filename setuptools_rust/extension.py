@@ -68,6 +68,12 @@ class RustExtension:
         args: A list of extra arguments to be passed to Cargo. For example,
             ``args=["--no-default-features"]`` will disable the default
             features listed in ``Cargo.toml``.
+        cargo_manifest_args: A list of extra arguments to be passed to Cargo.
+            These arguments will be passed to every ``cargo`` command, not just
+            ``cargo build``. For valid options, see
+            `the Cargo Book <https://doc.rust-lang.org/cargo/commands/cargo-build.html#manifest-options>`_.
+            For example, ``cargo_manifest_args=["--locked"]`` will require
+            ``Cargo.lock`` files are up to date.
         features: A list of Cargo features to also build.
         rustc_flags: A list of additional flags passed to rustc.
         rust_version: Minimum Rust compiler version required for this
@@ -109,6 +115,7 @@ class RustExtension:
         target: Union[str, Dict[str, str]],
         path: str = "Cargo.toml",
         args: Optional[List[str]] = None,
+        cargo_manifest_args: Optional[List[str]] = None,
         features: Optional[List[str]] = None,
         rustc_flags: Optional[List[str]] = None,
         rust_version: Optional[str] = None,
@@ -130,6 +137,7 @@ class RustExtension:
         self.name = name
         self.target = target
         self.args = args
+        self.cargo_manifest_args = cargo_manifest_args
         self.rustc_flags = rustc_flags
         self.binding = binding
         self.rust_version = rust_version
@@ -223,6 +231,8 @@ class RustExtension:
                 "--format-version",
                 "1",
             ]
+            if self.cargo_manifest_args:
+                metadata_command.extend(self.cargo_manifest_args)
             self._cargo_metadata = json.loads(subprocess.check_output(metadata_command))
         return self._cargo_metadata
 
