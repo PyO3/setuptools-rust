@@ -1,15 +1,13 @@
 from setuptools import setup
 
-from setuptools_rust import Binding, RustExtension
+from setuptools_rust import RustBin
 
 setup(
     name="hello-world",
     version="1.0",
     rust_extensions=[
-        RustExtension(
-            {"hello-world": "hello_world.hello-world"},
-            binding=Binding.Exec,
-            script=True,
+        RustBin(
+            "hello-world",
             args=["--profile", "release-lto"],
         )
     ],
