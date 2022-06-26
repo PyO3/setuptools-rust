@@ -695,6 +695,7 @@ def _prepare_build_environment(cross_lib: Optional[str]) -> Dict[str, str]:
     if cross_lib:
         env.setdefault("PYO3_CROSS_LIB_DIR", cross_lib)
 
+    env.pop("CARGO", None)
     return env
 
 

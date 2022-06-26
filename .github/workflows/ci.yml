@@ -253,7 +253,7 @@ jobs:
           toolchain: stable
           override: true
       - name: Install cross
-        run: cargo install --version 0.2.1 cross
+        run: cargo install cross
       - name: Build package
         run: pip install -e .
       - name: Build wheel using cross
