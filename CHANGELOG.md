@@ -11,6 +11,8 @@
 
 ### Changed
 - `Exec` binding `RustExtension` with `script=True` is deprecated in favor of `RustBin`. [#248](https://github.com/PyO3/setuptools-rust/pull/248)
+- Errors while calling `cargo metadata` are now reported back to the user [#254](https://github.com/PyO3/setuptools-rust/pull/254)
+- `quiet` option will now suppress output of `cargo metadata`. [#256](https://github.com/PyO3/setuptools-rust/pull/256)
 
 ### Fixed
 - If the sysconfig for `BLDSHARED` has no flags, `setuptools-rust` won't crash anymore. [#241](https://github.com/PyO3/setuptools-rust/pull/241)

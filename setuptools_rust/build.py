@@ -22,6 +22,7 @@ from typing_extensions import Literal
 
 from .command import RustCommand
 from .extension import RustBin, RustExtension, Strip
+from .private import format_called_process_error
 from .utils import (
     PyLimitedApi,
     binding_features,
@@ -139,13 +140,14 @@ class build_rust(RustCommand):
                 f"can't find Rust extension project file: {ext.path}"
             )
 
+        quiet = self.qbuild or ext.quiet
+        debug = self._is_debug_build(ext)
+
         # Find where to put the temporary build files created by `cargo`
-        target_dir = _base_cargo_target_dir(ext)
+        target_dir = _base_cargo_target_dir(ext, quiet=quiet)
         if target_triple is not None:
             target_dir = os.path.join(target_dir, target_triple)
 
-        quiet = self.qbuild or ext.quiet
-        debug = self._is_debug_build(ext)
         cargo_args = self._cargo_args(
             ext=ext, target_triple=target_triple, release=not debug, quiet=quiet
         )
@@ -210,21 +212,12 @@ class build_rust(RustCommand):
 
         # Execute cargo
         try:
+            stderr = subprocess.PIPE if quiet else None
             output = subprocess.check_output(
-                command, env=env, encoding="latin-1", stderr=subprocess.PIPE
+                command, env=env, encoding="latin-1", stderr=stderr
             )
         except subprocess.CalledProcessError as e:
-            raise CompileError(
-                f"""
-                cargo failed with code: {e.returncode}
-
-                Output captured from stderr:
-                {e.stderr}
-
-                Output captured from stdout:
-                {e.stdout}
-                """
-            )
+            raise CompileError(format_called_process_error(e))
 
         except OSError:
             raise DistutilsExecError(
@@ -280,7 +273,7 @@ class build_rust(RustCommand):
             else:
                 dylib_ext = "so"
 
-            wildcard_so = "*{}.{}".format(ext.get_lib_name(), dylib_ext)
+            wildcard_so = "*{}.{}".format(ext.get_lib_name(quiet=quiet), dylib_ext)
 
             try:
                 dylib_paths.append(
@@ -711,13 +704,13 @@ def _prepare_build_environment(cross_lib: Optional[str]) -> Dict[str, str]:
     return env
 
 
-def _base_cargo_target_dir(ext: RustExtension) -> str:
+def _base_cargo_target_dir(ext: RustExtension, *, quiet: bool) -> str:
     """Returns the root target directory cargo will use.
 
     If --target is passed to cargo in the command line, the target directory
     will have the target appended as a child.
     """
-    target_directory = ext._metadata()["target_directory"]
+    target_directory = ext._metadata(quiet=quiet)["target_directory"]
     assert isinstance(
         target_directory, str
     ), "expected cargo metadata to contain a string target directory"
