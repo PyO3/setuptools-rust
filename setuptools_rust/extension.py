@@ -1,14 +1,16 @@
 import json
 import os
 import re
-import warnings
 import subprocess
+import warnings
 from distutils.errors import DistutilsSetupError
 from enum import IntEnum, auto
 from typing import Any, Dict, List, NewType, Optional, Union
 
 from semantic_version import SimpleSpec
 from typing_extensions import Literal
+
+from .private import format_called_process_error
 
 
 class Binding(IntEnum):
@@ -167,9 +169,9 @@ class RustExtension:
                 DeprecationWarning,
             )
 
-    def get_lib_name(self) -> str:
+    def get_lib_name(self, *, quiet: bool) -> str:
         """Parse Cargo.toml to get the name of the shared library."""
-        metadata = self._metadata()
+        metadata = self._metadata(quiet=quiet)
         root_key = metadata["resolve"]["root"]
         [pkg] = [p for p in metadata["packages"] if p["id"] == root_key]
         name = pkg["targets"][0]["name"]
@@ -224,7 +226,7 @@ class RustExtension:
             with open(file, "w") as f:
                 f.write(_SCRIPT_TEMPLATE.format(executable=repr(executable)))
 
-    def _metadata(self) -> "_CargoMetadata":
+    def _metadata(self, *, quiet: bool) -> "_CargoMetadata":
         """Returns cargo metedata for this extension package.
 
         Cached - will only execute cargo on first invocation.
@@ -242,21 +244,12 @@ class RustExtension:
                 metadata_command.extend(self.cargo_manifest_args)
 
             try:
+                stderr = subprocess.PIPE if quiet else None
                 payload = subprocess.check_output(
-                    metadata_command, encoding="latin-1", stderr=subprocess.PIPE
+                    metadata_command, encoding="latin-1", stderr=stderr
                 )
             except subprocess.CalledProcessError as e:
-                raise DistutilsSetupError(
-                    f"""
-                    cargo metadata failed with code: {e.returncode}
-
-                    Output captured from stderr:
-                    {e.stderr}
-
-                    Output captured from stdout:
-                    {e.stdout}
-                    """
-                )
+                raise DistutilsSetupError(format_called_process_error(e))
             try:
                 self._cargo_metadata = json.loads(payload)
             except json.decoder.JSONDecodeError as e:
