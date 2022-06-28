@@ -240,7 +240,32 @@ class RustExtension:
             ]
             if self.cargo_manifest_args:
                 metadata_command.extend(self.cargo_manifest_args)
-            self._cargo_metadata = json.loads(subprocess.check_output(metadata_command))
+
+            try:
+                payload = subprocess.check_output(
+                    metadata_command, encoding="latin-1", stderr=subprocess.PIPE
+                )
+            except subprocess.CalledProcessError as e:
+                raise DistutilsSetupError(
+                    f"""
+                    cargo metadata failed with code: {e.returncode}
+
+                    Output captured from stderr:
+                    {e.stderr}
+
+                    Output captured from stdout:
+                    {e.stdout}
+                    """
+                )
+            try:
+                self._cargo_metadata = json.loads(payload)
+            except json.decoder.JSONDecodeError as e:
+                raise DistutilsSetupError(
+                    f"""
+                    Error parsing output of cargo metadata as json; received:
+                    {payload}
+                    """
+                ) from e
         return self._cargo_metadata
 
     def _uses_exec_binding(self) -> bool:

@@ -210,9 +210,21 @@ class build_rust(RustCommand):
 
         # Execute cargo
         try:
-            output = subprocess.check_output(command, env=env, encoding="latin-1")
+            output = subprocess.check_output(
+                command, env=env, encoding="latin-1", stderr=subprocess.PIPE
+            )
         except subprocess.CalledProcessError as e:
-            raise CompileError(f"cargo failed with code: {e.returncode}\n{e.output}")
+            raise CompileError(
+                f"""
+                cargo failed with code: {e.returncode}
+
+                Output captured from stderr:
+                {e.stderr}
+
+                Output captured from stdout:
+                {e.stdout}
+                """
+            )
 
         except OSError:
             raise DistutilsExecError(
