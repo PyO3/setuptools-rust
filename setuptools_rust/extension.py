@@ -257,8 +257,15 @@ class RustExtension:
                     {e.stdout}
                     """
                 )
-
-            self._cargo_metadata = json.loads(payload)
+            try:
+                self._cargo_metadata = json.loads(payload)
+            except json.decoder.JSONDecodeError as e:
+                raise DistutilsSetupError(
+                    f"""
+                    Error parsing output of cargo metadata as json; received:
+                    {payload}
+                    """
+                ) from e
         return self._cargo_metadata
 
     def _uses_exec_binding(self) -> bool:
