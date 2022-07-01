@@ -34,4 +34,4 @@ def mypy(session: nox.Session):
 @nox.session()
 def test(session: nox.Session):
     session.install("pytest", ".")
-    session.run("pytest", "setuptools_rust", *session.posargs)
+    session.run("pytest", "setuptools_rust", "tests", *session.posargs)
