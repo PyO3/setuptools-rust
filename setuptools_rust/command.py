@@ -7,7 +7,7 @@ from typing import List, Optional
 from setuptools.dist import Distribution
 
 from .extension import RustExtension
-from .utils import get_rust_version
+from .rustc_info import get_rust_version
 
 
 class RustCommand(Command, ABC):

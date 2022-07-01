@@ -10,7 +10,7 @@ from typing import Any, Dict, List, NewType, Optional, Union
 from semantic_version import SimpleSpec
 from typing_extensions import Literal
 
-from .private import format_called_process_error
+from ._utils import format_called_process_error
 
 
 class Binding(IntEnum):
@@ -246,7 +246,7 @@ class RustExtension:
             try:
                 stderr = subprocess.PIPE if quiet else None
                 payload = subprocess.check_output(
-                    metadata_command, encoding="latin-1", stderr=stderr
+                    metadata_command, stderr=stderr, encoding="latin-1"
                 )
             except subprocess.CalledProcessError as e:
                 raise DistutilsSetupError(format_called_process_error(e))

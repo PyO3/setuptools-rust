@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import glob
 import os
 import platform
@@ -13,23 +15,17 @@ from distutils.errors import (
     DistutilsPlatformError,
 )
 from distutils.sysconfig import get_config_var
-from typing import Dict, List, NamedTuple, Optional, cast
+from typing import Dict, List, NamedTuple, Optional, Set, Tuple, cast
 
 from setuptools.command.build import build as CommandBuild  # type: ignore[import]
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
 from typing_extensions import Literal
 
+from ._utils import format_called_process_error
 from .command import RustCommand
-from .extension import RustBin, RustExtension, Strip
-from .private import format_called_process_error
-from .utils import (
-    PyLimitedApi,
-    binding_features,
-    get_rust_target_info,
-    get_rust_target_list,
-    split_platform_and_extension,
-)
+from .extension import Binding, RustBin, RustExtension, Strip
+from .rustc_info import get_rust_host, get_rust_target_list, get_rustc_cfgs
 
 
 class build_rust(RustCommand):
@@ -131,7 +127,7 @@ class build_rust(RustCommand):
             cross_lib = None
             linker = None
 
-        rustc_cfgs = _get_rustc_cfgs(target_triple)
+        rustc_cfgs = get_rustc_cfgs(target_triple)
 
         env = _prepare_build_environment(cross_lib)
 
@@ -213,9 +209,7 @@ class build_rust(RustCommand):
         # Execute cargo
         try:
             stderr = subprocess.PIPE if quiet else None
-            output = subprocess.check_output(
-                command, env=env, encoding="latin-1", stderr=stderr
-            )
+            output = subprocess.check_output(command, env=env, stderr=stderr, text=True)
         except subprocess.CalledProcessError as e:
             raise CompileError(format_called_process_error(e))
 
@@ -310,7 +304,7 @@ class build_rust(RustCommand):
             if ext._uses_exec_binding():
                 ext_path = build_ext.get_ext_fullpath(module_name)
                 # remove extensions
-                ext_path, _, _ = split_platform_and_extension(ext_path)
+                ext_path, _, _ = _split_platform_and_extension(ext_path)
 
                 # Add expected extension
                 exe = sysconfig.get_config_var("EXE")
@@ -393,12 +387,12 @@ class build_rust(RustCommand):
         host_arch = host_platform.rsplit("-", 1)[1]
         # Remove incorrect platform tag if we are cross compiling
         if target_arch and host_arch != target_arch:
-            ext_path, _, extension = split_platform_and_extension(ext_path)
+            ext_path, _, extension = _split_platform_and_extension(ext_path)
             # rust.so, removed platform tag
             ext_path += extension
         return ext_path
 
-    def _py_limited_api(self) -> PyLimitedApi:
+    def _py_limited_api(self) -> _PyLimitedApi:
         bdist_wheel = self.distribution.get_command_obj("bdist_wheel", create=False)
 
         if bdist_wheel is None:
@@ -409,11 +403,12 @@ class build_rust(RustCommand):
 
             bdist_wheel_command = cast(CommandBdistWheel, bdist_wheel)  # type: ignore[no-any-unimported]
             bdist_wheel_command.ensure_finalized()
-            return cast(PyLimitedApi, bdist_wheel_command.py_limited_api)
+            return cast(_PyLimitedApi, bdist_wheel_command.py_limited_api)
 
     def _detect_rust_target(
         self, forced_target_triple: Optional[str] = None
     ) -> Optional["_TargetInfo"]:
+        assert self.plat_name is not None
         cross_compile_info = _detect_unix_cross_compile_info()
         if cross_compile_info is not None:
             cross_target_info = cross_compile_info.to_target_info()
@@ -448,33 +443,23 @@ class build_rust(RustCommand):
                 )
 
         elif forced_target_triple is not None:
-            return _TargetInfo.for_triple(forced_target_triple)
-
-        else:
             # Automatic target detection can be overridden via the CARGO_BUILD_TARGET
             # environment variable or --target command line option
-            return self._detect_local_rust_target()
+            return _TargetInfo.for_triple(forced_target_triple)
 
-    def _detect_local_rust_target(self) -> Optional["_TargetInfo"]:
-        """Attempts to infer the correct Rust target from build environment for
-        some edge cases."""
-        assert self.plat_name is not None
+        # Determine local rust target which needs to be "forced" if necessary
+        local_rust_target = _adjusted_local_rust_target(self.plat_name)
 
-        # If we are on a 64-bit machine, but running a 32-bit Python, then
-        # we'll target a 32-bit Rust build.
-        if self.plat_name == "win32":
-            if _get_rustc_cfgs(None).get("target_env") == "gnu":
-                return _TargetInfo.for_triple("i686-pc-windows-gnu")
-            return _TargetInfo.for_triple("i686-pc-windows-msvc")
-        elif self.plat_name == "win-amd64":
-            if _get_rustc_cfgs(None).get("target_env") == "gnu":
-                return _TargetInfo.for_triple("x86_64-pc-windows-gnu")
-            return _TargetInfo.for_triple("x86_64-pc-windows-msvc")
-        elif self.plat_name.startswith("macosx-") and platform.machine() == "x86_64":
-            # x86_64 or arm64 macOS targeting x86_64
-            return _TargetInfo.for_triple("x86_64-apple-darwin")
-        else:
-            return None
+        # Match cargo's behaviour of not using an explicit target if the
+        # target we're compiling for is the host
+        if (
+            local_rust_target is not None
+            # check for None first to avoid calling to rustc if not needed
+            and local_rust_target != get_rust_host()
+        ):
+            return _TargetInfo.for_triple(local_rust_target)
+
+        return None
 
     def _is_debug_build(self, ext: RustExtension) -> bool:
         if self.release:
@@ -512,7 +497,7 @@ class build_rust(RustCommand):
 
         features = {
             *ext.features,
-            *binding_features(ext, py_limited_api=self._py_limited_api()),
+            *_binding_features(ext, py_limited_api=self._py_limited_api()),
         }
 
         if features:
@@ -531,11 +516,9 @@ def create_universal2_binary(output_path: str, input_paths: List[str]) -> None:
     # Try lipo first
     command = ["lipo", "-create", "-output", output_path, *input_paths]
     try:
-        subprocess.check_output(command)
+        subprocess.check_output(command, text=True)
     except subprocess.CalledProcessError as e:
         output = e.output
-        if isinstance(output, bytes):
-            output = e.output.decode("latin-1").strip()
         raise CompileError("lipo failed with code: %d\n%s" % (e.returncode, output))
     except OSError:
         # lipo not found, try using the fat-macho library
@@ -649,21 +632,6 @@ def _detect_unix_cross_compile_info() -> Optional["_CrossCompileInfo"]:
     return _CrossCompileInfo(host_type, cross_lib, linker, linker_args)
 
 
-_RustcCfgs = Dict[str, Optional[str]]
-
-
-def _get_rustc_cfgs(target_triple: Optional[str]) -> _RustcCfgs:
-    cfgs: _RustcCfgs = {}
-    for entry in get_rust_target_info(target_triple):
-        maybe_split = entry.split("=", maxsplit=1)
-        if len(maybe_split) == 2:
-            cfgs[maybe_split[0]] = maybe_split[1].strip('"')
-        else:
-            assert len(maybe_split) == 1
-            cfgs[maybe_split[0]] = None
-    return cfgs
-
-
 def _replace_vendor_with_unknown(target: str) -> Optional[str]:
     """Replaces vendor in the target triple with unknown.
 
@@ -719,7 +687,7 @@ def _base_cargo_target_dir(ext: RustExtension, *, quiet: bool) -> str:
 
 def _is_py_limited_api(
     ext_setting: Literal["auto", True, False],
-    wheel_setting: Optional[PyLimitedApi],
+    wheel_setting: Optional[_PyLimitedApi],
 ) -> bool:
     """Returns whether this extension is being built for the limited api.
 
@@ -742,3 +710,64 @@ def _is_py_limited_api(
 
     # "auto" setting - use whether the bdist_wheel option is truthy.
     return bool(wheel_setting)
+
+
+def _binding_features(
+    ext: RustExtension,
+    py_limited_api: _PyLimitedApi,
+) -> Set[str]:
+    if ext.binding in (Binding.NoBinding, Binding.Exec):
+        return set()
+    elif ext.binding is Binding.PyO3:
+        features = {"pyo3/extension-module"}
+        if ext.py_limited_api == "auto":
+            if isinstance(py_limited_api, str):
+                python_version = py_limited_api[2:]
+                features.add(f"pyo3/abi3-py{python_version}")
+            elif py_limited_api:
+                features.add(f"pyo3/abi3")
+        return features
+    elif ext.binding is Binding.RustCPython:
+        return {"cpython/python3-sys", "cpython/extension-module"}
+    else:
+        raise DistutilsPlatformError(f"unknown Rust binding: '{ext.binding}'")
+
+
+_PyLimitedApi = Literal["cp37", "cp38", "cp39", "cp310", "cp311", "cp312", True, False]
+
+
+def _adjusted_local_rust_target(plat_name: str) -> Optional[str]:
+    """Returns the local rust target for the given `plat_name`, if it is
+    necessary to 'force' a specific target for correctness."""
+
+    # If we are on a 64-bit machine, but running a 32-bit Python, then
+    # we'll target a 32-bit Rust build.
+    if plat_name == "win32":
+        if get_rustc_cfgs(None).get("target_env") == "gnu":
+            return "i686-pc-windows-gnu"
+        else:
+            return "i686-pc-windows-msvc"
+    elif plat_name == "win-amd64":
+        if get_rustc_cfgs(None).get("target_env") == "gnu":
+            return "x86_64-pc-windows-gnu"
+        else:
+            return "x86_64-pc-windows-msvc"
+    elif plat_name.startswith("macosx-") and platform.machine() == "x86_64":
+        # x86_64 or arm64 macOS targeting x86_64
+        return "x86_64-apple-darwin"
+
+    return None
+
+
+def _split_platform_and_extension(ext_path: str) -> Tuple[str, str, str]:
+    """Splits an extension path into a tuple (ext_path, plat_tag, extension).
+
+    >>> _split_platform_and_extension("foo/bar.platform.so")
+    ('foo/bar', '.platform', '.so')
+    """
+
+    # rust.cpython-38-x86_64-linux-gnu.so to (rust.cpython-38-x86_64-linux-gnu, .so)
+    ext_path, extension = os.path.splitext(ext_path)
+    # rust.cpython-38-x86_64-linux-gnu to (rust, .cpython-38-x86_64-linux-gnu)
+    ext_path, platform_tag = os.path.splitext(ext_path)
+    return (ext_path, platform_tag, extension)
