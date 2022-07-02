@@ -5,7 +5,7 @@ import subprocess
 import warnings
 from distutils.errors import DistutilsSetupError
 from enum import IntEnum, auto
-from typing import Any, Dict, List, NewType, Optional, Union
+from typing import Any, Dict, List, NewType, Optional, Sequence, Union
 
 from semantic_version import SimpleSpec
 from typing_extensions import Literal
@@ -77,8 +77,10 @@ class RustExtension:
             `the Cargo Book <https://doc.rust-lang.org/cargo/commands/cargo-build.html#manifest-options>`_.
             For example, ``cargo_manifest_args=["--locked"]`` will require
             ``Cargo.lock`` files are up to date.
-        features: A list of Cargo features to also build.
-        rustc_flags: A list of additional flags passed to rustc.
+        features: Cargo `--features` to add to the build.
+        rustc_flags: A list of additional flags passed to `cargo rustc`. These
+            only affect the final artifact, usually you should set the
+            `RUSTFLAGS` environment variable.
         rust_version: Minimum Rust compiler version required for this
             extension.
         quiet: Suppress Cargo's output.
@@ -88,9 +90,10 @@ class RustExtension:
             and ``wheel`` builds will be release.
         binding: Informs ``setuptools_rust`` which Python binding is in use.
         strip: Strip symbols from final file. Does nothing for debug build.
+        native: Build extension or executable with ``-Ctarget-cpu=native``
+            (deprecated, set environment variable RUSTFLAGS=-Ctarget-cpu=native).
         script: Generate console script for executable if ``Binding.Exec`` is
-            used.
-        native: Build extension or executable with ``--target-cpu=native``.
+            used (deprecated, just use ``RustBin`` instead).
         optional: If it is true, a build failure in the extension will not
             abort the build process, and instead simply not install the failing
             extension.
@@ -117,10 +120,10 @@ class RustExtension:
         self,
         target: Union[str, Dict[str, str]],
         path: str = "Cargo.toml",
-        args: Optional[List[str]] = None,
-        cargo_manifest_args: Optional[List[str]] = None,
-        features: Optional[List[str]] = None,
-        rustc_flags: Optional[List[str]] = None,
+        args: Optional[Sequence[str]] = (),
+        cargo_manifest_args: Optional[Sequence[str]] = (),
+        features: Optional[Sequence[str]] = (),
+        rustc_flags: Optional[Sequence[str]] = (),
         rust_version: Optional[str] = None,
         quiet: bool = False,
         debug: Optional[bool] = None,
@@ -139,33 +142,34 @@ class RustExtension:
 
         self.name = name
         self.target = target
-        self.args = args
-        self.cargo_manifest_args = cargo_manifest_args
-        self.rustc_flags = rustc_flags
-        self.binding = binding
+        self.path = os.path.relpath(path)  # relative path to Cargo manifest file
+        self.args = tuple(args or ())
+        self.cargo_manifest_args = tuple(cargo_manifest_args or ())
+        self.features = tuple(features or ())
+        self.rustc_flags = tuple(rustc_flags or ())
         self.rust_version = rust_version
         self.quiet = quiet
         self.debug = debug
+        self.binding = binding
         self.strip = strip
         self.script = script
-        self.native = native
         self.optional = optional
         self.py_limited_api = py_limited_api
 
-        if features is None:
-            features = []
-
-        self.features = [s.strip() for s in features]
-
-        # get relative path to Cargo manifest file
-        path = os.path.relpath(path)
-        self.path = path
-
         self._cargo_metadata: Optional[_CargoMetadata] = None
+
+        if native:
+            warnings.warn(
+                "`native` is deprecated, set RUSTFLAGS=-Ctarget-cpu=native instead.",
+                DeprecationWarning,
+            )
+            # match old behaviour of only setting flag for top-level crate;
+            # setting for `rustflags` is strictly better
+            self.rustc_flags = (*self.rustc_flags, "-Ctarget-cpu=native")
 
         if binding == Binding.Exec and script:
             warnings.warn(
-                "'Binding.Exec' with 'script=True' is deprecated, use 'RustBin' instead.",
+                "`Binding.Exec` with `script=True` is deprecated, use `RustBin` instead.",
                 DeprecationWarning,
             )
 
@@ -189,21 +193,22 @@ class RustExtension:
             )
 
     def get_cargo_profile(self) -> Optional[str]:
-        args = self.args or []
         try:
-            index = args.index("--profile")
-            return args[index + 1]
+            index = self.args.index("--profile")
+            return self.args[index + 1]
         except ValueError:
             pass
         except IndexError:
-            raise DistutilsSetupError("Can not parse cargo profile from %s", args)
+            raise DistutilsSetupError("Can not parse cargo profile from %s", self.args)
 
         # Handle `--profile=<profile>`
-        profile_args = [p for p in args if p.startswith("--profile=")]
+        profile_args = [p for p in self.args if p.startswith("--profile=")]
         if profile_args:
             profile = profile_args[0].split("=", 1)[1]
             if not profile:
-                raise DistutilsSetupError("Can not parse cargo profile from %s", args)
+                raise DistutilsSetupError(
+                    "Can not parse cargo profile from %s", self.args
+                )
             return profile
         else:
             return None
@@ -280,46 +285,45 @@ class RustBin(RustExtension):
             `the Cargo Book <https://doc.rust-lang.org/cargo/commands/cargo-build.html#manifest-options>`_.
             For example, ``cargo_manifest_args=["--locked"]`` will require
             ``Cargo.lock`` files are up to date.
-        features: A list of Cargo features to also build.
-        rustc_flags: A list of additional flags passed to rustc.
-        rust_version: Minimum Rust compiler version required for this
-            extension.
+        features: Cargo `--features` to add to the build.
+        rust_version: Minimum Rust compiler version required for this bin.
         quiet: Suppress Cargo's output.
         debug: Controls whether ``--debug`` or ``--release`` is passed to
             Cargo. If set to `None` (the default) then build type is
             automatic: ``inplace`` build will be a debug build, ``install``
             and ``wheel`` builds will be release.
         strip: Strip symbols from final file. Does nothing for debug build.
-        native: Build extension or executable with ``--target-cpu=native``.
+        optional: If it is true, a build failure in the bin will not
+            abort the build process, and instead simply not install the failing
+            bin.
     """
 
     def __init__(
         self,
-        target: str,
+        target: Union[str, Dict[str, str]],
         path: str = "Cargo.toml",
-        args: Optional[List[str]] = None,
-        cargo_manifest_args: Optional[List[str]] = None,
-        features: Optional[List[str]] = None,
-        rustc_flags: Optional[List[str]] = None,
+        args: Optional[Sequence[str]] = (),
+        cargo_manifest_args: Optional[Sequence[str]] = (),
+        features: Optional[Sequence[str]] = (),
         rust_version: Optional[str] = None,
         quiet: bool = False,
         debug: Optional[bool] = None,
         strip: Strip = Strip.No,
-        native: bool = False,
+        optional: bool = False,
     ):
         super().__init__(
-            target,
-            path,
-            args,
-            cargo_manifest_args,
-            features,
-            rustc_flags,
-            rust_version,
-            quiet,
-            debug,
+            target=target,
+            path=path,
+            args=args,
+            cargo_manifest_args=cargo_manifest_args,
+            features=features,
+            rust_version=rust_version,
+            quiet=quiet,
+            debug=debug,
             binding=Binding.Exec,
+            optional=optional,
             strip=strip,
-            native=native,
+            py_limited_api=False,
         )
 
     def entry_points(self) -> List[str]:

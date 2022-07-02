@@ -14,6 +14,7 @@
 - Errors while calling `cargo metadata` are now reported back to the user [#254](https://github.com/PyO3/setuptools-rust/pull/254)
 - `quiet` option will now suppress output of `cargo metadata`. [#256](https://github.com/PyO3/setuptools-rust/pull/256)
 - `setuptools-rust` will now match `cargo` behavior of not setting `--target` when the selected target is the rust host. [#258](https://github.com/PyO3/setuptools-rust/pull/258)
+- Deprecate `native` option of `RustExtension`. [#258](https://github.com/PyO3/setuptools-rust/pull/258)
 
 ### Fixed
 - If the sysconfig for `BLDSHARED` has no flags, `setuptools-rust` won't crash anymore. [#241](https://github.com/PyO3/setuptools-rust/pull/241)
