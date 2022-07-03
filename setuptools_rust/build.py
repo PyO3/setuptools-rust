@@ -148,6 +148,11 @@ class build_rust(RustCommand):
             ext=ext, target_triple=target_triple, release=not debug, quiet=quiet
         )
 
+        rustflags = []
+
+        if linker is not None:
+            rustflags.extend(["-C", "linker=" + linker])
+
         if ext._uses_exec_binding():
             command = [self.cargo, "build", "--manifest-path", ext.path, *cargo_args]
 
@@ -155,13 +160,8 @@ class build_rust(RustCommand):
             rustc_args = [
                 "--crate-type",
                 "cdylib",
+                *ext.rustc_flags,
             ]
-
-            if ext.rustc_flags is not None:
-                rustc_args.extend(ext.rustc_flags)
-
-            if linker is not None:
-                rustc_args.extend(["-C", "linker=" + linker])
 
             # OSX requires special linker arguments
             if sys.platform == "darwin":
@@ -173,24 +173,12 @@ class build_rust(RustCommand):
                     ]
                 )
 
-            if ext.native:
-                rustc_args.extend(["-C", "target-cpu=native"])
-
             # Tell musl targets not to statically link libc. See
             # https://github.com/rust-lang/rust/issues/59302 for details.
             if rustc_cfgs.get("target_env") == "musl":
                 # This must go in the env otherwise rustc will refuse to build
                 # the cdylib, see https://github.com/rust-lang/cargo/issues/10143
-                MUSL_FLAGS = "-C target-feature=-crt-static"
-                rustflags = env.get("RUSTFLAGS")
-                if rustflags is not None:
-                    env["RUSTFLAGS"] = f"{rustflags} {MUSL_FLAGS}"
-                else:
-                    env["RUSTFLAGS"] = MUSL_FLAGS
-
-                # Include this in the command-line anyway, so that when verbose
-                # logging enabled the user will see that this flag is in use.
-                rustc_args.extend(MUSL_FLAGS.split())
+                rustflags.append("-Ctarget-feature=-crt-static")
 
             command = [
                 self.cargo,
@@ -202,6 +190,17 @@ class build_rust(RustCommand):
                 "--",
                 *rustc_args,
             ]
+
+        if rustflags:
+            existing_rustflags = env.get("RUSTFLAGS")
+            if existing_rustflags is not None:
+                rustflags.append(existing_rustflags)
+            new_rustflags = " ".join(rustflags)
+            env["RUSTFLAGS"] = new_rustflags
+
+            # print RUSTFLAGS being added before the command
+            if not quiet:
+                print(f"[RUSTFLAGS={new_rustflags}]", end=" ", file=sys.stderr)
 
         if not quiet:
             print(" ".join(command), file=sys.stderr)
