@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.4.0 (2022-07-05)
 
 ### Packaging
 - Increase minimum `setuptools` version to 62.4. [#222](https://github.com/PyO3/setuptools-rust/pull/246)
