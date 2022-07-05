@@ -10,7 +10,7 @@ def get_rust_version() -> Optional[Version]:  # type: ignore[no-any-unimported]
     try:
         # first line of rustc -Vv is something like
         # rustc 1.61.0 (fe5b13d68 2022-05-18)
-        return Version(_rust_version_verbose().split(" ")[1])
+        return Version(_rust_version().split(" ")[1])
     except (subprocess.CalledProcessError, OSError):
         return None
 
@@ -56,6 +56,11 @@ def get_rust_target_info(target_triple: Optional[str] = None) -> List[str]:
 def get_rust_target_list() -> List[str]:
     output = subprocess.check_output(["rustc", "--print", "target-list"], text=True)
     return output.splitlines()
+
+
+@lru_cache()
+def _rust_version() -> str:
+    return subprocess.check_output(["rustc", "-V"], text=True)
 
 
 @lru_cache()
