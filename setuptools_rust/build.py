@@ -207,7 +207,7 @@ class build_rust(RustCommand):
 
         # Execute cargo
         try:
-            stderr = subprocess.PIPE if quiet else None
+            stderr = None if quiet else subprocess.PIPE
             output = subprocess.check_output(command, env=env, stderr=stderr, text=True)
         except subprocess.CalledProcessError as e:
             raise CompileError(format_called_process_error(e))
