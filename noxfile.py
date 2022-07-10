@@ -2,6 +2,7 @@ import os
 import tarfile
 from glob import glob
 from pathlib import Path
+from unittest.mock import patch
 
 import nox
 
@@ -35,3 +36,40 @@ def mypy(session: nox.Session):
 def test(session: nox.Session):
     session.install("pytest", ".")
     session.run("pytest", "setuptools_rust", "tests", *session.posargs)
+
+
+@nox.session(name="test-mingw")
+def test_mingw(session: nox.Session):
+    # manually re-implemented test-examples to workaround
+    # https://github.com/wntrblm/nox/issues/630
+
+    oldrun = nox.command.run
+
+    def newrun(*args, **kwargs):
+        # suppress "external" error on install
+        kwargs["external"] = True
+        oldrun(*args, **kwargs)
+
+    def chdir(path: Path):
+        print(path)
+        os.chdir(path)
+
+    examples = Path(os.path.dirname(__file__)).absolute() / "examples"
+
+    with patch.object(nox.command, "run", newrun):
+        session.install(".")
+
+        session.install("--no-build-isolation", str(examples / "hello-world"))
+        session.run("hello-world")
+
+        session.install("pytest", "pytest-benchmark", "beautifulsoup4")
+        session.install("--no-build-isolation", str(examples / "html-py-ever"))
+        session.run("pytest", str(examples / "html-py-ever"))
+
+        session.install("pytest")
+        session.install("--no-build-isolation", str(examples / "html-py-ever"))
+        session.run("pytest", str(examples / "html-py-ever"))
+
+        session.install("pytest", "cffi")
+        session.install("--no-build-isolation", str(examples / "html-py-ever"))
+        session.run("pytest", str(examples / "html-py-ever"))
