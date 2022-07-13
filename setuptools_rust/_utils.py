@@ -4,6 +4,11 @@ import subprocess
 def format_called_process_error(e: subprocess.CalledProcessError) -> str:
     """Helper to convert a CalledProcessError to an error message.
 
+
+    >>> format_called_process_error(subprocess.CalledProcessError(
+    ...     777, ['ls', '-la'], None, None
+    ... ))
+    '`ls -la` failed with code 777'
     >>> format_called_process_error(subprocess.CalledProcessError(
     ...     1, ['cargo', 'foo bar'], 'message', None
     ... ))
@@ -14,7 +19,9 @@ def format_called_process_error(e: subprocess.CalledProcessError) -> str:
     '`cargo` failed with code -1\\n-- Output captured from stdout:\\nstdout\\n-- Output captured from stderr:\\nstderr'
     """
     command = " ".join(_quote_whitespace(arg) for arg in e.cmd)
-    message = f"""`{command}` failed with code {e.returncode}
+    message = f"`{command}` failed with code {e.returncode}"
+    if e.stdout is not None:
+        message += f"""
 -- Output captured from stdout:
 {e.stdout}"""
 

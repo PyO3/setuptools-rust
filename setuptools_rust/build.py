@@ -207,8 +207,13 @@ class build_rust(RustCommand):
 
         # Execute cargo
         try:
+            # If quiet, capture all output and only show it in the exception
+            # If not quiet, forward all cargo output to stderr
+            stdout = subprocess.PIPE if quiet else sys.stderr.fileno()
             stderr = subprocess.PIPE if quiet else None
-            output = subprocess.check_output(command, env=env, stderr=stderr, text=True)
+            subprocess.run(
+                command, env=env, stdout=stdout, stderr=stderr, text=True, check=True
+            )
         except subprocess.CalledProcessError as e:
             raise CompileError(format_called_process_error(e))
 
@@ -217,10 +222,6 @@ class build_rust(RustCommand):
                 "Unable to execute 'cargo' - this package "
                 "requires Rust to be installed and cargo to be on the PATH"
             )
-
-        if not quiet:
-            if output:
-                print(output, file=sys.stderr)
 
         # Find the shared library that cargo hopefully produced and copy
         # it into the build directory as if it were produced by build_ext.
