@@ -232,7 +232,7 @@ class RustExtension:
                 f.write(_SCRIPT_TEMPLATE.format(executable=repr(executable)))
 
     def _metadata(self, *, quiet: bool) -> "_CargoMetadata":
-        """Returns cargo metedata for this extension package.
+        """Returns cargo metadata for this extension package.
 
         Cached - will only execute cargo on first invocation.
         """
@@ -249,6 +249,8 @@ class RustExtension:
                 metadata_command.extend(self.cargo_manifest_args)
 
             try:
+                # If quiet, capture stderr and only show it on exceptions
+                # If not quiet, let stderr be inherited
                 stderr = subprocess.PIPE if quiet else None
                 payload = subprocess.check_output(
                     metadata_command, stderr=stderr, encoding="latin-1"
