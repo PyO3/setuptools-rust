@@ -48,6 +48,13 @@ jobs:
         with:
           python-version: "3.x"
 
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          default: true
+
       - run: pip install nox
 
       - run: nox -s test
