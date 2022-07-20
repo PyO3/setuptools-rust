@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import glob
+import json
 import os
 import platform
 import shutil
@@ -15,7 +16,8 @@ from distutils.errors import (
     DistutilsPlatformError,
 )
 from distutils.sysconfig import get_config_var
-from typing import Dict, List, NamedTuple, Optional, Set, Tuple, cast
+from pathlib import Path
+from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple, cast
 
 from setuptools.command.build import build as CommandBuild  # type: ignore[import]
 from setuptools.command.build_ext import build_ext as CommandBuildExt
@@ -139,11 +141,6 @@ class build_rust(RustCommand):
         quiet = self.qbuild or ext.quiet
         debug = self._is_debug_build(ext)
 
-        # Find where to put the temporary build files created by `cargo`
-        target_dir = _base_cargo_target_dir(ext, quiet=quiet)
-        if target_triple is not None:
-            target_dir = os.path.join(target_dir, target_triple)
-
         cargo_args = self._cargo_args(
             ext=ext, target_triple=target_triple, release=not debug, quiet=quiet
         )
@@ -154,7 +151,14 @@ class build_rust(RustCommand):
             rustflags.extend(["-C", "linker=" + linker])
 
         if ext._uses_exec_binding():
-            command = [self.cargo, "build", "--manifest-path", ext.path, *cargo_args]
+            command = [
+                self.cargo,
+                "build",
+                "--manifest-path",
+                ext.path,
+                "--message-format=json-render-diagnostics",
+                *cargo_args,
+            ]
 
         else:
             rustc_args = [
@@ -184,6 +188,7 @@ class build_rust(RustCommand):
                 self.cargo,
                 "rustc",
                 "--lib",
+                "--message-format=json-render-diagnostics",
                 "--manifest-path",
                 ext.path,
                 *cargo_args,
@@ -209,13 +214,17 @@ class build_rust(RustCommand):
         try:
             # If quiet, capture all output and only show it in the exception
             # If not quiet, forward all cargo output to stderr
-            stdout = subprocess.PIPE if quiet else sys.stderr.fileno()
             stderr = subprocess.PIPE if quiet else None
-            subprocess.run(
-                command, env=env, stdout=stdout, stderr=stderr, text=True, check=True
+            cargo_messages = subprocess.check_output(
+                command,
+                env=env,
+                stderr=stderr,
+                text=True,
             )
         except subprocess.CalledProcessError as e:
-            raise CompileError(format_called_process_error(e))
+            # Don't include stdout in the formatted error as it is a huge dump
+            # of cargo json lines which aren't helpful for the end user.
+            raise CompileError(format_called_process_error(e, include_stdout=False))
 
         except OSError:
             raise DistutilsExecError(
@@ -226,60 +235,64 @@ class build_rust(RustCommand):
         # Find the shared library that cargo hopefully produced and copy
         # it into the build directory as if it were produced by build_ext.
 
-        profile = ext.get_cargo_profile()
-        if profile:
-            # https://doc.rust-lang.org/cargo/reference/profiles.html
-            if profile in {"dev", "test"}:
-                profile_dir = "debug"
-            elif profile == "bench":
-                profile_dir = "release"
-            else:
-                profile_dir = profile
-        else:
-            profile_dir = "debug" if debug else "release"
-        artifacts_dir = os.path.join(target_dir, profile_dir)
         dylib_paths = []
+        package_id = ext.metadata(quiet=quiet)["resolve"]["root"]
 
         if ext._uses_exec_binding():
+            # Find artifact from cargo messages
+            artifacts = _find_cargo_artifacts(
+                cargo_messages.splitlines(),
+                package_id=package_id,
+                kind="bin",
+            )
             for name, dest in ext.target.items():
                 if not name:
                     name = dest.split(".")[-1]
-                exe = sysconfig.get_config_var("EXE")
-                if exe is not None:
-                    name += exe
 
-                path = os.path.join(artifacts_dir, name)
-                if os.access(path, os.X_OK):
-                    dylib_paths.append(_BuiltModule(dest, path))
-                else:
+                try:
+                    artifact_path = next(
+                        artifact
+                        for artifact in artifacts
+                        if Path(artifact).with_suffix("").name == name
+                    )
+                except StopIteration:
                     raise DistutilsExecError(
-                        "Rust build failed; "
-                        f"unable to find executable '{name}' in '{artifacts_dir}'"
+                        f"Rust build failed; unable to locate executable '{name}'"
                     )
+
+                if os.environ.get("CARGO") == "cross":
+                    artifact_path = _replace_cross_target_dir(
+                        artifact_path, ext, quiet=quiet
+                    )
+
+                dylib_paths.append(_BuiltModule(dest, artifact_path))
         else:
-            platform = sysconfig.get_platform()
-            if "win" in platform:
-                dylib_ext = "dll"
-            elif platform.startswith("macosx"):
-                dylib_ext = "dylib"
-            elif "wasm32" in platform:
-                dylib_ext = "wasm"
-            else:
-                dylib_ext = "so"
-
-            wildcard_so = "*{}.{}".format(ext.get_lib_name(quiet=quiet), dylib_ext)
-
-            try:
-                dylib_paths.append(
-                    _BuiltModule(
-                        ext.name,
-                        next(glob.iglob(os.path.join(artifacts_dir, wildcard_so))),
-                    )
+            # Find artifact from cargo messages
+            artifacts = tuple(
+                _find_cargo_artifacts(
+                    cargo_messages.splitlines(),
+                    package_id=package_id,
+                    kind="cdylib",
                 )
-            except StopIteration:
+            )
+            if len(artifacts) == 0:
                 raise DistutilsExecError(
-                    f"Rust build failed; unable to find any {wildcard_so} in {artifacts_dir}"
+                    "Rust build failed; unable to find any build artifacts"
                 )
+            elif len(artifacts) > 1:
+                raise DistutilsExecError(
+                    f"Rust build failed; expected only one build artifact but found {artifacts}"
+                )
+
+            artifact_path = artifacts[0]
+
+            if os.environ.get("CARGO") == "cross":
+                artifact_path = _replace_cross_target_dir(
+                    artifact_path, ext, quiet=quiet
+                )
+
+            # guaranteed to be just one element after checks above
+            dylib_paths.append(_BuiltModule(ext.name, artifact_path))
         return dylib_paths
 
     def install_extension(
@@ -668,21 +681,7 @@ def _prepare_build_environment(cross_lib: Optional[str]) -> Dict[str, str]:
     if cross_lib:
         env.setdefault("PYO3_CROSS_LIB_DIR", cross_lib)
 
-    env.pop("CARGO", None)
     return env
-
-
-def _base_cargo_target_dir(ext: RustExtension, *, quiet: bool) -> str:
-    """Returns the root target directory cargo will use.
-
-    If --target is passed to cargo in the command line, the target directory
-    will have the target appended as a child.
-    """
-    target_directory = ext._metadata(quiet=quiet)["target_directory"]
-    assert isinstance(
-        target_directory, str
-    ), "expected cargo metadata to contain a string target directory"
-    return target_directory
 
 
 def _is_py_limited_api(
@@ -771,3 +770,64 @@ def _split_platform_and_extension(ext_path: str) -> Tuple[str, str, str]:
     # rust.cpython-38-x86_64-linux-gnu to (rust, .cpython-38-x86_64-linux-gnu)
     ext_path, platform_tag = os.path.splitext(ext_path)
     return (ext_path, platform_tag, extension)
+
+
+def _find_cargo_artifacts(
+    cargo_messages: List[str],
+    *,
+    package_id: str,
+    kind: str,
+) -> Iterable[str]:
+    """Identifies cargo artifacts built for the given `package_id` from the
+    provided cargo_messages.
+
+    >>> list(_find_cargo_artifacts(
+    ...    [
+    ...        '{"some_irrelevant_message": []}',
+    ...        '{"reason":"compiler-artifact","package_id":"some_id","target":{"kind":["cdylib"]},"filenames":["/some/path/baz.so"]}',
+    ...        '{"reason":"compiler-artifact","package_id":"some_id","target":{"kind":["cdylib", "rlib"]},"filenames":["/file/two/baz.dylib", "/file/two/baz.rlib"]}',
+    ...        '{"reason":"compiler-artifact","package_id":"some_other_id","target":{"kind":["cdylib"]},"filenames":["/not/this.so"]}',
+    ...    ],
+    ...    package_id="some_id",
+    ...    kind="cdylib",
+    ... ))
+    ['/some/path/baz.so', '/file/two/baz.dylib']
+    >>> list(_find_cargo_artifacts(
+    ...    [
+    ...        '{"some_irrelevant_message": []}',
+    ...        '{"reason":"compiler-artifact","package_id":"some_id","target":{"kind":["cdylib"]},"filenames":["/some/path/baz.so"]}',
+    ...        '{"reason":"compiler-artifact","package_id":"some_id","target":{"kind":["cdylib", "rlib"]},"filenames":["/file/two/baz.dylib", "/file/two/baz.rlib"]}',
+    ...        '{"reason":"compiler-artifact","package_id":"some_other_id","target":{"kind":["cdylib"]},"filenames":["/not/this.so"]}',
+    ...    ],
+    ...    package_id="some_id",
+    ...    kind="rlib",
+    ... ))
+    ['/file/two/baz.rlib']
+    """
+    for message in cargo_messages:
+        # only bother parsing messages that look like a match
+        if "compiler-artifact" in message and package_id in message and kind in message:
+            parsed = json.loads(message)
+            # verify the message is correct
+            if (
+                parsed.get("reason") == "compiler-artifact"
+                and parsed.get("package_id") == package_id
+            ):
+                for artifact_kind, filename in zip(
+                    parsed["target"]["kind"], parsed["filenames"]
+                ):
+                    if artifact_kind == kind:
+                        yield filename
+
+
+def _replace_cross_target_dir(path: str, ext: RustExtension, *, quiet: bool) -> str:
+    """Replaces target director from `cross` docker build with the correct
+    local path.
+
+    Cross artifact messages and metadata contain paths from inside the
+    dockerfile; invoking `cargo metadata` we can work out the correct local
+    target directory.
+    """
+    cross_target_dir = ext._metadata(cargo="cross", quiet=quiet)["target_directory"]
+    local_target_dir = ext._metadata(cargo="cargo", quiet=quiet)["target_directory"]
+    return path.replace(cross_target_dir, local_target_dir)

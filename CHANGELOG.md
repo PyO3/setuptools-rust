@@ -1,12 +1,15 @@
 # Changelog
 
-## 1.4.1 (2022-07-05)
+## Unreleased
+### Changed
+- Locate cdylib artifacts by handling messages from cargo instead of searching target dir (fixes build on MSYS2). [#267](https://github.com/PyO3/setuptools-rust/pull/267)
 
+
+## 1.4.1 (2022-07-05)
 ### Fixed
 - Fix crash when checking Rust version. [#263](https://github.com/PyO3/setuptools-rust/pull/263)
 
 ## 1.4.0 (2022-07-05)
-
 ### Packaging
 - Increase minimum `setuptools` version to 62.4. [#246](https://github.com/PyO3/setuptools-rust/pull/246)
 
@@ -25,7 +28,6 @@
 - If the sysconfig for `BLDSHARED` has no flags, `setuptools-rust` won't crash anymore. [#241](https://github.com/PyO3/setuptools-rust/pull/241)
 
 ## 1.3.0 (2022-04-26)
-
 ### Packaging
 - Increase minimum `setuptools` version to 58. [#222](https://github.com/PyO3/setuptools-rust/pull/222)
 
