@@ -5,7 +5,8 @@ import subprocess
 import warnings
 from distutils.errors import DistutilsSetupError
 from enum import IntEnum, auto
-from typing import Any, Dict, List, NewType, Optional, Sequence, Union
+from functools import lru_cache
+from typing import Any, Dict, List, NewType, Optional, Sequence, Union, cast
 
 from semantic_version import SimpleSpec
 from typing_extensions import Literal
@@ -156,8 +157,6 @@ class RustExtension:
         self.optional = optional
         self.py_limited_api = py_limited_api
 
-        self._cargo_metadata: Optional[_CargoMetadata] = None
-
         if native:
             warnings.warn(
                 "`native` is deprecated, set RUSTFLAGS=-Ctarget-cpu=native instead.",
@@ -231,42 +230,45 @@ class RustExtension:
             with open(file, "w") as f:
                 f.write(_SCRIPT_TEMPLATE.format(executable=repr(executable)))
 
-    def _metadata(self, *, quiet: bool) -> "_CargoMetadata":
+    def metadata(self, *, quiet: bool) -> "CargoMetadata":
         """Returns cargo metadata for this extension package.
 
         Cached - will only execute cargo on first invocation.
         """
-        if self._cargo_metadata is None:
-            metadata_command = [
-                "cargo",
-                "metadata",
-                "--manifest-path",
-                self.path,
-                "--format-version",
-                "1",
-            ]
-            if self.cargo_manifest_args:
-                metadata_command.extend(self.cargo_manifest_args)
 
-            try:
-                # If quiet, capture stderr and only show it on exceptions
-                # If not quiet, let stderr be inherited
-                stderr = subprocess.PIPE if quiet else None
-                payload = subprocess.check_output(
-                    metadata_command, stderr=stderr, encoding="latin-1"
-                )
-            except subprocess.CalledProcessError as e:
-                raise DistutilsSetupError(format_called_process_error(e))
-            try:
-                self._cargo_metadata = json.loads(payload)
-            except json.decoder.JSONDecodeError as e:
-                raise DistutilsSetupError(
-                    f"""
-                    Error parsing output of cargo metadata as json; received:
-                    {payload}
-                    """
-                ) from e
-        return self._cargo_metadata
+        return self._metadata(os.environ.get("CARGO", "cargo"), quiet)
+
+    @lru_cache()
+    def _metadata(self, cargo: str, quiet: bool) -> "CargoMetadata":
+        metadata_command = [
+            cargo,
+            "metadata",
+            "--manifest-path",
+            self.path,
+            "--format-version",
+            "1",
+        ]
+        if self.cargo_manifest_args:
+            metadata_command.extend(self.cargo_manifest_args)
+
+        try:
+            # If quiet, capture stderr and only show it on exceptions
+            # If not quiet, let stderr be inherited
+            stderr = subprocess.PIPE if quiet else None
+            payload = subprocess.check_output(
+                metadata_command, stderr=stderr, encoding="latin-1"
+            )
+        except subprocess.CalledProcessError as e:
+            raise DistutilsSetupError(format_called_process_error(e))
+        try:
+            return cast(CargoMetadata, json.loads(payload))
+        except json.decoder.JSONDecodeError as e:
+            raise DistutilsSetupError(
+                f"""
+                Error parsing output of cargo metadata as json; received:
+                {payload}
+                """
+            ) from e
 
     def _uses_exec_binding(self) -> bool:
         return self.binding == Binding.Exec
@@ -332,7 +334,7 @@ class RustBin(RustExtension):
         return []
 
 
-_CargoMetadata = NewType("_CargoMetadata", Dict[str, Any])
+CargoMetadata = NewType("CargoMetadata", Dict[str, Any])
 
 
 def _script_name(executable: str) -> str:
