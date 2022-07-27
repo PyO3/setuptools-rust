@@ -8,6 +8,5 @@ build
 target
 .pytest_cache
 *.egg-info
-setuptools_rust/version.py
 pyo3
 docs/_build
