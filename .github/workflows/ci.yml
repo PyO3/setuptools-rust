@@ -260,7 +260,9 @@ jobs:
           toolchain: stable
           override: true
       - name: Install cross
-        run: cargo install cross
+        uses: taiki-e/install-action@v1
+        with:
+          tool: cross
       - name: Build package
         run: pip install -e .
       - name: Build wheel using cross
