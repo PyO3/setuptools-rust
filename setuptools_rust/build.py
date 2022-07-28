@@ -3,6 +3,7 @@ from __future__ import annotations
 import glob
 import json
 import os
+import pkg_resources
 import platform
 import shutil
 import subprocess
@@ -64,11 +65,14 @@ class build_rust(RustCommand):
         self.qbuild = None
         self.build_temp = None
         self.plat_name = None
+        self.build_number = None
         self.target = os.getenv("CARGO_BUILD_TARGET")
         self.cargo = os.getenv("CARGO", "cargo")
 
     def finalize_options(self) -> None:
         super().finalize_options()
+
+        self.data_dir = self.get_data_dir()
 
         if self.plat_name is None:
             self.plat_name = cast(  # type: ignore[no-any-unimported]
@@ -83,6 +87,18 @@ class build_rust(RustCommand):
             ("debug", "debug"),
             ("inplace", "inplace"),
         )
+
+        if self.build_number is not None and not self.build_number[:1].isdigit():
+            raise ValueError("Build tag (build-number) must start with a digit.")
+
+    def get_data_dir(self) -> str:
+        components = (
+            pkg_resources.safe_name(self.distribution.get_name()).replace("-", "_"),  # type: ignore[attr-defined]
+            pkg_resources.safe_version(self.distribution.get_version()).replace("-", "_"),  # type: ignore[attr-defined]
+        )
+        if self.build_number:
+            components += (self.build_number,)
+        return "-".join(components) + ".data"
 
     def run_for_extension(self, ext: RustExtension) -> None:
         assert self.plat_name is not None
@@ -329,9 +345,8 @@ class build_rust(RustCommand):
                     executable_name = module_name
                     if exe is not None:
                         executable_name += exe
-                    wheel = self.get_finalized_command("bdist_wheel")
                     scripts_dir = os.path.join(
-                        build_ext.build_lib, wheel.data_dir, "scripts"  # type: ignore[attr-defined]
+                        build_ext.build_lib, self.data_dir, "scripts"
                     )
                     os.makedirs(scripts_dir, exist_ok=True)
                     ext_path = os.path.join(scripts_dir, executable_name)
