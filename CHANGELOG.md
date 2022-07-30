@@ -4,6 +4,7 @@
 ### Changed
 - Locate cdylib artifacts by handling messages from cargo instead of searching target dir (fixes build on MSYS2). [#267](https://github.com/PyO3/setuptools-rust/pull/267)
 - Fix RustBin build without wheel. [#273](https://github.com/PyO3/setuptools-rust/pull/273)
+- Fix RustBin setuptools install. [#275](https://github.com/PyO3/setuptools-rust/pull/275)
 
 
 ## 1.4.1 (2022-07-05)
