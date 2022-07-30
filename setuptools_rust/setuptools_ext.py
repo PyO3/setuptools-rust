@@ -1,16 +1,19 @@
 import os
 import subprocess
+import sysconfig
 from distutils import log
 from distutils.command.clean import clean
 from typing import List, Set, Tuple, Type, cast
 
 from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
+from setuptools.command.install_lib import install_lib
+from setuptools.command.install_scripts import install_scripts
 from setuptools.command.sdist import sdist
 from setuptools.dist import Distribution
 from typing_extensions import Literal
 
-from .extension import RustExtension
+from .extension import RustBin, RustExtension
 
 try:
     from wheel.bdist_wheel import bdist_wheel
@@ -189,7 +192,63 @@ def add_rust_extension(dist: Distribution) -> None:
             # restore ext_modules
             self.distribution.ext_modules = ext_modules
 
+        def run(self) -> None:
+            install_base_class.run(self)
+            install_rustbin = False
+            if self.distribution.rust_extensions:
+                for ext in self.distribution.rust_extensions:
+                    if isinstance(ext, RustBin):
+                        install_rustbin = True
+            if install_rustbin:
+                self.run_command("install_scripts")
+
     dist.cmdclass["install"] = install_rust_extension
+
+    install_lib_base_class = cast(
+        Type[install_lib], dist.cmdclass.get("install_lib", install_lib)
+    )
+
+    # prevent RustBin from being installed to data_dir
+    class install_lib_rust_extension(install_lib_base_class):  # type: ignore[misc,valid-type]
+        def get_exclusions(self) -> Set[str]:
+            exclusions: Set[str] = install_lib_base_class.get_exclusions(self)
+            build_rust = self.get_finalized_command("build_rust")
+            scripts_path = os.path.join(
+                self.install_dir, build_rust.data_dir, "scripts"
+            )
+            if self.distribution.rust_extensions:
+                exe = sysconfig.get_config_var("EXE")
+                for ext in self.distribution.rust_extensions:
+                    executable_name = ext.name
+                    if exe is not None:
+                        executable_name += exe
+                    if isinstance(ext, RustBin):
+                        exclusions.add(os.path.join(scripts_path, executable_name))
+            return exclusions
+
+    dist.cmdclass["install_lib"] = install_lib_rust_extension
+
+    install_scripts_base_class = cast(
+        Type[install_scripts], dist.cmdclass.get("install_scripts", install_scripts)
+    )
+
+    # this is required to make install_scripts compatible with RustBin
+    class install_scripts_rust_extension(install_scripts_base_class):  # type: ignore[misc,valid-type]
+        def run(self) -> None:
+            install_scripts_base_class.run(self)
+            build_ext = self.get_finalized_command("build_ext")
+            build_rust = self.get_finalized_command("build_rust")
+            scripts_path = os.path.join(
+                build_ext.build_lib, build_rust.data_dir, "scripts"
+            )
+            if os.path.isdir(scripts_path):
+                for file in os.listdir(scripts_path):
+                    script_path = os.path.join(scripts_path, file)
+                    if os.path.isfile(script_path):
+                        with open(os.path.join(script_path), "rb") as script_reader:
+                            self.write_script(file, script_reader.read(), mode="b")
+
+    dist.cmdclass["install_scripts"] = install_scripts_rust_extension
 
     if bdist_wheel is not None:
         bdist_wheel_base_class = cast(  # type: ignore[no-any-unimported]
