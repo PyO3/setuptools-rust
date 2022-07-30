@@ -39,6 +39,25 @@ def add_rust_extension(dist: Distribution) -> None:
     sdist_boolean_options.append("vendor-crates")
     sdist_negative_opt["no-vendor-crates"] = "vendor-crates"
 
+    # Patch dist to include console_scripts for Exec binding
+    console_scripts = []
+    for ext in dist.rust_extensions:  # type: ignore[attr-defined]
+        console_scripts.extend(ext.entry_points())
+
+    if console_scripts:
+        if not dist.entry_points:  # type: ignore[attr-defined]
+            dist.entry_points = {"console_scripts": console_scripts}  # type: ignore[attr-defined]
+        else:
+            ep_scripts = dist.entry_points.get("console_scripts")  # type: ignore[attr-defined]
+            if ep_scripts:
+                for script in console_scripts:
+                    if script not in ep_scripts:
+                        ep_scripts.append(console_scripts)
+            else:
+                ep_scripts = console_scripts
+
+            dist.entry_points["console_scripts"] = ep_scripts  # type: ignore[attr-defined]
+
     class sdist_rust_extension(sdist_base_class):  # type: ignore[misc,valid-type]
         user_options = sdist_options
         boolean_options = sdist_boolean_options
@@ -152,32 +171,8 @@ def add_rust_extension(dist: Distribution) -> None:
 
     install_base_class = cast(Type[install], dist.cmdclass.get("install", install))
 
-    # this is required for console_scripts and to make install_scripts compatible with RustBin
+    # this is required to make install_scripts compatible with RustBin
     class install_rust_extension(install_base_class):  # type: ignore[misc,valid-type]
-        def finalize_options(self) -> None:
-            if self.distribution.rust_extensions:
-                scripts = []
-                for ext in self.distribution.rust_extensions:
-                    scripts.extend(ext.entry_points())
-
-                if scripts:
-                    if not self.distribution.entry_points:
-                        self.distribution.entry_points = {"console_scripts": scripts}
-                    else:
-                        ep_scripts = self.distribution.entry_points.get(
-                            "console_scripts"
-                        )
-                        if ep_scripts:
-                            for script in scripts:
-                                if script not in ep_scripts:
-                                    ep_scripts.append(scripts)
-                        else:
-                            ep_scripts = scripts
-
-                        self.distribution.entry_points["console_scripts"] = ep_scripts
-
-            install_base_class.finalize_options(self)
-
         def run(self) -> None:
             install_base_class.run(self)
             install_rustbin = False
@@ -251,29 +246,6 @@ def add_rust_extension(dist: Distribution) -> None:
             def initialize_options(self) -> None:
                 super().initialize_options()
                 self.target = os.getenv("CARGO_BUILD_TARGET")
-
-            def finalize_options(self) -> None:
-                scripts = []
-                for ext in self.distribution.rust_extensions:
-                    scripts.extend(ext.entry_points())
-
-                if scripts:
-                    if not self.distribution.entry_points:
-                        self.distribution.entry_points = {"console_scripts": scripts}
-                    else:
-                        ep_scripts = self.distribution.entry_points.get(
-                            "console_scripts"
-                        )
-                        if ep_scripts:
-                            for script in scripts:
-                                if script not in ep_scripts:
-                                    ep_scripts.append(scripts)
-                        else:
-                            ep_scripts = scripts
-
-                        self.distribution.entry_points["console_scripts"] = ep_scripts
-
-                bdist_wheel_base_class.finalize_options(self)
 
             def get_tag(self) -> Tuple[str, str, str]:
                 python, abi, plat = super().get_tag()
