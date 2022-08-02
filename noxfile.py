@@ -7,6 +7,8 @@ from unittest.mock import patch
 
 import nox
 
+import nox
+
 
 @nox.session(name="test-examples", venv_backend="none")
 def test_examples(session: nox.Session):
@@ -99,23 +101,14 @@ def test_examples_emscripten(session: nox.Session):
         env = os.environ.copy()
         env.update(
             RUSTUP_TOOLCHAIN="nightly",
-            _SETUPTOOLSRUST_BUILD_STD="1",
             PYTHONPATH=str(emscripten_dir),
             _PYTHON_SYSCONFIGDATA_NAME="_sysconfigdata__emscripten_wasm32-emscripten",
             _PYTHON_HOST_PLATFORM="emscripten_3_1_14_wasm32",
             CARGO_BUILD_TARGET="wasm32-unknown-emscripten",
-            CARGO_UNSTABLE_BUILD_STD="true",
             CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=str(
                 emscripten_dir / "emcc_wrapper.py"
             ),
             PYO3_CONFIG_FILE=str(emscripten_dir / "pyo3_config.ini"),
-            RUSTFLAGS=" ".join(
-                [
-                    "-C relocation-model=pic",
-                    "-C link-arg=-sSIDE_MODULE=2",
-                    "-C link-arg=-sWASM_BIGINT",
-                ]
-            ),
         )
         with session.chdir(example):
             session.run("python", "setup.py", "bdist_wheel", env=env, external=True)
