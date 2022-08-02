@@ -3,7 +3,6 @@ from __future__ import annotations
 import glob
 import json
 import os
-import pkg_resources
 import platform
 import shutil
 import subprocess
@@ -20,6 +19,7 @@ from distutils.sysconfig import get_config_var
 from pathlib import Path
 from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple, cast
 
+import pkg_resources
 from setuptools.command.build import build as CommandBuild  # type: ignore[import]
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
@@ -131,23 +131,10 @@ class build_rust(RustCommand):
         self, ext: RustExtension, forced_target_triple: Optional[str] = None
     ) -> List["_BuiltModule"]:
 
-        target_info = self._detect_rust_target(forced_target_triple)
-        if target_info is not None:
-            target_triple = target_info.triple
-            cross_lib = target_info.cross_lib
-            linker = target_info.linker
-            # We're ignoring target_info.linker_args for now because we're not
-            # sure if they will always do the right thing. Might help with some
-            # of the OS-specific logic if it does.
-
-        else:
-            target_triple = None
-            cross_lib = None
-            linker = None
-
+        target_triple = self._detect_rust_target(forced_target_triple)
         rustc_cfgs = get_rustc_cfgs(target_triple)
 
-        env = _prepare_build_environment(cross_lib)
+        env = _prepare_build_environment()
 
         if not os.path.exists(ext.path):
             raise DistutilsFileError(
@@ -162,9 +149,6 @@ class build_rust(RustCommand):
         )
 
         rustflags = []
-
-        if linker is not None:
-            rustflags.extend(["-C", "linker=" + linker])
 
         if ext._uses_exec_binding():
             command = [
@@ -435,45 +419,12 @@ class build_rust(RustCommand):
 
     def _detect_rust_target(
         self, forced_target_triple: Optional[str] = None
-    ) -> Optional["_TargetInfo"]:
+    ) -> Optional[str]:
         assert self.plat_name is not None
-        cross_compile_info = _detect_unix_cross_compile_info()
-        if cross_compile_info is not None:
-            cross_target_info = cross_compile_info.to_target_info()
-            if forced_target_triple is not None:
-                if (
-                    cross_target_info is not None
-                    and not cross_target_info.is_compatible_with(forced_target_triple)
-                ):
-                    self.warn(
-                        f"Forced Rust target `{forced_target_triple}` is not "
-                        f"compatible with deduced Rust target "
-                        f"`{cross_target_info.triple}` - the built package "
-                        f" may not import successfully once installed."
-                    )
-
-                # Forcing the target in a cross-compile environment; use
-                # the cross-compile information in combination with the
-                # forced target
-                return _TargetInfo(
-                    forced_target_triple,
-                    cross_compile_info.cross_lib,
-                    cross_compile_info.linker,
-                    cross_compile_info.linker_args,
-                )
-            elif cross_target_info is not None:
-                return cross_target_info
-            else:
-                raise DistutilsPlatformError(
-                    "Don't know the correct rust target for system type "
-                    f"{cross_compile_info.host_type}. Please set the "
-                    "CARGO_BUILD_TARGET environment variable."
-                )
-
-        elif forced_target_triple is not None:
+        if forced_target_triple is not None:
             # Automatic target detection can be overridden via the CARGO_BUILD_TARGET
             # environment variable or --target command line option
-            return _TargetInfo.for_triple(forced_target_triple)
+            return forced_target_triple
 
         # Determine local rust target which needs to be "forced" if necessary
         local_rust_target = _adjusted_local_rust_target(self.plat_name)
@@ -485,7 +436,7 @@ class build_rust(RustCommand):
             # check for None first to avoid calling to rustc if not needed
             and local_rust_target != get_rust_host()
         ):
-            return _TargetInfo.for_triple(local_rust_target)
+            return local_rust_target
 
         return None
 
@@ -575,91 +526,6 @@ class _BuiltModule(NamedTuple):
     path: str
 
 
-class _TargetInfo(NamedTuple):
-    triple: str
-    cross_lib: Optional[str]
-    linker: Optional[str]
-    linker_args: Optional[str]
-
-    @staticmethod
-    def for_triple(triple: str) -> "_TargetInfo":
-        return _TargetInfo(triple, None, None, None)
-
-    def is_compatible_with(self, target: str) -> bool:
-        if self.triple == target:
-            return True
-
-        # the vendor field can be ignored, so x86_64-pc-linux-gnu is compatible
-        # with x86_64-unknown-linux-gnu
-        if _replace_vendor_with_unknown(self.triple) == target:
-            return True
-
-        return False
-
-
-class _CrossCompileInfo(NamedTuple):
-    host_type: str
-    cross_lib: Optional[str]
-    linker: Optional[str]
-    linker_args: Optional[str]
-
-    def to_target_info(self) -> Optional[_TargetInfo]:
-        """Maps this cross compile info to target info.
-
-        Returns None if the corresponding target information could not be
-        deduced.
-        """
-        # hopefully an exact match
-        targets = get_rust_target_list()
-        if self.host_type in targets:
-            return _TargetInfo(
-                self.host_type, self.cross_lib, self.linker, self.linker_args
-            )
-
-        # the vendor field can be ignored, so x86_64-pc-linux-gnu is compatible
-        # with x86_64-unknown-linux-gnu
-        without_vendor = _replace_vendor_with_unknown(self.host_type)
-        if without_vendor is not None and without_vendor in targets:
-            return _TargetInfo(
-                without_vendor, self.cross_lib, self.linker, self.linker_args
-            )
-
-        return None
-
-
-def _detect_unix_cross_compile_info() -> Optional["_CrossCompileInfo"]:
-    # See https://github.com/PyO3/setuptools-rust/issues/138
-    # This is to support cross compiling on *NIX, where plat_name isn't
-    # necessarily the same as the system we are running on.  *NIX systems
-    # have more detailed information available in sysconfig. We need that
-    # because plat_name doesn't give us information on e.g., glibc vs musl.
-    host_type = sysconfig.get_config_var("HOST_GNU_TYPE")
-    build_type = sysconfig.get_config_var("BUILD_GNU_TYPE")
-
-    if not host_type or host_type == build_type:
-        # not *NIX, or not cross compiling
-        return None
-
-    if "apple-darwin" in host_type and (build_type and "apple-darwin" in build_type):
-        # On macos and the build and host differ. This is probably an arm
-        # Python which was built on x86_64. Don't try to handle this for now.
-        # (See https://github.com/PyO3/setuptools-rust/issues/192)
-        return None
-
-    stdlib = sysconfig.get_path("stdlib")
-    assert stdlib is not None
-    cross_lib = os.path.dirname(stdlib)
-
-    bldshared = sysconfig.get_config_var("BLDSHARED")
-    if not bldshared:
-        linker = None
-        linker_args = None
-    else:
-        [linker, _, linker_args] = bldshared.partition(" ")
-
-    return _CrossCompileInfo(host_type, cross_lib, linker, linker_args)
-
-
 def _replace_vendor_with_unknown(target: str) -> Optional[str]:
     """Replaces vendor in the target triple with unknown.
 
@@ -672,7 +538,7 @@ def _replace_vendor_with_unknown(target: str) -> Optional[str]:
     return "-".join(components)
 
 
-def _prepare_build_environment(cross_lib: Optional[str]) -> Dict[str, str]:
+def _prepare_build_environment() -> Dict[str, str]:
     """Prepares environment variables to use when executing cargo build."""
 
     # Make sure that if pythonXX-sys is used, it builds against the current
@@ -692,10 +558,6 @@ def _prepare_build_environment(cross_lib: Optional[str]) -> Dict[str, str]:
             "PYO3_PYTHON": os.environ.get("PYO3_PYTHON", sys.executable),
         }
     )
-
-    if cross_lib:
-        env.setdefault("PYO3_CROSS_LIB_DIR", cross_lib)
-
     return env
 
 
