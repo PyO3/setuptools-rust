@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+### Added
+- Add support for extension modules built for wasm32-unknown-emscripten with Pyodide.
+
 ### Changed
 - Locate cdylib artifacts by handling messages from cargo instead of searching target dir (fixes build on MSYS2). [#267](https://github.com/PyO3/setuptools-rust/pull/267)
 - Fix RustBin build without wheel. [#273](https://github.com/PyO3/setuptools-rust/pull/273)

@@ -7,8 +7,6 @@ from unittest.mock import patch
 
 import nox
 
-import nox
-
 
 @nox.session(name="test-examples", venv_backend="none")
 def test_examples(session: nox.Session):
@@ -92,7 +90,7 @@ def test_examples_emscripten(session: nox.Session):
         "nightly",
         external=True,
     )
-    examples_dir = Path("examples")
+    examples_dir = Path("examples").absolute()
     test_crates = [
         examples_dir / "html-py-ever",
         examples_dir / "namespace_package",

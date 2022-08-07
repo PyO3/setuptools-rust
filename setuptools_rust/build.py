@@ -3,7 +3,6 @@ from __future__ import annotations
 import glob
 import json
 import os
-import pkg_resources
 import platform
 import shutil
 import subprocess
@@ -20,6 +19,7 @@ from distutils.sysconfig import get_config_var
 from pathlib import Path
 from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple, cast
 
+import pkg_resources
 from setuptools.command.build import build as CommandBuild  # type: ignore[import]
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
@@ -184,7 +184,7 @@ class build_rust(RustCommand):
             ]
 
             # OSX requires special linker arguments
-            if sys.platform == "darwin":
+            if rustc_cfgs.get("target_os") == "macos":
                 ext_basename = os.path.basename(self.get_dylib_ext_path(ext, ext.name))
                 rustc_args.extend(
                     [
@@ -199,6 +199,12 @@ class build_rust(RustCommand):
                 # This must go in the env otherwise rustc will refuse to build
                 # the cdylib, see https://github.com/rust-lang/cargo/issues/10143
                 rustflags.append("-Ctarget-feature=-crt-static")
+
+            elif (rustc_cfgs.get("target_arch"), rustc_cfgs.get("target_os")) == (
+                "wasm32",
+                "emscripten",
+            ):
+                rustc_args.extend(["-C", f"link-args=-sSIDE_MODULE=2 -sWASM_BIGINT"])
 
             command = [
                 self.cargo,
