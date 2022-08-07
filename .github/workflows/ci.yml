@@ -412,10 +412,10 @@ jobs:
         with:
           node-version: 18
       - run: |
-          PYODIDE_VERSION=0.21.0-alpha.2
+          PYODIDE_VERSION=0.21.0-alpha.3
 
           cd emscripten
-          npm i pyodide@0.21.0-alpha.2 prettier
+          npm i pyodide@0.21.0-alpha.3 prettier
           cd node_modules/pyodide/
           node ../prettier/bin-prettier.js -w pyodide.asm.js
           EMSCRIPTEN_VERSION=$(node -p "require('./repodata.json').info.platform.split('_').slice(1).join('.')")
