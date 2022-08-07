@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+### Added
+- Add support for extension modules built for wasm32-unknown-emscripten with Pyodide.
+
 ### Changed
 - Locate cdylib artifacts by handling messages from cargo instead of searching target dir (fixes build on MSYS2). [#267](https://github.com/PyO3/setuptools-rust/pull/267)
 - No longer guess cross-compile environment using `HOST_GNU_TYPE` / `BUILD_GNU_TYPE` sysconfig variables. [#269](https://github.com/PyO3/setuptools-rust/pull/269)

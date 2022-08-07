@@ -1,4 +1,5 @@
 import os
+import sys
 import tarfile
 from glob import glob
 from pathlib import Path
@@ -73,3 +74,42 @@ def test_mingw(session: nox.Session):
         session.install("pytest", "cffi")
         session.install("--no-build-isolation", str(examples / "html-py-ever"))
         session.run("pytest", str(examples / "html-py-ever"))
+
+
+@nox.session(name="test-examples-emscripten")
+def test_examples_emscripten(session: nox.Session):
+    session.install(".")
+    emscripten_dir = Path("./emscripten").resolve()
+
+    session.run(
+        "rustup",
+        "component",
+        "add",
+        "rust-src",
+        "--toolchain",
+        "nightly",
+        external=True,
+    )
+    examples_dir = Path("examples").absolute()
+    test_crates = [
+        examples_dir / "html-py-ever",
+        examples_dir / "namespace_package",
+    ]
+    for example in test_crates:
+        env = os.environ.copy()
+        env.update(
+            RUSTUP_TOOLCHAIN="nightly",
+            PYTHONPATH=str(emscripten_dir),
+            _PYTHON_SYSCONFIGDATA_NAME="_sysconfigdata__emscripten_wasm32-emscripten",
+            _PYTHON_HOST_PLATFORM="emscripten_3_1_14_wasm32",
+            CARGO_BUILD_TARGET="wasm32-unknown-emscripten",
+            CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=str(
+                emscripten_dir / "emcc_wrapper.py"
+            ),
+            PYO3_CONFIG_FILE=str(emscripten_dir / "pyo3_config.ini"),
+        )
+        with session.chdir(example):
+            session.run("python", "setup.py", "bdist_wheel", env=env, external=True)
+
+        with session.chdir(emscripten_dir):
+            session.run("node", "runner.js", str(example), external=True)

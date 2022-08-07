@@ -402,3 +402,52 @@ jobs:
         shell: msys2 {0}
         run: |
           PATH="$PATH:/c/Users/runneradmin/.cargo/bin" nox -s test-mingw
+
+  test-emscripten:
+    name: Test Emscripten
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - run: |
+          PYODIDE_VERSION=0.21.0-alpha.3
+
+          cd emscripten
+          npm i pyodide@0.21.0-alpha.3 prettier
+          cd node_modules/pyodide/
+          node ../prettier/bin-prettier.js -w pyodide.asm.js
+          EMSCRIPTEN_VERSION=$(node -p "require('./repodata.json').info.platform.split('_').slice(1).join('.')")
+          PYTHON_VERSION=3.10.2
+
+          echo "PYODIDE_VERSION=$PYODIDE_VERSION" >> $GITHUB_ENV
+          echo "EMSCRIPTEN_VERSION=$EMSCRIPTEN_VERSION" >> $GITHUB_ENV
+          echo "PYTHON_VERSION=$PYTHON_VERSION" >> $GITHUB_ENV
+          echo "ORIG_PATH=$PATH" >> $GITHUB_ENV
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          components: rust-src
+          target: wasm32-unknown-emscripten
+          override: true
+      - uses: mymindstorm/setup-emsdk@v11
+        with:
+          version: ${{env.EMSCRIPTEN_VERSION}}
+          actions-cache-folder: emsdk-cache
+      - uses: actions/setup-python@v2
+        id: setup-python
+        with:
+          python-version: ${{env.PYTHON_VERSION}}
+      - run: pip install nox
+      - uses: actions/cache@v3
+        with:
+          path: |
+            tests/pyodide
+          key: ${{ hashFiles('tests/*.js') }} - ${{ hashFiles('noxfile.py') }} - ${{ steps.setup-python.outputs.python-path }}
+      - uses: Swatinem/rust-cache@v1
+      - name: Test
+        run: |
+          export PATH=$ORIG_PATH:$PATH
+          nox -s test-examples-emscripten

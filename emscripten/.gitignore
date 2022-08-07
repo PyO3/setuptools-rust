@@ -1,0 +1,6 @@
+builddir
+main.*
+!main.c
+pybuilddir.txt
+pyodide
+node_modules

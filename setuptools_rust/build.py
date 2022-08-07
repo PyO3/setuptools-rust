@@ -168,7 +168,7 @@ class build_rust(RustCommand):
             ]
 
             # OSX requires special linker arguments
-            if sys.platform == "darwin":
+            if rustc_cfgs.get("target_os") == "macos":
                 ext_basename = os.path.basename(self.get_dylib_ext_path(ext, ext.name))
                 rustc_args.extend(
                     [
@@ -183,6 +183,12 @@ class build_rust(RustCommand):
                 # This must go in the env otherwise rustc will refuse to build
                 # the cdylib, see https://github.com/rust-lang/cargo/issues/10143
                 rustflags.append("-Ctarget-feature=-crt-static")
+
+            elif (rustc_cfgs.get("target_arch"), rustc_cfgs.get("target_os")) == (
+                "wasm32",
+                "emscripten",
+            ):
+                rustc_args.extend(["-C", f"link-args=-sSIDE_MODULE=2 -sWASM_BIGINT"])
 
             command = [
                 self.cargo,
