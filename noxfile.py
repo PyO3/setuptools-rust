@@ -113,3 +113,9 @@ def test_examples_emscripten(session: nox.Session):
 
         with session.chdir(emscripten_dir):
             session.run("node", "runner.js", str(example), external=True)
+
+
+@nox.session(name="bump-version")
+def bump_version(session: nox.Session) -> None:
+    session.install("bump2version")
+    session.run("bumpversion", *session.posargs)

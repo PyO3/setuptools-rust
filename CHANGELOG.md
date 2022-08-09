@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.5.0 (2022-08-09)
 ### Added
-- Add support for extension modules built for wasm32-unknown-emscripten with Pyodide.
+- Add support for extension modules built for wasm32-unknown-emscripten with Pyodide. [#244](https://github.com/PyO3/setuptools-rust/pull/244)
 
 ### Changed
 - Locate cdylib artifacts by handling messages from cargo instead of searching target dir (fixes build on MSYS2). [#267](https://github.com/PyO3/setuptools-rust/pull/267)
