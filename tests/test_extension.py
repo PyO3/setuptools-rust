@@ -3,16 +3,27 @@ from pathlib import Path
 import pytest
 from pytest import CaptureFixture, MonkeyPatch
 
-from setuptools_rust.extension import RustBin
+from setuptools_rust.extension import RustBin, RustExtension
+
+SETUPTOOLS_RUST_DIR = Path(__file__).parent.parent
 
 
 @pytest.fixture()
 def hello_world_bin() -> RustBin:
-    setuptools_rust_dir = Path(__file__).parent.parent
     return RustBin(
         "hello-world",
         path=(
-            setuptools_rust_dir / "examples" / "hello-world" / "Cargo.toml"
+            SETUPTOOLS_RUST_DIR / "examples" / "hello-world" / "Cargo.toml"
+        ).as_posix(),
+    )
+
+
+@pytest.fixture()
+def namespace_package_extension() -> RustExtension:
+    return RustExtension(
+        "namespace_package.rust",
+        path=(
+            SETUPTOOLS_RUST_DIR / "examples" / "namespace_package" / "Cargo.toml"
         ).as_posix(),
     )
 
@@ -38,3 +49,11 @@ def test_metadata_cargo_log(
     captured = capfd.readouterr()
     assert captured.out == ""
     assert captured.err == ""
+
+
+def test_get_lib_name_namespace_package(
+    namespace_package_extension: RustExtension,
+) -> None:
+    assert (
+        namespace_package_extension.get_lib_name(quiet=True) == "namespace_package_rust"
+    )

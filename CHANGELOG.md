@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+### Fixed
+- Fix regression in `get_lib_name` crashing since 1.5.0. [#280](https://github.com/PyO3/setuptools-rust/pull/280)
+
 ## 1.5.0 (2022-08-09)
 ### Added
 - Add support for extension modules built for wasm32-unknown-emscripten with Pyodide. [#244](https://github.com/PyO3/setuptools-rust/pull/244)
@@ -11,7 +15,6 @@
 ### Fixed
 - Fix RustBin build without wheel. [#273](https://github.com/PyO3/setuptools-rust/pull/273)
 - Fix RustBin setuptools install. [#275](https://github.com/PyO3/setuptools-rust/pull/275)
-
 
 ## 1.4.1 (2022-07-05)
 ### Fixed
