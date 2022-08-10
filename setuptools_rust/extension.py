@@ -174,7 +174,7 @@ class RustExtension:
 
     def get_lib_name(self, *, quiet: bool) -> str:
         """Parse Cargo.toml to get the name of the shared library."""
-        metadata = self._metadata(quiet=quiet)
+        metadata = self.metadata(quiet=quiet)
         root_key = metadata["resolve"]["root"]
         [pkg] = [p for p in metadata["packages"] if p["id"] == root_key]
         name = pkg["targets"][0]["name"]
