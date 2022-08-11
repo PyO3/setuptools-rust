@@ -93,6 +93,7 @@ async function main() {
     FS.mount(NODEFS, { root: testDir }, "/test_dir");
     await pyodide.loadPackage(["micropip", "pytest", "tomli"]);
     const micropip = pyodide.pyimport("micropip");
+    await micropip.install("beautifulsoup4");
     await micropip.install(wheelURL);
     const pytest = pyodide.pyimport("pytest");
     errcode = pytest.main(pyodide.toPy(["/test_dir"]));
