@@ -274,12 +274,10 @@ class build_rust(RustCommand):
                 dylib_paths.append(_BuiltModule(dest, artifact_path))
         else:
             # Find artifact from cargo messages
-            artifacts = tuple(
-                _find_cargo_artifacts(
-                    cargo_messages.splitlines(),
-                    package_id=package_id,
-                    kind="cdylib",
-                )
+            artifacts = _find_cargo_artifacts(
+                cargo_messages.splitlines(),
+                package_id=package_id,
+                kind="cdylib",
             )
             if len(artifacts) == 0:
                 raise DistutilsExecError(
@@ -660,11 +658,11 @@ def _find_cargo_artifacts(
     *,
     package_id: str,
     kind: str,
-) -> Iterable[str]:
+) -> List[str]:
     """Identifies cargo artifacts built for the given `package_id` from the
     provided cargo_messages.
 
-    >>> list(_find_cargo_artifacts(
+    >>> _find_cargo_artifacts(
     ...    [
     ...        '{"some_irrelevant_message": []}',
     ...        '{"reason":"compiler-artifact","package_id":"some_id","target":{"kind":["cdylib"]},"filenames":["/some/path/baz.so"]}',
@@ -673,9 +671,9 @@ def _find_cargo_artifacts(
     ...    ],
     ...    package_id="some_id",
     ...    kind="cdylib",
-    ... ))
+    ... )
     ['/some/path/baz.so', '/file/two/baz.dylib']
-    >>> list(_find_cargo_artifacts(
+    >>> _find_cargo_artifacts(
     ...    [
     ...        '{"some_irrelevant_message": []}',
     ...        '{"reason":"compiler-artifact","package_id":"some_id","target":{"kind":["cdylib"]},"filenames":["/some/path/baz.so"]}',
@@ -684,9 +682,10 @@ def _find_cargo_artifacts(
     ...    ],
     ...    package_id="some_id",
     ...    kind="rlib",
-    ... ))
+    ... )
     ['/file/two/baz.rlib']
     """
+    artifacts = []
     for message in cargo_messages:
         # only bother parsing messages that look like a match
         if "compiler-artifact" in message and package_id in message and kind in message:
@@ -700,7 +699,8 @@ def _find_cargo_artifacts(
                     parsed["target"]["kind"], parsed["filenames"]
                 ):
                     if artifact_kind == kind:
-                        yield filename
+                        artifacts.append(filename)
+    return artifacts
 
 
 def _replace_cross_target_dir(path: str, ext: RustExtension, *, quiet: bool) -> str:
