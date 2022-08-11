@@ -82,6 +82,7 @@ const testDir = pkgDir + "/tests";
 async function main() {
   const wheelName = await findWheel(distDir);
   const wheelURL = `file:${distDir}/${wheelName}`;
+  let errcode = 1;
 
   try {
     pyodide = await loadPyodide();
@@ -94,11 +95,12 @@ async function main() {
     const micropip = pyodide.pyimport("micropip");
     await micropip.install(wheelURL);
     const pytest = pyodide.pyimport("pytest");
-    errcode = pytest.main(pyodide.toPy(["/test_dir", "-vv"]));
+    errcode = pytest.main(pyodide.toPy(["/test_dir"]));
   } catch (e) {
     console.error(e);
     process.exit(1);
   }
+  process.exit(errcode);
 }
 
 main();
