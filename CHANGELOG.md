@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.5.1 (2022-08-14)
 ### Fixed
 - Fix regression in `get_lib_name` crashing since 1.5.0. [#280](https://github.com/PyO3/setuptools-rust/pull/280)
 - Fix regression in `Binding.Exec` builds with multiple executables not finding built executables since 1.5.0. [#283](https://github.com/PyO3/setuptools-rust/pull/283)
