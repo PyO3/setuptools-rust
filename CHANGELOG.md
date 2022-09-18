@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+### Fixed
+- Fix regression in `dylib` build artifacts not being found since 1.5.0. [#280](https://github.com/PyO3/setuptools-rust/pull/280)
+
 ## 1.5.1 (2022-08-14)
 ### Fixed
 - Fix regression in `get_lib_name` crashing since 1.5.0. [#280](https://github.com/PyO3/setuptools-rust/pull/280)
