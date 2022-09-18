@@ -249,7 +249,7 @@ class build_rust(RustCommand):
             artifacts = _find_cargo_artifacts(
                 cargo_messages.splitlines(),
                 package_id=package_id,
-                kind="bin",
+                kinds={"bin"},
             )
             for name, dest in ext.target.items():
                 if not name:
@@ -277,15 +277,15 @@ class build_rust(RustCommand):
             artifacts = _find_cargo_artifacts(
                 cargo_messages.splitlines(),
                 package_id=package_id,
-                kind="cdylib",
+                kinds={"cdylib", "dylib"},
             )
             if len(artifacts) == 0:
                 raise DistutilsExecError(
-                    "Rust build failed; unable to find any build artifacts"
+                    "Rust build failed; unable to find any cdylib or dylib build artifacts"
                 )
             elif len(artifacts) > 1:
                 raise DistutilsExecError(
-                    f"Rust build failed; expected only one build artifact but found {artifacts}"
+                    f"Rust build failed; expected only one cdylib or dylib build artifact but found {artifacts}"
                 )
 
             artifact_path = artifacts[0]
@@ -657,7 +657,7 @@ def _find_cargo_artifacts(
     cargo_messages: List[str],
     *,
     package_id: str,
-    kind: str,
+    kinds: Set[str],
 ) -> List[str]:
     """Identifies cargo artifacts built for the given `package_id` from the
     provided cargo_messages.
@@ -666,11 +666,11 @@ def _find_cargo_artifacts(
     ...    [
     ...        '{"some_irrelevant_message": []}',
     ...        '{"reason":"compiler-artifact","package_id":"some_id","target":{"kind":["cdylib"]},"filenames":["/some/path/baz.so"]}',
-    ...        '{"reason":"compiler-artifact","package_id":"some_id","target":{"kind":["cdylib", "rlib"]},"filenames":["/file/two/baz.dylib", "/file/two/baz.rlib"]}',
+    ...        '{"reason":"compiler-artifact","package_id":"some_id","target":{"kind":["dylib", "rlib"]},"filenames":["/file/two/baz.dylib", "/file/two/baz.rlib"]}',
     ...        '{"reason":"compiler-artifact","package_id":"some_other_id","target":{"kind":["cdylib"]},"filenames":["/not/this.so"]}',
     ...    ],
     ...    package_id="some_id",
-    ...    kind="cdylib",
+    ...    kinds={"cdylib", "dylib"},
     ... )
     ['/some/path/baz.so', '/file/two/baz.dylib']
     >>> _find_cargo_artifacts(
@@ -681,14 +681,14 @@ def _find_cargo_artifacts(
     ...        '{"reason":"compiler-artifact","package_id":"some_other_id","target":{"kind":["cdylib"]},"filenames":["/not/this.so"]}',
     ...    ],
     ...    package_id="some_id",
-    ...    kind="rlib",
+    ...    kinds={"rlib"},
     ... )
     ['/file/two/baz.rlib']
     """
     artifacts = []
     for message in cargo_messages:
         # only bother parsing messages that look like a match
-        if "compiler-artifact" in message and package_id in message and kind in message:
+        if "compiler-artifact" in message and package_id in message:
             parsed = json.loads(message)
             # verify the message is correct
             if (
@@ -698,7 +698,7 @@ def _find_cargo_artifacts(
                 for artifact_kind, filename in zip(
                     parsed["target"]["kind"], parsed["filenames"]
                 ):
-                    if artifact_kind == kind:
+                    if artifact_kind in kinds:
                         artifacts.append(filename)
     return artifacts
 
