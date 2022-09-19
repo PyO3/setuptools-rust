@@ -23,8 +23,11 @@ jobs:
       with:
         python-version: '3.x'
     - name: Install dependencies
+      # Install build and packaging dependencies.
+      # setuptools-scm is necessary for ensuring all files from VCS (such as
+      # examples) are in the sdist.
       run: |
-        pip install --upgrade pip setuptools wheel twine
+        pip install --upgrade pip setuptools wheel twine setuptools-scm
     - name: Build and publish
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
