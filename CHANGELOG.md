@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.5.2 (2022-09-19)
 ### Fixed
 - Fix regression in `dylib` build artifacts not being found since 1.5.0. [#290](https://github.com/PyO3/setuptools-rust/pull/290)
 - Fix regression in sdist missing examples and other supplementary files since 1.5.0. [#291](https://github.com/PyO3/setuptools-rust/pull/291)
