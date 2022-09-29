@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+### Fixed
+- Fix a bug where rebuilding the library would cause any running processes using it to segfault. [#295](https://github.com/PyO3/setuptools-rust/pull/295)
+
 ## 1.5.2 (2022-09-19)
 ### Fixed
 - Fix regression in `dylib` build artifacts not being found since 1.5.0. [#290](https://github.com/PyO3/setuptools-rust/pull/290)
