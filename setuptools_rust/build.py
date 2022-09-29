@@ -345,6 +345,26 @@ class build_rust(RustCommand):
                 os.makedirs(os.path.dirname(ext_path), exist_ok=True)
 
             log.info("Copying rust artifact from %s to %s", dylib_path, ext_path)
+
+            # We delete any existing library file before copying to avoid
+            # causing running processes that use it from segfaulting.
+            #
+            # This is because shared libraries are memory mapped into processes
+            # that use it, so modifying the shared library file (which is what
+            # `shutil.copyfile` does) means the next time a process calls into
+            # the shared library they get the updated library rather than the
+            # original one, causing confusion and segfaults.
+            #
+            # Deleting a memory mapped file, on the other hand, is correctly
+            # handled by the OS, i.e. a copy is kept around until the running
+            # process exits. Thus, deleting the existing library file and *then*
+            # copying the new one won't change the existing memory mapped file,
+            # and so is safe to do.
+            try:
+                os.remove(ext_path)
+            except FileNotFoundError:
+                pass
+
             shutil.copyfile(dylib_path, ext_path)
 
             if sys.platform != "win32" and not debug_build:
