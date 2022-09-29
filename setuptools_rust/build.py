@@ -356,7 +356,7 @@ class build_rust(RustCommand):
             # doesn't work across file system boundaries.
             temp_ext_path = ext_path + "~"
             shutil.copyfile(dylib_path, temp_ext_path)
-            os.rename(temp_ext_path, ext_path)
+            os.replace(temp_ext_path, ext_path)
 
             if sys.platform != "win32" and not debug_build:
                 args = []
