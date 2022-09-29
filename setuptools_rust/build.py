@@ -351,7 +351,7 @@ class build_rust(RustCommand):
             #
             # This is because shared libraries are memory mapped into processes
             # that use it, so modifying the shared library file (which is what
-            # `shutil.copyfile` does) means the next time a process calls into
+            # copying the file does) means the next time a process calls into
             # the shared library they get the updated library rather than the
             # original one, causing confusion and segfaults.
             #
@@ -365,7 +365,7 @@ class build_rust(RustCommand):
             except FileNotFoundError:
                 pass
 
-            shutil.copyfile(dylib_path, ext_path)
+            os.rename(dylib_path, ext_path)
 
             if sys.platform != "win32" and not debug_build:
                 args = []
