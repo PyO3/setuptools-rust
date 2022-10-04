@@ -345,7 +345,18 @@ class build_rust(RustCommand):
                 os.makedirs(os.path.dirname(ext_path), exist_ok=True)
 
             log.info("Copying rust artifact from %s to %s", dylib_path, ext_path)
-            shutil.copyfile(dylib_path, ext_path)
+
+            # We want to atomically replace any existing library file. We can't
+            # just copy the new library directly on top of the old one as that
+            # causes the existing library to be modified (rather the replaced).
+            # This means that any process that currently uses the shared library
+            # will see it modified and likely segfault.
+            #
+            # We first copy the file to the same directory, as `os.rename`
+            # doesn't work across file system boundaries.
+            temp_ext_path = ext_path + "~"
+            shutil.copyfile(dylib_path, temp_ext_path)
+            os.replace(temp_ext_path, ext_path)
 
             if sys.platform != "win32" and not debug_build:
                 args = []
