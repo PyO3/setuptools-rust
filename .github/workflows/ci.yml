@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.x"
 
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.x"
 
@@ -44,16 +44,12 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.x"
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          default: true
+        uses: dtolnay/rust-toolchain@stable
 
       - run: pip install nox
 
@@ -85,18 +81,15 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.platform.python-architecture }}
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          target: ${{ matrix.platform.rust-target }}
-          profile: minimal
-          default: true
+          targets: ${{ matrix.platform.rust-target }}
 
       - name: Install Rust aarch64-apple-darwin target
         if: matrix.platform.os == 'macos-latest'
@@ -148,15 +141,11 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
+      - uses: dtolnay/rust-toolchain@stable
 
       - name: Install Rust aarch64-apple-darwin target
         if: matrix.os == 'macos-latest'
@@ -180,7 +169,7 @@ jobs:
       # Now we switch to a differnet Python version and ensure we can install
       # the wheel we just built.
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.10"
 
@@ -251,14 +240,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
+      - uses: dtolnay/rust-toolchain@stable
       - name: Install cross
         uses: taiki-e/install-action@v1
         with:
@@ -298,15 +283,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: stable
-          target: aarch64-unknown-linux-gnu
-          override: true
+          targets: aarch64-unknown-linux-gnu
       - name: Install cargo-zigbuild
         run: |
           python3 -m pip install cargo-zigbuild
@@ -345,12 +327,9 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: stable
-          target: aarch64-apple-darwin
-          override: true
+          targets: aarch64-apple-darwin
       - uses: pypa/cibuildwheel@v2.3.1
         env:
           CIBW_BUILD: cp39-*
@@ -384,11 +363,9 @@ jobs:
             mingw-w64-${{ matrix.arch }}-openssl
             mingw-w64-${{ matrix.arch }}-toolchain
 
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: stable-${{ matrix.rust_target }}
-          default: true
 
       - name: Install test dependencies
         shell: msys2 {0}
@@ -425,18 +402,15 @@ jobs:
           echo "EMSCRIPTEN_VERSION=$EMSCRIPTEN_VERSION" >> $GITHUB_ENV
           echo "PYTHON_VERSION=$PYTHON_VERSION" >> $GITHUB_ENV
           echo "ORIG_PATH=$PATH" >> $GITHUB_ENV
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          profile: minimal
-          toolchain: nightly
           components: rust-src
-          target: wasm32-unknown-emscripten
-          override: true
+          targets: wasm32-unknown-emscripten
       - uses: mymindstorm/setup-emsdk@v11
         with:
           version: ${{env.EMSCRIPTEN_VERSION}}
           actions-cache-folder: emsdk-cache
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         id: setup-python
         with:
           python-version: ${{env.PYTHON_VERSION}}
@@ -446,7 +420,7 @@ jobs:
           path: |
             tests/pyodide
           key: ${{ hashFiles('tests/*.js') }} - ${{ hashFiles('noxfile.py') }} - ${{ steps.setup-python.outputs.python-path }}
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
       - name: Test
         run: |
           export PATH=$ORIG_PATH:$PATH
