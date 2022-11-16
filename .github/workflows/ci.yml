@@ -160,6 +160,7 @@ jobs:
       - name: Build an abi3 wheel
         shell: bash
         run: |
+          set -e
           cd examples/rust_with_cffi/
           python --version
           pip install -U wheel
@@ -179,12 +180,21 @@ jobs:
       - name: Install abi3 wheel and run tests
         shell: bash
         run: |
+          set -e
           cd examples/
           pip install -U wheel
           python --version
           pip install rust_with_cffi/dist/rust_with_cffi*.whl
           python -c "from rust_with_cffi import rust; assert rust.rust_func() == 14"
           python -c "from rust_with_cffi.cffi import lib; assert lib.cffi_func() == 15"
+
+      - name: Run abi3audit
+        shell: bash
+        run: |
+          set -e
+          pip install abi3audit
+          cd examples/
+          abi3audit rust_with_cffi/dist/rust_with_cffi*.whl
 
   test-crossenv:
     runs-on: ubuntu-latest
