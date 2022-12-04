@@ -409,7 +409,7 @@ jobs:
           cd node_modules/pyodide/
           node ../prettier/bin-prettier.js -w pyodide.asm.js
           EMSCRIPTEN_VERSION=$(node -p "require('./repodata.json').info.platform.split('_').slice(1).join('.')")
-          PYTHON_VERSION=3.10.2
+          PYTHON_VERSION=3.10
 
           echo "PYODIDE_VERSION=$PYODIDE_VERSION" >> $GITHUB_ENV
           echo "EMSCRIPTEN_VERSION=$EMSCRIPTEN_VERSION" >> $GITHUB_ENV
