@@ -63,7 +63,6 @@ DOCS_URL = "https://setuptools-rust.readthedocs.io/en/latest/"
 
 
 class RelativeDocLinks(SphinxTransform):
-
     default_priority = 750
 
     def apply(self):
