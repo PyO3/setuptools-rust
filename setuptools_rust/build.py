@@ -130,7 +130,6 @@ class build_rust(RustCommand):
     def build_extension(
         self, ext: RustExtension, forced_target_triple: Optional[str] = None
     ) -> List["_BuiltModule"]:
-
         target_triple = self._detect_rust_target(forced_target_triple)
         rustc_cfgs = get_rustc_cfgs(target_triple)
 

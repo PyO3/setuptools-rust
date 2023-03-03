@@ -36,8 +36,7 @@ class RustCommand(Command, ABC):
                 "expected list of RustExtension objects for rust_extensions "
                 f"argument to setup(), got `{ty}`"
             )
-        for (i, extension) in enumerate(extensions):
-
+        for i, extension in enumerate(extensions):
             if not isinstance(extension, RustExtension):
                 ty = type(extension)
                 raise ValueError(
