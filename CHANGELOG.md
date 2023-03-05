@@ -3,6 +3,7 @@
 ## Unreleased
 ### Fixed
 - Fix a bug where rebuilding the library would cause any running processes using it to segfault. [#295](https://github.com/PyO3/setuptools-rust/pull/295)
+- Fix `setup.cfg` format for compatibility with "poetry==1.4.0". [#319](https://github.com/PyO3/setuptools-rust/pull/319)
 
 ## 1.5.2 (2022-09-19)
 ### Fixed
