@@ -28,15 +28,22 @@ from typing_extensions import Literal
 from ._utils import format_called_process_error
 from .command import RustCommand
 from .extension import Binding, RustBin, RustExtension, Strip
-from .rustc_info import get_rust_host, get_rust_target_list, get_rustc_cfgs, get_rust_version
+from .rustc_info import (
+    get_rust_host,
+    get_rust_target_list,
+    get_rustc_cfgs,
+    get_rust_version,
+)
 from semantic_version import Version
 
 
 def _detect_toolchain_1_70_or_later() -> bool:
     version = get_rust_version()
-    return version.major > 1 or (
-        version.major == 1 and version.minor >= 70
-    )
+
+    if version is None:
+        return False
+
+    return version.major > 1 or (version.major == 1 and version.minor >= 70)  # type: ignore
 
 
 class build_rust(RustCommand):
