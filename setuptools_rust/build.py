@@ -212,7 +212,7 @@ class build_rust(RustCommand):
             ):
                 rustc_args.extend(["-C", f"link-args=-sSIDE_MODULE=2 -sWASM_BIGINT"])
 
-            if is_toolchain_1_70_or_later:
+            if is_toolchain_1_70_or_later and "--crate-type" not in cargo_args:
                 cargo_args.extend(["--crate-type", "cdylib"])
 
             command = [
