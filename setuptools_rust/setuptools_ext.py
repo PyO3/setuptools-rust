@@ -275,10 +275,8 @@ def rust_extensions(
     has_rust_extensions = len(value) > 0
 
     # Monkey patch has_ext_modules to include Rust extensions.
-    #
-    # has_ext_modules is missing from Distribution typing.
-    orig_has_ext_modules = dist.has_ext_modules  # type: ignore[attr-defined]
-    dist.has_ext_modules = lambda: (orig_has_ext_modules() or has_rust_extensions)  # type: ignore[attr-defined]
+    orig_has_ext_modules = dist.has_ext_modules
+    dist.has_ext_modules = lambda: (orig_has_ext_modules() or has_rust_extensions)  # type: ignore[method-assign]
 
     if has_rust_extensions:
         add_rust_extension(dist)

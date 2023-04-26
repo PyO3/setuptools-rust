@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple, cast
 
 import pkg_resources
+from semantic_version import Version
 from setuptools.command.build import build as CommandBuild  # type: ignore[import]
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
@@ -31,10 +32,9 @@ from .extension import Binding, RustBin, RustExtension, Strip
 from .rustc_info import (
     get_rust_host,
     get_rust_target_list,
-    get_rustc_cfgs,
     get_rust_version,
+    get_rustc_cfgs,
 )
-from semantic_version import Version
 
 
 def _check_cargo_supports_crate_type_option() -> bool:
@@ -108,8 +108,10 @@ class build_rust(RustCommand):
 
     def get_data_dir(self) -> str:
         components = (
-            pkg_resources.safe_name(self.distribution.get_name()).replace("-", "_"),  # type: ignore[attr-defined]
-            pkg_resources.safe_version(self.distribution.get_version()).replace("-", "_"),  # type: ignore[attr-defined]
+            pkg_resources.safe_name(self.distribution.get_name()).replace("-", "_"),
+            pkg_resources.safe_version(self.distribution.get_version()).replace(
+                "-", "_"
+            ),
         )
         if self.build_number:
             components += (self.build_number,)
