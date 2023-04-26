@@ -37,13 +37,13 @@ from .rustc_info import (
 from semantic_version import Version
 
 
-def _detect_toolchain_1_70_or_later() -> bool:
+def _check_cargo_supports_crate_type_option() -> bool:
     version = get_rust_version()
 
     if version is None:
         return False
 
-    return version.major > 1 or (version.major == 1 and version.minor >= 70)  # type: ignore
+    return version.major > 1 or (version.major == 1 and version.minor >= 64)  # type: ignore
 
 
 class build_rust(RustCommand):
@@ -157,7 +157,7 @@ class build_rust(RustCommand):
 
         quiet = self.qbuild or ext.quiet
         debug = self._is_debug_build(ext)
-        is_toolchain_1_70_or_later = _detect_toolchain_1_70_or_later()
+        use_cargo_crate_type = _check_cargo_supports_crate_type_option()
 
         cargo_args = self._cargo_args(
             ext=ext, target_triple=target_triple, release=not debug, quiet=quiet
@@ -176,9 +176,9 @@ class build_rust(RustCommand):
             ]
 
         else:
-            # If toolchain >= 1.70.0, use '--crate-type' option of cargo.
+            # If toolchain >= 1.64.0, use '--crate-type' option of cargo.
             # See https://github.com/PyO3/setuptools-rust/issues/320
-            if is_toolchain_1_70_or_later:
+            if use_cargo_crate_type:
                 rustc_args = [
                     *ext.rustc_flags,
                 ]
@@ -212,7 +212,7 @@ class build_rust(RustCommand):
             ):
                 rustc_args.extend(["-C", f"link-args=-sSIDE_MODULE=2 -sWASM_BIGINT"])
 
-            if is_toolchain_1_70_or_later and "--crate-type" not in cargo_args:
+            if use_cargo_crate_type and "--crate-type" not in cargo_args:
                 cargo_args.extend(["--crate-type", "cdylib"])
 
             command = [
