@@ -1,10 +1,12 @@
 # Changelog
 
-## Unreleased
+## 1.6.0 (2023-04-27)
+### Changed
+- Prefer passing `--crate-type` option to cargo if "toolchain >= 1.64". [#322](https://github.com/PyO3/setuptools-rust/pull/322)
+
 ### Fixed
 - Fix a bug where rebuilding the library would cause any running processes using it to segfault. [#295](https://github.com/PyO3/setuptools-rust/pull/295)
 - Fix `setup.cfg` format for compatibility with "poetry==1.4.0". [#319](https://github.com/PyO3/setuptools-rust/pull/319)
-- Fix to use `--crate-type` option of cargo if "toolchain >= 1.64". [#322](https://github.com/PyO3/setuptools-rust/pull/322)
 
 ## 1.5.2 (2022-09-19)
 ### Fixed
