@@ -3,6 +3,7 @@
 ## Unreleased
 ### Packaging
 - Include `py.typed` when packaging to denote that setuptools-rust includes type hints. [#338](https://github.com/PyO3/setuptools-rust/pull/338)
+- Remove direct imports from `distutils`. [#336](https://github.com/PyO3/setuptools-rust/pull/336)
 
 ## 1.6.0 (2023-04-27)
 ### Changed

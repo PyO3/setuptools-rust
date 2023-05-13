@@ -1,5 +1,4 @@
 import os
-import sys
 import tarfile
 from glob import glob
 from pathlib import Path

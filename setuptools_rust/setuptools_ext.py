@@ -1,11 +1,12 @@
 import os
 import subprocess
 import sysconfig
-from distutils import log
-from distutils.command.clean import clean
+import logging
+
 from typing import List, Set, Tuple, Type, cast
 
 from setuptools.command.build_ext import build_ext
+
 from setuptools.command.install import install
 from setuptools.command.install_lib import install_lib
 from setuptools.command.install_scripts import install_scripts
@@ -19,6 +20,8 @@ try:
     from wheel.bdist_wheel import bdist_wheel
 except ImportError:
     bdist_wheel = None
+
+logger = logging.getLogger(__name__)
 
 
 def add_rust_extension(dist: Distribution) -> None:
@@ -145,7 +148,7 @@ def add_rust_extension(dist: Distribution) -> None:
 
         def run(self) -> None:
             if self.distribution.rust_extensions:
-                log.info("running build_rust")
+                logger.info("running build_rust")
                 build_rust = self.get_finalized_command("build_rust")
                 build_rust.inplace = self.inplace
                 build_rust.target = self.target
@@ -159,15 +162,17 @@ def add_rust_extension(dist: Distribution) -> None:
 
     dist.cmdclass["build_ext"] = build_ext_rust_extension
 
-    clean_base_class = cast(Type[clean], dist.cmdclass.get("clean", clean))
+    clean_base_class = dist.cmdclass.get("clean")
 
-    class clean_rust_extension(clean_base_class):  # type: ignore[misc,valid-type]
-        def run(self) -> None:
-            clean_base_class.run(self)
-            if not self.dry_run:
-                self.run_command("clean_rust")
+    if clean_base_class is not None:
 
-    dist.cmdclass["clean"] = clean_rust_extension
+        class clean_rust_extension(clean_base_class):  # type: ignore[misc,valid-type]
+            def run(self) -> None:
+                super().run()
+                if not self.dry_run:
+                    self.run_command("clean_rust")
+
+        dist.cmdclass["clean"] = clean_rust_extension
 
     install_base_class = cast(Type[install], dist.cmdclass.get("install", install))
 

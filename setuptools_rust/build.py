@@ -8,14 +8,14 @@ import shutil
 import subprocess
 import sys
 import sysconfig
-from distutils import log
-from distutils.errors import (
+import logging
+from setuptools.errors import (
     CompileError,
-    DistutilsExecError,
-    DistutilsFileError,
-    DistutilsPlatformError,
+    ExecError,
+    FileError,
+    PlatformError,
 )
-from distutils.sysconfig import get_config_var
+from sysconfig import get_config_var
 from pathlib import Path
 from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple, cast
 
@@ -35,6 +35,8 @@ from .rustc_info import (
     get_rust_version,
     get_rustc_cfgs,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _check_cargo_supports_crate_type_option() -> bool:
@@ -153,9 +155,7 @@ class build_rust(RustCommand):
         env = _prepare_build_environment()
 
         if not os.path.exists(ext.path):
-            raise DistutilsFileError(
-                f"can't find Rust extension project file: {ext.path}"
-            )
+            raise FileError(f"can't find Rust extension project file: {ext.path}")
 
         quiet = self.qbuild or ext.quiet
         debug = self._is_debug_build(ext)
@@ -260,7 +260,7 @@ class build_rust(RustCommand):
             raise CompileError(format_called_process_error(e, include_stdout=False))
 
         except OSError:
-            raise DistutilsExecError(
+            raise ExecError(
                 "Unable to execute 'cargo' - this package "
                 "requires Rust to be installed and cargo to be on the PATH"
             )
@@ -289,7 +289,7 @@ class build_rust(RustCommand):
                         if Path(artifact).with_suffix("").name == name
                     )
                 except StopIteration:
-                    raise DistutilsExecError(
+                    raise ExecError(
                         f"Rust build failed; unable to locate executable '{name}'"
                     )
 
@@ -307,11 +307,11 @@ class build_rust(RustCommand):
                 kinds={"cdylib", "dylib"},
             )
             if len(artifacts) == 0:
-                raise DistutilsExecError(
+                raise ExecError(
                     "Rust build failed; unable to find any cdylib or dylib build artifacts"
                 )
             elif len(artifacts) > 1:
-                raise DistutilsExecError(
+                raise ExecError(
                     f"Rust build failed; expected only one cdylib or dylib build artifact but found {artifacts}"
                 )
 
@@ -371,7 +371,7 @@ class build_rust(RustCommand):
                 ext_path = self.get_dylib_ext_path(ext, module_name)
                 os.makedirs(os.path.dirname(ext_path), exist_ok=True)
 
-            log.info("Copying rust artifact from %s to %s", dylib_path, ext_path)
+            logger.info("Copying rust artifact from %s to %s", dylib_path, ext_path)
 
             # We want to atomically replace any existing library file. We can't
             # just copy the new library directly on top of the old one as that
@@ -546,7 +546,7 @@ def create_universal2_binary(output_path: str, input_paths: List[str]) -> None:
         try:
             from fat_macho import FatWriter
         except ImportError:
-            raise DistutilsExecError(
+            raise ExecError(
                 "failed to locate `lipo` or import `fat_macho.FatWriter`. "
                 "Try installing with `pip install fat-macho` "
             )
@@ -648,7 +648,7 @@ def _binding_features(
     elif ext.binding is Binding.RustCPython:
         return {"cpython/python3-sys", "cpython/extension-module"}
     else:
-        raise DistutilsPlatformError(f"unknown Rust binding: '{ext.binding}'")
+        raise PlatformError(f"unknown Rust binding: '{ext.binding}'")
 
 
 _PyLimitedApi = Literal["cp37", "cp38", "cp39", "cp310", "cp311", "cp312", True, False]
