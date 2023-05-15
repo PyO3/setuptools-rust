@@ -14,8 +14,6 @@ def test(session: nox.Session):
 
 @nox.session()
 def setuptools_install(session: nox.Session):
-    session.install("setuptools")
-    with session.chdir(SETUPTOOLS_RUST):
-        session.run("python", "setup.py", "install")
+    session.install(SETUPTOOLS_RUST)
     session.run("python", "setup.py", "install")
     session.run("hello-world", *session.posargs)

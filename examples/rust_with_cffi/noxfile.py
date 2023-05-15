@@ -14,8 +14,6 @@ def test(session: nox.Session):
 
 @nox.session()
 def setuptools_install(session: nox.Session):
-    session.install("setuptools", "pytest", "cffi")
-    with session.chdir(SETUPTOOLS_RUST):
-        session.run("python", "setup.py", "install")
+    session.install(SETUPTOOLS_RUST, "pytest", "cffi")
     session.run("python", "setup.py", "install")
     session.run("pytest", *session.posargs)
