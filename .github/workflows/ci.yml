@@ -232,7 +232,7 @@ jobs:
 
           docker run --rm -v "$PWD":/io -w /io messense/manylinux2014-cross:${{ matrix.platform.arch }} bash build-wheels.sh
       - name: Install abi3 wheel and run tests
-        uses: uraimo/run-on-arch-action@v2.0.5
+        uses: uraimo/run-on-arch-action@v2.5.0
         with:
           arch: ${{ matrix.platform.arch }}
           distro: ubuntu20.04
@@ -275,7 +275,7 @@ jobs:
           python -m pip install wheel
           python setup.py bdist_wheel --plat-name manylinux2014_aarch64
           ls -la dist/
-      - uses: uraimo/run-on-arch-action@v2.1.1
+      - uses: uraimo/run-on-arch-action@v2.5.0
         name: Install built wheel
         with:
           arch: aarch64
@@ -320,7 +320,7 @@ jobs:
           python -m pip install wheel
           python setup.py bdist_wheel --plat-name manylinux2014_aarch64
           ls -la dist/
-      - uses: uraimo/run-on-arch-action@v2.1.1
+      - uses: uraimo/run-on-arch-action@v2.5.0
         name: Install built wheel
         with:
           arch: aarch64

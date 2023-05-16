@@ -1,3 +1,47 @@
+[project]
+name = "setuptools-rust"
+version = "1.6.0"
+description = "Setuptools Rust extension plugin"
+readme = "README.md"
+requires-python = ">=3.7"
+keywords = ["distutils", "setuptools", "rust"]
+authors = [
+    {name = "Nikolay Kim", email = "fafhrd91@gmail.com"},
+]
+classifiers = [
+    "Topic :: Software Development :: Version Control",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Development Status :: 5 - Production/Stable",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+]
+
+dependencies = [
+    "setuptools>=62.4",
+    "semantic_version>=2.8.2,<3",
+    "typing_extensions>=3.7.4.3",
+]
+
+[project.entry-points."distutils.commands"]
+clean_rust = "setuptools_rust:clean_rust"
+build_rust = "setuptools_rust:build_rust"
+
+[project.entry-points."distutils.setup_keywords"]
+rust_extensions = "setuptools_rust.setuptools_ext:rust_extensions"
+
+[project.urls]
+repository = "https://github.com/PyO3/setuptools-rust"
+documentation = "https://setuptools-rust.readthedocs.io"
+changelog = "https://github.com/PyO3/setuptools-rust/blob/main/CHANGELOG.md"
+
 [build-system]
 requires = ["setuptools>=62.4"]
 build-backend = "setuptools.build_meta"
@@ -8,3 +52,7 @@ profile = "black"
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "--doctest-modules"
+
+[tool.setuptools]
+packages = ["setuptools_rust"]
+zip-safe = true
