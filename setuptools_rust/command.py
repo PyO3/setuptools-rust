@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
 from distutils import log
-from distutils.cmd import Command
 from distutils.errors import DistutilsPlatformError
 from typing import List, Optional
 
-from setuptools.dist import Distribution
+from setuptools import Command, Distribution
 
 from .extension import RustExtension
 from .rustc_info import get_rust_version
