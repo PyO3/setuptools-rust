@@ -56,3 +56,6 @@ addopts = "--doctest-modules"
 [tool.setuptools]
 packages = ["setuptools_rust"]
 zip-safe = true
+
+[tool.setuptools.package-data]
+setuptools_rust = ["py.typed"]

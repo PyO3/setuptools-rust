@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+### Packaging
+- Include `py.typed` when packaging to denote that setuptools-rust includes type hints. [#338](https://github.com/PyO3/setuptools-rust/pull/338)
+
 ## 1.6.0 (2023-04-27)
 ### Changed
 - Prefer passing `--crate-type` option to cargo if "toolchain >= 1.64". [#322](https://github.com/PyO3/setuptools-rust/pull/322)
