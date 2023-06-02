@@ -21,7 +21,7 @@ from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple, cast
 
 import pkg_resources
 from semantic_version import Version
-from setuptools.command.build import build as CommandBuild  # type: ignore[import]
+from setuptools.command.build import build as CommandBuild
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
 from typing_extensions import Literal
@@ -90,7 +90,7 @@ class build_rust(RustCommand):
         self.data_dir = self.get_data_dir()
 
         if self.plat_name is None:
-            self.plat_name = cast(  # type: ignore[no-any-unimported]
+            self.plat_name = cast(
                 CommandBuild, self.get_finalized_command("build")
             ).plat_name
             assert isinstance(self.plat_name, str)
