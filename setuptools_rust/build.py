@@ -81,6 +81,7 @@ class build_rust(RustCommand):
         self.build_temp = None
         self.plat_name = None
         self.build_number = None
+        self.include_dirs = None
         self.target = os.getenv("CARGO_BUILD_TARGET")
         self.cargo = os.getenv("CARGO", "cargo")
 
@@ -151,6 +152,13 @@ class build_rust(RustCommand):
         rustc_cfgs = get_rustc_cfgs(target_triple)
 
         env = _prepare_build_environment()
+
+        if self.include_dirs:
+            env.update(
+                {
+                    "SETUPTOOLS_RUST_INCLUDE_DIRS": os.pathsep.join(self.include_dirs),
+                }
+            )
 
         if not os.path.exists(ext.path):
             raise DistutilsFileError(

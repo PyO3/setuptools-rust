@@ -153,6 +153,7 @@ def add_rust_extension(dist: Distribution) -> None:
                 options = self.distribution.get_cmdline_options().get("bdist_wheel", {})
                 plat_name = options.get("plat-name") or self.plat_name
                 build_rust.plat_name = plat_name
+                build_rust.include_dirs = self.include_dirs
                 build_rust.run()
 
             build_ext_base_class.run(self)
