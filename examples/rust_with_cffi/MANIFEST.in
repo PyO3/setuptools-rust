@@ -1,3 +1,4 @@
 include Cargo.toml
 include cffi_module.py
 recursive-include src *
+recursive-include python *

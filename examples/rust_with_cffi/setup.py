@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from setuptools import setup
+from setuptools import find_packages, setup
 from setuptools_rust import RustExtension
 
 setup(
@@ -14,7 +14,8 @@ setup(
         "Operating System :: POSIX",
         "Operating System :: MacOS :: MacOS X",
     ],
-    packages=["rust_with_cffi"],
+    packages=find_packages(where="python"),
+    package_dir={"": "python"},
     rust_extensions=[
         RustExtension("rust_with_cffi.rust", py_limited_api="auto"),
     ],
