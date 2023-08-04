@@ -405,9 +405,9 @@ jobs:
           PYODIDE_VERSION=0.21.0
 
           cd emscripten
-          npm i pyodide@0.21.0 prettier
+          npm i pyodide@0.21.0
           cd node_modules/pyodide/
-          node ../prettier/bin-prettier.js -w pyodide.asm.js
+          npx -y prettier -w pyodide.asm.js
           EMSCRIPTEN_VERSION=$(node -p "require('./repodata.json').info.platform.split('_').slice(1).join('.')")
           PYTHON_VERSION=3.10
 
