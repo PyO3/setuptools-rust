@@ -386,7 +386,7 @@ jobs:
 
       - name: Create libpython symlink
         shell: msys2 {0}
-        run: ln -s /${{ matrix.path }}/lib/libpython3.10.dll.a /${{ matrix.path }}/lib/libpython310.dll.a
+        run: ln -s /${{ matrix.path }}/lib/libpython3.11.dll.a /${{ matrix.path }}/lib/libpython311.dll.a
 
       - name: Test examples
         shell: msys2 {0}
