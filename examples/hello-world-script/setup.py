@@ -1,10 +1,12 @@
-from setuptools import setup
+from setuptools import find_packages, setup
 
 from setuptools_rust import RustExtension, Binding
 
 setup(
     name="hello-world-script",
     version="1.0",
+    packages=find_packages(where="python"),
+    package_dir={"": "python"},
     rust_extensions=[
         RustExtension(
             {"hello-world-script": "hello_world.hello-world-script"},
