@@ -10,3 +10,4 @@ pyo3 = { version = "0.19.2", features = ["extension-module"] }
 [lib]
 name = "rust_with_cffi"
 crate-type = ["cdylib"]
+path = "rust/lib.rs"
