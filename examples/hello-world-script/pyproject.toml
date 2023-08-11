@@ -13,6 +13,5 @@ find = { where = ["python"] }
 [[tool.setuptools-rust.bins]]
 # Private Rust extension module to be nested into Python package
 target = "hello-world-script"  # Matches bin.name in Cargo.toml
-                               # (or package.name if [[bin]] is missing and src/main.rs exists)
 args = ["--profile", "release-lto"]  # Extra args for Cargo
 # See reference for RustBin in https://setuptools-rust.readthedocs.io/en/latest/reference.html
