@@ -1,3 +1,25 @@
 [build-system]
 requires = ["setuptools", "wheel", "setuptools-rust"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name="namespace_package"
+version="0.1.0"
+
+[tool.setuptools.packages]
+# Pure Python packages/modules
+find = { where = ["python"] }
+
+[[tool.setuptools-rust.ext-modules]]
+target = "namespace_package.rust"
+# ^-- The last part of the target name (e.g. "rust") should match lib.name in Cargo.toml,
+#     but you can add a prefix to nest it inside of a parent Python package or namespace.
+#     Note that lib.name may not be defined in the Cargo.toml, but you still
+#     have to match the name of the function with the `#[pymodule]` attribute.
+path = "Cargo.toml"
+# ^-- Default value for cargo's manifest (can be omitted)
+#     Each manifest can have a single [lib] definition.
+#     To specify multiple extension modules you can use different toml files (one each).
+binding = "PyO3"  # Default value, can be omitted
+debug = false
+# See reference for RustExtension in https://setuptools-rust.readthedocs.io/en/latest/reference.html
