@@ -10,3 +10,7 @@ edition = "2018"
 [profile.release-lto]
 inherits = "release"
 lto = true
+
+[[bin]]
+name = "hello-world"
+path = "rust/main.rs"
