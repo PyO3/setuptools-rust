@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import glob
 import json
 import os
 import platform
@@ -17,10 +16,9 @@ from setuptools.errors import (
 )
 from sysconfig import get_config_var
 from pathlib import Path
-from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple, cast
+from typing import Dict, List, NamedTuple, Optional, Set, Tuple, cast
 
 import pkg_resources
-from semantic_version import Version
 from setuptools.command.build import build as CommandBuild
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
@@ -31,7 +29,6 @@ from .command import RustCommand
 from .extension import Binding, RustBin, RustExtension, Strip
 from .rustc_info import (
     get_rust_host,
-    get_rust_target_list,
     get_rust_version,
     get_rustc_cfgs,
 )
@@ -155,11 +152,20 @@ class build_rust(RustCommand):
         env = _prepare_build_environment()
 
         if not os.path.exists(ext.path):
-            raise FileError(f"can't find Rust extension project file: {ext.path}")
+            raise FileError(
+                f"can't find manifest for Rust extension `{ext.name}` at path `{ext.path}`"
+            )
 
         quiet = self.qbuild or ext.quiet
         debug = self._is_debug_build(ext)
         use_cargo_crate_type = _check_cargo_supports_crate_type_option()
+
+        package_id = ext.metadata(quiet=quiet)["resolve"]["root"]
+        if package_id is None:
+            raise FileError(
+                f"manifest for Rust extention `{ext.name}` at path `{ext.path}` is a virtual manifest (a workspace root without a package).\n\n"
+                "If you intended to build for a workspace member, set `path` for the extension to the member's Cargo.toml file."
+            )
 
         cargo_args = self._cargo_args(
             ext=ext, target_triple=target_triple, release=not debug, quiet=quiet
@@ -212,7 +218,7 @@ class build_rust(RustCommand):
                 "wasm32",
                 "emscripten",
             ):
-                rustc_args.extend(["-C", f"link-args=-sSIDE_MODULE=2 -sWASM_BIGINT"])
+                rustc_args.extend(["-C", "link-args=-sSIDE_MODULE=2 -sWASM_BIGINT"])
 
             if use_cargo_crate_type and "--crate-type" not in cargo_args:
                 cargo_args.extend(["--crate-type", "cdylib"])
@@ -269,7 +275,6 @@ class build_rust(RustCommand):
         # it into the build directory as if it were produced by build_ext.
 
         dylib_paths = []
-        package_id = ext.metadata(quiet=quiet)["resolve"]["root"]
 
         if ext._uses_exec_binding():
             # Find artifact from cargo messages
@@ -396,7 +401,7 @@ class build_rust(RustCommand):
                     args.insert(0, "strip")
                     args.append(ext_path)
                     try:
-                        output = subprocess.check_output(args)
+                        subprocess.check_output(args)
                     except subprocess.CalledProcessError:
                         pass
 
@@ -643,7 +648,7 @@ def _binding_features(
                 python_version = py_limited_api[2:]
                 features.add(f"pyo3/abi3-py{python_version}")
             elif py_limited_api:
-                features.add(f"pyo3/abi3")
+                features.add("pyo3/abi3")
         return features
     elif ext.binding is Binding.RustCPython:
         return {"cpython/python3-sys", "cpython/extension-module"}
