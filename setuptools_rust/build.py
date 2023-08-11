@@ -376,6 +376,15 @@ class build_rust(RustCommand):
                 ext_path = self.get_dylib_ext_path(ext, module_name)
                 os.makedirs(os.path.dirname(ext_path), exist_ok=True)
 
+            # Make filenames relative to cwd where possible, to make logs and
+            # errors below a little neater
+
+            cwd = os.getcwd()
+            if dylib_path.startswith(cwd):
+                dylib_path = os.path.relpath(dylib_path, cwd)
+            if ext_path.startswith(cwd):
+                ext_path = os.path.relpath(ext_path, cwd)
+
             logger.info("Copying rust artifact from %s to %s", dylib_path, ext_path)
 
             # We want to atomically replace any existing library file. We can't
@@ -384,11 +393,18 @@ class build_rust(RustCommand):
             # This means that any process that currently uses the shared library
             # will see it modified and likely segfault.
             #
-            # We first copy the file to the same directory, as `os.rename`
+            # We first copy the file to the same directory, as `os.replace`
             # doesn't work across file system boundaries.
             temp_ext_path = ext_path + "~"
             shutil.copyfile(dylib_path, temp_ext_path)
-            os.replace(temp_ext_path, ext_path)
+            try:
+                os.replace(temp_ext_path, ext_path)
+            except PermissionError as e:
+                msg = f"{e}\n  hint: check permissions for {ext_path!r}"
+                if sys.platform == "win32":
+                    # On Windows, dll files are locked by the system when in use.
+                    msg += "\n  hint: the file may be in use by another Python process"
+                raise CompileError(msg)
 
             if sys.platform != "win32" and not debug_build:
                 args = []
