@@ -120,8 +120,8 @@ jobs:
           PYO3_CROSS_LIB_DIR: /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.8/lib
         run: |
           cd examples/namespace_package
-          pip install wheel
-          python setup.py bdist_wheel
+          pip install build wheel
+          python -m build --no-isolation
           ls -l dist/
           pip install --force-reinstall dist/namespace_package*_universal2.whl
           cd -
@@ -269,11 +269,13 @@ jobs:
           CARGO: cross
           CARGO_BUILD_TARGET: aarch64-unknown-linux-gnu
           PYO3_CROSS_LIB_DIR: /opt/python/cp38-cp38/lib
+          DIST_EXTRA_CONFIG: /tmp/build-opts.cfg
         run: |
           cd examples/namespace_package
           docker build -t cross-pyo3:aarch64-unknown-linux-gnu .
-          python -m pip install wheel
-          python setup.py bdist_wheel --plat-name manylinux2014_aarch64
+          python -m pip install build wheel
+          echo -e "[bdist_wheel]\nplat_name=manylinux2014_aarch64" > $DIST_EXTRA_CONFIG
+          python -m build --no-isolation
           ls -la dist/
       - uses: uraimo/run-on-arch-action@v2.5.0
         name: Install built wheel
@@ -313,12 +315,14 @@ jobs:
           CARGO: cargo-zigbuild
           CARGO_BUILD_TARGET: aarch64-unknown-linux-gnu
           PYO3_CROSS_LIB_DIR: /opt/python/cp38-cp38/lib
+          DIST_EXTRA_CONFIG: /tmp/build-opts.cfg
         run: |
           mkdir -p $PYO3_CROSS_LIB_DIR
           docker cp -L $(docker create --rm quay.io/pypa/manylinux2014_aarch64:latest):/opt/python/cp38-cp38 /opt/python
           cd examples/namespace_package
-          python -m pip install wheel
-          python setup.py bdist_wheel --plat-name manylinux2014_aarch64
+          python -m pip install build wheel
+          echo -e "[bdist_wheel]\nplat_name=manylinux2014_aarch64" > $DIST_EXTRA_CONFIG
+          python -m build --no-isolation
           ls -la dist/
       - uses: uraimo/run-on-arch-action@v2.5.0
         name: Install built wheel
