@@ -1,6 +1,6 @@
 graft python
 graft rust
 graft tests
-include Cargo.toml noxfile.py
+include Cargo.toml noxfile.py build.rs
 global-exclude */__pycache__/*
 global-exclude *.pyc
