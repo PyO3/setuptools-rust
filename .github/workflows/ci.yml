@@ -159,16 +159,18 @@ jobs:
 
       - name: Build an abi3 wheel
         shell: bash
+        env:
+          # https://github.com/actions/setup-python/issues/26
+          MACOSX_DEPLOYMENT_TARGET: 10.9
+          DIST_EXTRA_CONFIG: /tmp/build-opts.cfg
         run: |
           set -e
           cd examples/rust_with_cffi/
           python --version
-          pip install -U wheel
-          python setup.py bdist_wheel --py-limited-api=cp39
+          pip install -U build cffi wheel
+          echo -e "[bdist_wheel]\npy_limited_api=cp39" > $DIST_EXTRA_CONFIG
+          python -m build --no-isolation
           ls -la dist/
-        env:
-          # https://github.com/actions/setup-python/issues/26
-          MACOSX_DEPLOYMENT_TARGET: 10.9
 
       # Now we switch to a differnet Python version and ensure we can install
       # the wheel we just built.
@@ -225,8 +227,10 @@ jobs:
           build-pip install cffi wheel "setuptools>=62.4"
           cross-expose cffi
           pip install wheel
-          pip install -e ../../
-          python setup.py bdist_wheel --py-limited-api=cp37
+          pip install build cffi -e ../../
+          export DIST_EXTRA_CONFIG=/tmp/build-opts.cfg
+          echo -e "[bdist_wheel]\npy_limited_api=cp37" > $DIST_EXTRA_CONFIG
+          python -m build
           ls -la dist/
           ' > build-wheels.sh
 
