@@ -1,9 +1,11 @@
 import os
 import subprocess
+import sys
 import sysconfig
 import logging
 
-from typing import List, Set, Tuple, Type, cast
+from typing import List, Set, Tuple, Type, TypeVar, cast
+from functools import partial
 
 from setuptools.command.build_ext import build_ext
 
@@ -14,14 +16,22 @@ from setuptools.command.sdist import sdist
 from setuptools.dist import Distribution
 from typing_extensions import Literal
 
-from .extension import RustBin, RustExtension
+from .extension import Binding, RustBin, RustExtension, Strip
 
 try:
     from wheel.bdist_wheel import bdist_wheel
 except ImportError:
     bdist_wheel = None
 
+if sys.version_info[:2] >= (3, 11):
+    from tomllib import load as toml_load
+else:
+    from tomli import load as toml_load
+
+
 logger = logging.getLogger(__name__)
+
+T = TypeVar("T", bound=RustExtension)
 
 
 def add_rust_extension(dist: Distribution) -> None:
@@ -285,6 +295,33 @@ def rust_extensions(
 
     if has_rust_extensions:
         add_rust_extension(dist)
+
+
+def pyprojecttoml_config(dist: Distribution) -> None:
+    try:
+        with open("pyproject.toml", "rb") as f:
+            cfg = toml_load(f).get("tool", {}).get("setuptools-rust")
+    except FileNotFoundError:
+        return None
+
+    if cfg:
+        modules = map(partial(_create, RustExtension), cfg.get("ext-modules", []))
+        binaries = map(partial(_create, RustBin), cfg.get("bins", []))
+        dist.rust_extensions = [*modules, *binaries]  # type: ignore[attr-defined]
+        rust_extensions(dist, "rust_extensions", dist.rust_extensions)  # type: ignore[attr-defined]
+
+
+def _create(constructor: Type[T], config: dict) -> T:
+    kwargs = {
+        # PEP 517/621 convention: pyproject.toml uses dashes
+        k.replace("-", "_"): v
+        for k, v in config.items()
+    }
+    if "binding" in config:
+        kwargs["binding"] = Binding[config["binding"]]
+    if "strip" in config:
+        kwargs["strip"] = Strip[config["strip"]]
+    return constructor(**kwargs)
 
 
 _CARGO_VENDOR_CONFIG = b"""

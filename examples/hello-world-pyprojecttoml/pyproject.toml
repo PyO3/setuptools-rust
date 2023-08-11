@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools", "setuptools-rust"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hello-world"
+version = "1.0"
+
+[project.scripts]
+# Python entry-point wrapper to be installed in `$venv/bin`
+sum-cli = "hello_world.sum_cli:main"  # Python function that uses Rust
+rust-demo = "hello_world._lib:demo"   # Rust function that uses Python
+
+[tool.setuptools.packages]
+# Pure Python packages/modules
+find = { where = ["python"] }
+
+[[tool.setuptools-rust.ext-modules]]
+# Private Rust extension module to be nested into Python package
+target = "hello_world._lib"  # The last part of the name (e.g. "_lib") has to match lib.name in Cargo.toml,
+                             # but you can add a prefix to nest it inside of a Python package.
+py-limited-api = "auto"  # Default value, can be omitted
+binding = "PyO3"  # Default value, can be omitted
+# See reference for RustExtension in https://setuptools-rust.readthedocs.io/en/latest/reference.html
+
+[[tool.setuptools-rust.bins]]
+# Rust executable to be installed in `$venv/bin`
+target = "print-hello"  # Needs to match bin.name in Cargo.toml
+args = ["--profile", "release-lto"]  # Extra args for Cargo
+# See reference for RustBin in https://setuptools-rust.readthedocs.io/en/latest/reference.html
+# Note that you can also use Python entry-points as alternative to Rust binaries
