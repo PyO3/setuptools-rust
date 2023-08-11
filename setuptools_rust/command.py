@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
-from distutils import log
-from distutils.errors import DistutilsPlatformError
-from typing import List, Optional
-
+import logging
 from setuptools import Command, Distribution
+from setuptools.errors import PlatformError
+from typing import List, Optional
 
 from .extension import RustExtension
 from .rustc_info import get_rust_version
+
+logger = logging.getLogger(__name__)
 
 
 class RustCommand(Command, ABC):
@@ -47,7 +48,7 @@ class RustCommand(Command, ABC):
 
     def run(self) -> None:
         if not self.extensions:
-            log.info("%s: no rust_extensions defined", self.get_command_name())
+            logger.info("%s: no rust_extensions defined", self.get_command_name())
             return
 
         all_optional = all(ext.optional for ext in self.extensions)
@@ -61,7 +62,7 @@ class RustCommand(Command, ABC):
                     ),
                     default=None,
                 )
-                raise DistutilsPlatformError(
+                raise PlatformError(
                     "can't find Rust compiler\n\n"
                     "If you are using an outdated pip version, it is possible a "
                     "prebuilt wheel is available for this package but pip is not able "
@@ -81,7 +82,7 @@ class RustCommand(Command, ABC):
                         else ""
                     )
                 )
-        except DistutilsPlatformError as e:
+        except PlatformError as e:
             if not all_optional:
                 raise
             else:
@@ -92,7 +93,7 @@ class RustCommand(Command, ABC):
             try:
                 rust_version = ext.get_rust_version()
                 if rust_version is not None and version not in rust_version:
-                    raise DistutilsPlatformError(
+                    raise PlatformError(
                         f"Rust {version} does not match extension requirement {rust_version}"
                     )
 

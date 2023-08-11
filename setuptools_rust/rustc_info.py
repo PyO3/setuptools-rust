@@ -1,5 +1,5 @@
 import subprocess
-from distutils.errors import DistutilsPlatformError
+from setuptools.errors import PlatformError
 from functools import lru_cache
 from typing import Dict, List, NewType, Optional
 
@@ -25,7 +25,7 @@ def get_rust_host() -> str:
     for line in _rust_version_verbose().splitlines():
         if line.startswith(_HOST_LINE_START):
             return line[len(_HOST_LINE_START) :].strip()
-    raise DistutilsPlatformError("Could not determine rust host")
+    raise PlatformError("Could not determine rust host")
 
 
 RustCfgs = NewType("RustCfgs", Dict[str, Optional[str]])

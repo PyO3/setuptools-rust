@@ -3,7 +3,7 @@ import os
 import re
 import subprocess
 import warnings
-from distutils.errors import DistutilsSetupError
+from setuptools.errors import SetupError
 from enum import IntEnum, auto
 from functools import lru_cache
 from typing import Any, Dict, List, NewType, Optional, Sequence, Union, cast
@@ -187,7 +187,7 @@ class RustExtension:
         try:
             return SimpleSpec(self.rust_version)
         except ValueError:
-            raise DistutilsSetupError(
+            raise SetupError(
                 "Can not parse rust compiler version: %s", self.rust_version
             )
 
@@ -198,16 +198,14 @@ class RustExtension:
         except ValueError:
             pass
         except IndexError:
-            raise DistutilsSetupError("Can not parse cargo profile from %s", self.args)
+            raise SetupError("Can not parse cargo profile from %s", self.args)
 
         # Handle `--profile=<profile>`
         profile_args = [p for p in self.args if p.startswith("--profile=")]
         if profile_args:
             profile = profile_args[0].split("=", 1)[1]
             if not profile:
-                raise DistutilsSetupError(
-                    "Can not parse cargo profile from %s", self.args
-                )
+                raise SetupError("Can not parse cargo profile from %s", self.args)
             return profile
         else:
             return None
@@ -259,11 +257,11 @@ class RustExtension:
                 metadata_command, stderr=stderr, encoding="latin-1"
             )
         except subprocess.CalledProcessError as e:
-            raise DistutilsSetupError(format_called_process_error(e))
+            raise SetupError(format_called_process_error(e))
         try:
             return cast(CargoMetadata, json.loads(payload))
         except json.decoder.JSONDecodeError as e:
-            raise DistutilsSetupError(
+            raise SetupError(
                 f"""
                 Error parsing output of cargo metadata as json; received:
                 {payload}
