@@ -281,6 +281,7 @@ jobs:
           echo -e "[bdist_wheel]\nplat_name=manylinux2014_aarch64" > $DIST_EXTRA_CONFIG
           python -m build --no-isolation
           ls -la dist/
+          unzip -l dist/*.whl  # debug all files inside wheel file
       - uses: uraimo/run-on-arch-action@v2.5.0
         name: Install built wheel
         with:
@@ -328,6 +329,7 @@ jobs:
           echo -e "[bdist_wheel]\nplat_name=manylinux2014_aarch64" > $DIST_EXTRA_CONFIG
           python -m build --no-isolation
           ls -la dist/
+          unzip -l dist/*.whl  # debug all files inside wheel file
       - uses: uraimo/run-on-arch-action@v2.5.0
         name: Install built wheel
         with:
