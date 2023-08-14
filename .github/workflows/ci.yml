@@ -224,14 +224,20 @@ jobs:
           python3.9 -m pip install crossenv
           python3.9 -m crossenv "/opt/python/cp39-cp39/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 venv
           . venv/bin/activate
-          build-pip install cffi wheel "setuptools>=62.4"
+
+          build-pip install -U pip>=23.2.1 setuptools>=68.0.0 wheel>=0.41.1
+          cross-pip install -U pip>=23.2.1 setuptools>=68.0.0 wheel>=0.41.1
+          build-pip install cffi
           cross-expose cffi
-          pip install wheel build -e ../../
-          pip install cffi
+          cross-pip install -e ../../
+          cross-pip list
+
           export DIST_EXTRA_CONFIG=/tmp/build-opts.cfg
           echo -e "[bdist_wheel]\npy_limited_api=cp37" > $DIST_EXTRA_CONFIG
-          python -m build --no-isolation
+
+          cross-pip wheel --no-build-isolation --no-deps --wheel-dir dist .
           ls -la dist/
+          unzip -l dist/*.whl  # debug all files inside wheel file
           ' > build-wheels.sh
 
           docker run --rm -v "$PWD":/io -w /io messense/manylinux2014-cross:${{ matrix.platform.arch }} bash build-wheels.sh
