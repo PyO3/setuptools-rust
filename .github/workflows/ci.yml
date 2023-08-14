@@ -230,7 +230,7 @@ jobs:
           pip install build cffi -e ../../
           export DIST_EXTRA_CONFIG=/tmp/build-opts.cfg
           echo -e "[bdist_wheel]\npy_limited_api=cp37" > $DIST_EXTRA_CONFIG
-          python -m build
+          python -m build --no-isolation
           ls -la dist/
           ' > build-wheels.sh
 
