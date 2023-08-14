@@ -237,7 +237,7 @@ jobs:
 
           cross-pip wheel --no-build-isolation --no-deps --wheel-dir dist .
           ls -la dist/
-          unzip -l dist/*.whl  # debug all files inside wheel file
+          python -m zipfile -l dist/*.whl # debug all files inside wheel file
           ' > build-wheels.sh
 
           docker run --rm -v "$PWD":/io -w /io messense/manylinux2014-cross:${{ matrix.platform.arch }} bash build-wheels.sh
