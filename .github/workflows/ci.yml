@@ -226,8 +226,8 @@ jobs:
           . venv/bin/activate
           build-pip install cffi wheel "setuptools>=62.4"
           cross-expose cffi
-          pip install wheel
-          pip install build cffi -e ../../
+          pip install wheel build -e ../../
+          pip install cffi
           export DIST_EXTRA_CONFIG=/tmp/build-opts.cfg
           echo -e "[bdist_wheel]\npy_limited_api=cp37" > $DIST_EXTRA_CONFIG
           python -m build --no-isolation
