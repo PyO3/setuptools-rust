@@ -21,7 +21,6 @@ setup(
     ],
     cffi_modules=["cffi_module.py:ffi"],
     install_requires=["cffi"],
-    setup_requires=["cffi"],
     include_package_data=True,
     zip_safe=False,
 )
