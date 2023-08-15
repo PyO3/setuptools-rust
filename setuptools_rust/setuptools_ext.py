@@ -16,6 +16,7 @@ from setuptools.command.sdist import sdist
 from setuptools.dist import Distribution
 from typing_extensions import Literal
 
+from .build import _get_bdist_wheel_cmd
 from .extension import Binding, RustBin, RustExtension, Strip
 
 try:
@@ -169,11 +170,8 @@ def add_rust_extension(dist: Distribution) -> None:
             build_ext_base_class.run(self)
 
         def _get_wheel_plat_name(self) -> Optional[str]:
-            try:
-                cmd = self.distribution.get_command_obj("bdist_wheel")
-                return cast(Optional[str], cmd.plat_name)
-            except Exception:  # unlikely scenario: `wheel` not installed
-                return None
+            cmd = _get_bdist_wheel_cmd(self.distribution)
+            return cast(Optional[str], getattr(cmd, "plat_name", None))
 
     dist.cmdclass["build_ext"] = build_ext_rust_extension
 
