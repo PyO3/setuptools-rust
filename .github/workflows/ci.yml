@@ -362,13 +362,15 @@ jobs:
       - uses: pypa/cibuildwheel@v2.3.1
         env:
           CIBW_BUILD: cp39-*
-          CIBW_BEFORE_BUILD: pip install -U pip>=23.2.1 setuptools>=68.0.0 wheel>=0.41.1 && pip install -e . && pip list
+          CIBW_BEFORE_BUILD: pip install -U 'pip>=23.2.1' 'setuptools>=68.0.0' 'wheel<=0.37.1' && pip install -e . && pip list
+          # ^-- cap on `wheel` is a workaround for pypa/auditwheel#436
+          #     setuptools needs to be upgraded before installing setuptools-rust
           CIBW_ARCHS_MACOS: "x86_64 universal2 arm64"
           CIBW_BUILD_VERBOSITY: 3
           CIBW_BUILD_FRONTEND: pip  # pip allows disabling isolation via env var
           CIBW_ENVIRONMENT: PIP_NO_BUILD_ISOLATION=false
-          # ^ -- necessary to use working copy of setuptools-rust,
-          #      (however PIP_NO_BUILD_ISOLATION is counter-intuitive: see pypa/pip#5735)
+          # ^-- necessary to use working copy of setuptools-rust,
+          #     (however PIP_NO_BUILD_ISOLATION is counter-intuitive: see pypa/pip#5735)
         with:
           package-dir: examples/namespace_package
 
