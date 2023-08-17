@@ -8,6 +8,9 @@
 ### Added
 - Add support for `pyproject.toml` configuration using `[tool.setuptools-rust]` options. [#348](https://github.com/PyO3/setuptools-rust/pull/348)
 
+### Fixed
+- Fix `plat_name` handling in the case `bdist_wheel.plat_name` is set via configuration file (e.g., `setup.cfg`). [#352](https://github.com/PyO3/setuptools-rust/pull/352)
+
 ## 1.6.0 (2023-04-27)
 ### Changed
 - Prefer passing `--crate-type` option to cargo if "toolchain >= 1.64". [#322](https://github.com/PyO3/setuptools-rust/pull/322)
