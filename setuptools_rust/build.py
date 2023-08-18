@@ -784,7 +784,7 @@ def _get_bdist_wheel_cmd(  # type: ignore[no-any-unimported]
 ) -> Optional[CommandBdistWheel]:
     try:
         cmd_obj = dist.get_command_obj("bdist_wheel", create=create)
-        cmd_obj.ensure_finalized()
-        return cast(CommandBdistWheel, cmd_obj)  # type: ignore [no-any-unimported]
+        cmd_obj.ensure_finalized()  # type: ignore[union-attr]
+        return cast(CommandBdistWheel, cmd_obj)  # type: ignore[no-any-unimported]
     except Exception:
         return None
