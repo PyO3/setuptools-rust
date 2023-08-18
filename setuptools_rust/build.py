@@ -780,8 +780,7 @@ def _replace_cross_target_dir(path: str, ext: RustExtension, *, quiet: bool) -> 
 
 
 def _get_bdist_wheel_cmd(  # type: ignore[no-any-unimported]
-    dist: Distribution,
-    create: bool = True
+    dist: Distribution, create: bool = True
 ) -> Optional[CommandBdistWheel]:
     try:
         cmd_obj = dist.get_command_obj("bdist_wheel", create=create)
