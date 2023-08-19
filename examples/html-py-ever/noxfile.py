@@ -10,12 +10,7 @@ def test(session: nox.Session):
     session.install(
         SETUPTOOLS_RUST, "wheel", "pytest", "pytest-benchmark", "beautifulsoup4"
     )
+    # Ensure build uses version of setuptools-rust under development
     session.install("--no-build-isolation", ".")
-    session.run("pytest", *session.posargs)
-
-
-@nox.session()
-def setuptools_install(session: nox.Session):
-    session.install(SETUPTOOLS_RUST, "pytest", "pytest-benchmark", "beautifulsoup4")
-    session.run("python", "setup.py", "install")
+    # Test Python package
     session.run("pytest", *session.posargs)

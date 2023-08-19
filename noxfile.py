@@ -1,5 +1,6 @@
 import os
 import tarfile
+from inspect import cleandoc as heredoc
 from glob import glob
 from pathlib import Path
 from unittest.mock import patch
@@ -15,10 +16,22 @@ def test_examples(session: nox.Session):
 
 @nox.session(name="test-sdist-vendor")
 def test_sdist_vendor(session: nox.Session):
-    session.install(".")
+    session.install(".", "build", "wheel")
     namespace_package = Path(__file__).parent / "examples" / "namespace_package"
     os.chdir(namespace_package)
-    session.run("python", "setup.py", "sdist", "--vendor-crates", external=True)
+    tmp = session.create_tmp()
+
+    build_config = """
+        [sdist]
+        vendor_crates = True
+        """
+    Path(tmp, "setup.cfg").write_text(heredoc(build_config), encoding="utf-8")
+
+    env = os.environ.copy()
+    env.update(DIST_EXTRA_CONFIG=str(Path(tmp, "setup.cfg")))
+    cmd = ["python", "-m", "build", "--sdist", "--no-isolation"]
+    session.run(*cmd, env=env, external=True)
+
     dist = namespace_package / "dist"
     with tarfile.open(str(dist / "namespace_package-0.1.0.tar.gz")) as tf:
         tf.extractall(str(dist))
@@ -60,7 +73,9 @@ def test_mingw(session: nox.Session):
         session.install(".")
 
         session.install("--no-build-isolation", str(examples / "hello-world"))
-        session.run("hello-world")
+        session.run("print-hello")
+        session.run("sum-cli", "5", "7")
+        session.run("rust-demo", "5", "7")
 
         session.install("pytest", "pytest-benchmark", "beautifulsoup4")
         session.install("--no-build-isolation", str(examples / "html-py-ever"))
@@ -77,7 +92,7 @@ def test_mingw(session: nox.Session):
 
 @nox.session(name="test-examples-emscripten")
 def test_examples_emscripten(session: nox.Session):
-    session.install(".")
+    session.install(".", "build")
     emscripten_dir = Path("./emscripten").resolve()
 
     session.run(
@@ -108,7 +123,8 @@ def test_examples_emscripten(session: nox.Session):
             PYO3_CONFIG_FILE=str(emscripten_dir / "pyo3_config.ini"),
         )
         with session.chdir(example):
-            session.run("python", "setup.py", "bdist_wheel", env=env, external=True)
+            cmd = ["python", "-m", "build", "--wheel", "--no-isolation"]
+            session.run(*cmd, env=env, external=True)
 
         with session.chdir(emscripten_dir):
             session.run("node", "runner.js", str(example), external=True)

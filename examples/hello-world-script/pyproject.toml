@@ -1,3 +1,17 @@
 [build-system]
 requires = ["setuptools", "wheel", "setuptools-rust"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "hello-world"
+version = "1.0"
+
+[tool.setuptools.packages]
+# Pure Python packages/modules
+find = { where = ["python"] }
+
+[[tool.setuptools-rust.bins]]
+# Private Rust extension module to be nested into Python package
+target = "hello-world-script"  # Matches bin.name in Cargo.toml
+args = ["--profile", "release-lto"]  # Extra args for Cargo
+# See reference for RustBin in https://setuptools-rust.readthedocs.io/en/latest/reference.html

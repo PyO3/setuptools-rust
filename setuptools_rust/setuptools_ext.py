@@ -4,7 +4,7 @@ import sys
 import sysconfig
 import logging
 
-from typing import List, Set, Tuple, Type, TypeVar, cast
+from typing import List, Optional, Set, Tuple, Type, TypeVar, cast
 from functools import partial
 
 from setuptools.command.build_ext import build_ext
@@ -16,6 +16,7 @@ from setuptools.command.sdist import sdist
 from setuptools.dist import Distribution
 from typing_extensions import Literal
 
+from .build import _get_bdist_wheel_cmd
 from .extension import Binding, RustBin, RustExtension, Strip
 
 try:
@@ -163,12 +164,14 @@ def add_rust_extension(dist: Distribution) -> None:
                 build_rust.inplace = self.inplace
                 build_rust.target = self.target
                 build_rust.verbose = self.verbose
-                options = self.distribution.get_cmdline_options().get("bdist_wheel", {})
-                plat_name = options.get("plat-name") or self.plat_name
-                build_rust.plat_name = plat_name
+                build_rust.plat_name = self._get_wheel_plat_name() or self.plat_name
                 build_rust.run()
 
             build_ext_base_class.run(self)
+
+        def _get_wheel_plat_name(self) -> Optional[str]:
+            cmd = _get_bdist_wheel_cmd(self.distribution)
+            return cast(Optional[str], getattr(cmd, "plat_name", None))
 
     dist.cmdclass["build_ext"] = build_ext_rust_extension
 

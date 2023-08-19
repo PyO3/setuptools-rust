@@ -10,3 +10,15 @@ edition = "2018"
 [profile.release-lto]
 inherits = "release"
 lto = true
+
+[[bin]]
+name = "hello-world-script"
+path = "rust/main.rs"
+# See https://doc.rust-lang.org/cargo/reference/cargo-targets.html#binaries
+#
+# If [[bin]] is not specified, but the file ``src/main.rs`` exists,
+# you can also rely on an implicit definition which will behave similarly to:
+#
+# [[bin]]
+# name = <package.name>
+# path = "src/main.rs"

@@ -4,7 +4,18 @@ version = "0.1.0"
 edition = "2018"
 
 [lib]
+# When omitted, the name field will be assumed to have the same value as package.name
+# https://doc.rust-lang.org/cargo/reference/cargo-targets.html#the-name-field
 crate-type = ["cdylib", "rlib"]
+path = "rust/lib.rs"  # When omitted, the value of "src/lib.rs" is assumed
+# See https://doc.rust-lang.org/cargo/reference/cargo-targets.html#library
+#
+# If [lib] is not specified, but the file ``src/lib.rs`` exists,
+# you can also rely on an implicit definition which will behave similarly to:
+#
+# [lib]
+# name = <package.name>
+# path = "src/lib.rs"
 
 [dependencies]
 pyo3 = { version = "0.19.2", features = ["extension-module"] }

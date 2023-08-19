@@ -19,6 +19,8 @@ from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional, Set, Tuple, cast
 
 import pkg_resources
+from semantic_version import Version
+from setuptools import Distribution
 from setuptools.command.build import build as CommandBuild
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
@@ -34,6 +36,12 @@ from .rustc_info import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+try:
+    from wheel.bdist_wheel import bdist_wheel as CommandBdistWheel
+except ImportError:  # wheel installation might be deferred in PEP 517
+    from setuptools import Command as CommandBdistWheel
 
 
 def _check_cargo_supports_crate_type_option() -> bool:
@@ -468,17 +476,13 @@ class build_rust(RustCommand):
         return ext_path
 
     def _py_limited_api(self) -> _PyLimitedApi:
-        bdist_wheel = self.distribution.get_command_obj("bdist_wheel", create=False)
+        bdist_wheel = _get_bdist_wheel_cmd(self.distribution, create=False)
 
         if bdist_wheel is None:
             # wheel package is not installed, not building a limited-api wheel
             return False
         else:
-            from wheel.bdist_wheel import bdist_wheel as CommandBdistWheel
-
-            bdist_wheel_command = cast(CommandBdistWheel, bdist_wheel)  # type: ignore[no-any-unimported]
-            bdist_wheel_command.ensure_finalized()
-            return cast(_PyLimitedApi, bdist_wheel_command.py_limited_api)
+            return cast(_PyLimitedApi, bdist_wheel.py_limited_api)
 
     def _detect_rust_target(
         self, forced_target_triple: Optional[str] = None
@@ -773,3 +777,14 @@ def _replace_cross_target_dir(path: str, ext: RustExtension, *, quiet: bool) -> 
     cross_target_dir = ext._metadata(cargo="cross", quiet=quiet)["target_directory"]
     local_target_dir = ext._metadata(cargo="cargo", quiet=quiet)["target_directory"]
     return path.replace(cross_target_dir, local_target_dir)
+
+
+def _get_bdist_wheel_cmd(  # type: ignore[no-any-unimported]
+    dist: Distribution, create: bool = True
+) -> Optional[CommandBdistWheel]:
+    try:
+        cmd_obj = dist.get_command_obj("bdist_wheel", create=create)
+        cmd_obj.ensure_finalized()  # type: ignore[union-attr]
+        return cast(CommandBdistWheel, cmd_obj)  # type: ignore[no-any-unimported]
+    except Exception:
+        return None

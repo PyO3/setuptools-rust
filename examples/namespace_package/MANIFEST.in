@@ -1,3 +1,4 @@
 include Cargo.toml
-recursive-include src *
+include Cross.toml
+recursive-include rust *
 recursive-include python *

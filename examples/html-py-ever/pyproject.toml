@@ -1,3 +1,19 @@
 [build-system]
 requires = ["setuptools", "wheel", "setuptools-rust"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "html-py-ever"
+version = "0.1.0"
+
+[tool.setuptools.packages]
+# Pure Python packages/modules
+find = { where = ["python"] }
+
+
+[[tool.setuptools-rust.ext-modules]]
+# Rust extension module to be nested into Python package
+target = "html_py_ever.html_py_ever"
+# ^-- The last part of the name (e.g. "html_py_ever") has to match lib.name in Cargo.toml,
+#     but you can add a prefix to nest it inside of a Python package.
+# See reference for RustExtension in https://setuptools-rust.readthedocs.io/en/latest/reference.html
