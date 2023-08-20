@@ -1,8 +1,12 @@
 # Building wheels
 
-Because `setuptools-rust` is an extension to `setuptools`, the standard `setup.py bdist_wheel` command is used to build distributable wheels. These wheels can be uploaded to PyPI using standard tools such as [twine](https://github.com/pypa/twine).
+Because `setuptools-rust` is an extension to `setuptools`, the standard [`python -m build`](https://pypa-build.readthedocs.io/en/stable/) command
+(or [`pip wheel --no-deps . --wheel-dir dist`](https://pip.pypa.io/en/stable/cli/pip_wheel/)) can be used to build distributable wheels.
+These wheels can be uploaded to PyPI using standard tools such as [twine](https://github.com/pypa/twine).
 
-`setuptools-rust` supports building for the [PEP 384](https://www.python.org/dev/peps/pep-0384/) "stable" (aka "limited") API when the `--py-limited-api` option is passed to `setup.py bdist_wheel`. If using PyO3 bindings for `RustExtension`, then the correct [`pyo3/abi3`](https://pyo3.rs/v0.14.5/features.html#abi3) sub-feature is automatically enabled. In this way, abi3 wheels can be uploaded to make package distributors' roles easier, and  package users installing from source with `python setup.py install` can use optimizations specific to their Python version.
+`setuptools-rust` supports building for the [PEP 384](https://www.python.org/dev/peps/pep-0384/) "stable" (aka "limited") API when the `py_limited_api` option is set on the `[bdist_wheel]` section of `setup.cfg`.
+If using PyO3 bindings for `RustExtension`, then the correct [`pyo3/abi3`](https://pyo3.rs/v0.14.5/features.html#abi3) sub-feature is automatically enabled.
+In this way, abi3 wheels can be uploaded to make package distributors' roles easier, and package users installing from source with `pip install .` can use optimizations specific to their Python version.
 
 This chapter of the documentation explains two possible ways to build wheels for multiple Python versions below.
 
@@ -52,7 +56,7 @@ It is possible to use any of the `manylinux` docker images: `manylinux1`, `manyl
 
 ### Binary wheels on macOS
 
-For building wheels on macOS it is sufficient to run the `bdist_wheel` command, i.e. `setup.py bdist_wheel`.
+For building wheels on macOS it is sufficient to use one of the default `python -m build` or `pip wheel --no-deps . --wheel-dir dist` commands.
 
 To build `universal2` wheels set the `ARCHFLAGS` environment variable to contain both `x86_64` and `arm64`, for example `ARCHFLAGS="-arch x86_64 -arch arm64"`. Wheel-building solutions such as [`cibuildwheel`][cibuildwheel] set this environment variable automatically.
 
