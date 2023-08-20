@@ -134,3 +134,9 @@ def test_examples_emscripten(session: nox.Session):
 def bump_version(session: nox.Session) -> None:
     session.install("bump2version")
     session.run("bumpversion", *session.posargs)
+
+
+@nox.session()
+def docs(session: nox.Session):
+    session.install(".", "-r", "docs/requirements.txt")
+    session.run("python", "-m", "sphinx", "docs", "docs/_build", *session.posargs)
