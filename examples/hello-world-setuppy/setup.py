@@ -10,11 +10,11 @@ setup(
     rust_extensions=[
         RustExtension(
             "hello_world._lib",
-             # ^-- The last part of the name (e.g. "_lib") has to match lib.name
-             #     in Cargo.toml and the function name in the `.rs` file,
-             #     but you can add a prefix to nest it inside of a Python package.
-            path="Cargo.toml",     # Default value, can be omitted
-            py_limited_api="auto", # Default value, can be omitted
+            # ^-- The last part of the name (e.g. "_lib") has to match lib.name
+            #     in Cargo.toml and the function name in the `.rs` file,
+            #     but you can add a prefix to nest it inside of a Python package.
+            path="Cargo.toml",  # Default value, can be omitted
+            py_limited_api="auto",  # Default value, can be omitted
             binding=Binding.PyO3,  # Default value, can be omitted
         )
     ],
