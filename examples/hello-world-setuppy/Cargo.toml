@@ -3,14 +3,16 @@ name = "hello-world"
 version = "0.1.0"
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+pyo3 = { version = "0.19.2", features = ["extension-module"] }
 
-[profile.release-lto]
-inherits = "release"
-lto = true
+[build-dependencies]
+pyo3-build-config = "0.19.2"
 
-[[bin]]
-name = "hello-world"
-path = "rust/main.rs"
+[lib]
+# See https://github.com/PyO3/pyo3 for details
+name = "_lib"  # private module to be nested into Python package
+path = "rust/lib.rs"
+crate-type = ["cdylib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
