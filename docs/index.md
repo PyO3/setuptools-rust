@@ -4,6 +4,7 @@
    :hidden:
 
    README.md
+   setuppy_tutorial
    building_wheels
    reference
 ```
