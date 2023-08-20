@@ -102,13 +102,12 @@ class RustExtension:
             ``setuptools.Extension``, this controls whether the built extension
             should be considered compatible with the PEP 384 "limited API".
 
-            - ``'auto'``: the ``--py-limited-api`` option of
-              ``setup.py bdist_wheel`` will control whether the extension is
+            - ``'auto'``: the ``py_limited_api`` option of
+              ``bdist_wheel`` will control whether the extension is
               built as a limited api extension. The corresponding
               ``pyo3/abi3-pyXY`` feature will be set accordingly.
               This is the recommended setting, as it allows
-              ``python setup.py install`` to build a version-specific extension
-              for best performance.
+              to build a version-specific extension for best performance.
 
             - ``True``: the extension is assumed to be compatible with the
               limited abi. You must ensure this is the case (e.g. by setting
