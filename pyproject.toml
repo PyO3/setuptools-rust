@@ -1,6 +1,6 @@
 [project]
 name = "setuptools-rust"
-version = "1.6.0"
+version = "1.7.0"
 description = "Setuptools Rust extension plugin"
 readme = "README.md"
 requires-python = ">=3.7"
@@ -47,7 +47,7 @@ documentation = "https://setuptools-rust.readthedocs.io"
 changelog = "https://github.com/PyO3/setuptools-rust/blob/main/CHANGELOG.md"
 
 [build-system]
-requires = ["setuptools>=62.4"]
+requires = ["setuptools>=62.4", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
 [tool.isort]
