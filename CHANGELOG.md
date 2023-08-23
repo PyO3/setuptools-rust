@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+### Packaging
+- Drop support for Python 3.7. [#357](https://github.com/PyO3/setuptools-rust/pull/357)
+
 ## 1.7.0 (2023-08-22)
 ### Packaging
 - Remove direct imports from `distutils`. [#336](https://github.com/PyO3/setuptools-rust/pull/336)

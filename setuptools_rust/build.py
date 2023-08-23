@@ -16,7 +16,7 @@ from setuptools.errors import (
 )
 from sysconfig import get_config_var
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional, Set, Tuple, cast
+from typing import Dict, List, Literal, NamedTuple, Optional, Set, Tuple, cast
 
 import pkg_resources
 from semantic_version import Version
@@ -24,7 +24,6 @@ from setuptools import Distribution
 from setuptools.command.build import build as CommandBuild
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
-from typing_extensions import Literal
 
 from ._utils import format_called_process_error
 from .command import RustCommand

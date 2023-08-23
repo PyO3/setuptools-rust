@@ -4,7 +4,7 @@ import sys
 import sysconfig
 import logging
 
-from typing import List, Optional, Set, Tuple, Type, TypeVar, cast
+from typing import List, Literal, Optional, Set, Tuple, Type, TypeVar, cast
 from functools import partial
 
 from setuptools.command.build_ext import build_ext
@@ -14,7 +14,6 @@ from setuptools.command.install_lib import install_lib
 from setuptools.command.install_scripts import install_scripts
 from setuptools.command.sdist import sdist
 from setuptools.dist import Distribution
-from typing_extensions import Literal
 
 from .build import _get_bdist_wheel_cmd
 from .extension import Binding, RustBin, RustExtension, Strip
