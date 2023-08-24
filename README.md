@@ -30,7 +30,11 @@ hello-world
 ```
 
 Once the implementation files are in place, we need to add a `pyproject.toml`
-file that tells anyone that wants to use your project how to build it:
+file that tells anyone that wants to use your project how to build it.
+In this file, we use an [array of tables](https://toml.io/en/v1.0.0#array-of-tables)
+(TOML jargon equivalent to Python's list of dicts) for ``[[tool.setuptools-rust.ext-modules]]``,
+to specify different extension modules written in Rust:
+
 
 ```toml
 # pyproject.toml
@@ -55,9 +59,8 @@ binding = "PyO3"         # Default value, can be omitted
 py-limited-api = "auto"  # Default value, can be omitted
 ```
 
-In this file we use an array of tables (TOML jargon equivalent to Python's list
-of dicts) for ``[[tool.setuptools-rust.ext-modules]]``, to specify different
-extension modules that will map directly to `Cargo.toml`'s `[lib]` table:
+Each extension module should map directly into the corresponding `[lib]` table on the
+[Cargo manifest file](https://doc.rust-lang.org/cargo/reference/manifest.html):
 
 ```toml
 # Cargo.toml
