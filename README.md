@@ -14,10 +14,10 @@ they were written in C.
 
 The following is a very basic tutorial that shows how to use `setuptools-rust` in `pyproject.toml`.
 It assumes that you already have a bunch of Python and Rust files that you want
-distribute. You can see examples for these files in the 
+to distribute. You can see examples for these files in the 
 [`examples/hello-world`](https://github.com/PyO3/setuptools-rust/tree/main/examples/hello-world)
 directory in the [github repository](https://github.com/PyO3/setuptools-rust).
-[PyO3 docs](https://pyo3.rs) has detailed information on how to write Python
+The [PyO3 docs](https://pyo3.rs) have detailed information on how to write Python
 modules in Rust.
 
 ```

@@ -15,7 +15,7 @@ Let's start by assuming that you already have a bunch of Python and Rust files[^
 that you would like to package for distribution in PyPI inside of a project directory
 named `hello-world-setuppy`[^2][^3]:
 
-[^1]: To now more about how to write Rust to be integrated into Python packages,
+[^1]: To know more about how to write Rust to be integrated into Python packages,
       please have a look on the [PyO3 docs](https://pyo3.rs)
 [^2]: You can have a look on the
       [examples/hello-world-setuppy](https://github.com/PyO3/setuptools-rust/tree/main/examples/hello-world-setuppy)
