@@ -6,10 +6,19 @@ import warnings
 from setuptools.errors import SetupError
 from enum import IntEnum, auto
 from functools import lru_cache
-from typing import Any, Dict, List, NewType, Optional, Sequence, Union, cast
+from typing import (
+    Any,
+    Dict,
+    List,
+    Literal,
+    NewType,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 from semantic_version import SimpleSpec
-from typing_extensions import Literal
 
 from ._utils import format_called_process_error
 
