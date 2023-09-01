@@ -139,7 +139,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
       - name: Setup python
         uses: actions/setup-python@v4
         with:
@@ -206,7 +206,7 @@ jobs:
           { target: "armv7-unknown-linux-gnueabihf", arch: "armv7" },
         ]
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
       - name: Build wheels
         run: |
           echo 'set -ex
@@ -232,7 +232,7 @@ jobs:
           export DIST_EXTRA_CONFIG=/tmp/build-opts.cfg
           echo -e "[bdist_wheel]\npy_limited_api=cp37" > $DIST_EXTRA_CONFIG
 
-          cross-pip wheel --no-build-isolation --no-deps --wheel-dir dist .
+          cross-pip wheel --no-build-isolation --no-deps --wheel-dir dist . -vv
           ls -la dist/
           python -m zipfile -l dist/*.whl # debug all files inside wheel file
           ' > build-wheels.sh
@@ -382,7 +382,7 @@ jobs:
           { msystem: MINGW32, arch: i686, path: mingw32, rust_target: i686-pc-windows-gnu }
         ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install MSys2 and dependencies
         uses: msys2/setup-msys2@v2
         with:
@@ -438,7 +438,7 @@ jobs:
         with:
           components: rust-src
           targets: wasm32-unknown-emscripten
-      - uses: mymindstorm/setup-emsdk@v11
+      - uses: mymindstorm/setup-emsdk@v12
         with:
           version: ${{env.EMSCRIPTEN_VERSION}}
           actions-cache-folder: emsdk-cache
