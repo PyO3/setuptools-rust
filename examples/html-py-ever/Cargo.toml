@@ -13,3 +13,7 @@ tendril = "0.4.3"
 name = "html_py_ever"
 crate-type = ["cdylib"]
 path = "rust/lib.rs"
+
+[[bin]]
+name = "html-py-ever"
+path = "rust/main.rs"
