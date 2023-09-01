@@ -18,12 +18,11 @@ from sysconfig import get_config_var
 from pathlib import Path
 from typing import Dict, List, Literal, NamedTuple, Optional, Set, Tuple, cast
 
-import pkg_resources
-from semantic_version import Version
 from setuptools import Distribution
 from setuptools.command.build import build as CommandBuild
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
+from setuptools.command.install_scripts import install_scripts as CommandInstallScripts
 
 from ._utils import format_called_process_error
 from .command import RustCommand
@@ -93,8 +92,6 @@ class build_rust(RustCommand):
     def finalize_options(self) -> None:
         super().finalize_options()
 
-        self.data_dir = self.get_data_dir()
-
         if self.plat_name is None:
             self.plat_name = cast(
                 CommandBuild, self.get_finalized_command("build")
@@ -111,17 +108,6 @@ class build_rust(RustCommand):
 
         if self.build_number is not None and not self.build_number[:1].isdigit():
             raise ValueError("Build tag (build-number) must start with a digit.")
-
-    def get_data_dir(self) -> str:
-        components = (
-            pkg_resources.safe_name(self.distribution.get_name()).replace("-", "_"),
-            pkg_resources.safe_version(self.distribution.get_version()).replace(
-                "-", "_"
-            ),
-        )
-        if self.build_number:
-            components += (self.build_number,)
-        return "-".join(components) + ".data"
 
     def run_for_extension(self, ext: RustExtension) -> None:
         assert self.plat_name is not None
@@ -358,30 +344,33 @@ class build_rust(RustCommand):
                 )
 
             if ext._uses_exec_binding():
-                ext_path = build_ext.get_ext_fullpath(module_name)
-                # remove extensions
-                ext_path, _, _ = _split_platform_and_extension(ext_path)
-
-                # Add expected extension
                 exe = sysconfig.get_config_var("EXE")
-                if exe is not None:
-                    ext_path += exe
 
-                os.makedirs(os.path.dirname(ext_path), exist_ok=True)
                 if isinstance(ext, RustBin):
-                    executable_name = module_name
+                    # will install the rust binary into the scripts directory
+                    bin_name = module_name
                     if exe is not None:
-                        executable_name += exe
-                    scripts_dir = os.path.join(
-                        build_ext.build_lib, self.data_dir, "scripts"
+                        bin_name += exe
+
+                    install_scripts = cast(
+                        CommandInstallScripts,
+                        self.get_finalized_command("install_scripts"),
                     )
-                    os.makedirs(scripts_dir, exist_ok=True)
-                    ext_path = os.path.join(scripts_dir, executable_name)
+                    ext_path = os.path.join(install_scripts.build_dir, bin_name)
                 else:
+                    # will install the rust binary into the module directory
+                    ext_path = build_ext.get_ext_fullpath(module_name)
+
+                    # add expected extension
+                    ext_path, _, _ = _split_platform_and_extension(ext_path)
+                    if exe is not None:
+                        ext_path += exe
+
+                    # if required, also generate a console script entry point
                     ext.install_script(module_name.split(".")[-1], ext_path)
             else:
+                # will install the rust library into the module directory
                 ext_path = self.get_dylib_ext_path(ext, module_name)
-                os.makedirs(os.path.dirname(ext_path), exist_ok=True)
 
             # Make filenames relative to cwd where possible, to make logs and
             # errors below a little neater
@@ -392,6 +381,7 @@ class build_rust(RustCommand):
             if ext_path.startswith(cwd):
                 ext_path = os.path.relpath(ext_path, cwd)
 
+            os.makedirs(os.path.dirname(ext_path), exist_ok=True)
             logger.info("Copying rust artifact from %s to %s", dylib_path, ext_path)
 
             # We want to atomically replace any existing library file. We can't

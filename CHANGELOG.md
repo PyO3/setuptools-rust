@@ -3,6 +3,7 @@
 ## Unreleased
 ### Packaging
 - Drop support for Python 3.7. [#357](https://github.com/PyO3/setuptools-rust/pull/357)
+- Remove direct imports from `pkg_resources`. [#359](https://github.com/PyO3/setuptools-rust/pull/359)
 
 ## 1.7.0 (2023-08-22)
 ### Packaging

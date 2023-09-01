@@ -40,9 +40,10 @@ rust_extensions = "setuptools_rust.setuptools_ext:rust_extensions"
 setuptools_rust = "setuptools_rust.setuptools_ext:pyprojecttoml_config"
 
 [project.urls]
-repository = "https://github.com/PyO3/setuptools-rust"
-documentation = "https://setuptools-rust.readthedocs.io"
-changelog = "https://github.com/PyO3/setuptools-rust/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/PyO3/setuptools-rust"
+Repository = "https://github.com/PyO3/setuptools-rust"
+Documentation = "https://setuptools-rust.readthedocs.io"
+Changelog = "https://github.com/PyO3/setuptools-rust/blob/main/CHANGELOG.md"
 
 [build-system]
 requires = ["setuptools>=62.4", "setuptools_scm"]
