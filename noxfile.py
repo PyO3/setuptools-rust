@@ -39,6 +39,94 @@ def test_sdist_vendor(session: nox.Session):
     session.run("cargo", "build", "--offline", external=True)
 
 
+@nox.session(name="test-crossenv", venv_backend=None)
+def test_crossenv(session: nox.Session):
+    try:
+        arch = session.posargs[0]
+    except IndexError:
+        arch = "aarch64"
+    print(arch)
+
+    if arch == "aarch64":
+        rust_target = "aarch64-unknown-linux-gnu"
+        docker_platform = "aarch64"
+    elif arch == "armv7":
+        rust_target = "armv7-unknown-linux-gnueabihf"
+        docker_platform = "linux/arm/v7"
+    else:
+        raise RuntimeError("don't know rust target for arch: " + arch)
+
+    script_build = f"""set -ex
+curl -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+source ~/.cargo/env
+rustup target add {rust_target}
+
+# https://github.com/pypa/setuptools_scm/issues/707
+git config --global --add safe.directory /io
+
+cd examples/rust_with_cffi/
+python3.9 -m pip install crossenv
+python3.9 -m crossenv "/opt/python/cp39-cp39/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 venv
+. venv/bin/activate
+
+build-pip install -U pip>=23.2.1 setuptools>=68.0.0 wheel>=0.41.1
+cross-pip install -U pip>=23.2.1 setuptools>=68.0.0 wheel>=0.41.1
+build-pip install cffi
+cross-expose cffi
+cross-pip install -e ../../
+cross-pip list
+
+export DIST_EXTRA_CONFIG=/tmp/build-opts.cfg
+echo -e "[bdist_wheel]\npy_limited_api=cp37" > $DIST_EXTRA_CONFIG
+
+rm -rf dist/*
+cross-pip wheel --no-build-isolation --no-deps --wheel-dir dist . -vv
+ls -la dist/
+python -m zipfile -l dist/*.whl # debug all files inside wheel file
+    """
+
+    pwd = os.getcwd()
+    session.run(
+        "docker",
+        "run",
+        "--rm",
+        "-v",
+        f"{pwd}:/io",
+        "-w",
+        "/io",
+        f"messense/manylinux2014-cross:{arch}",
+        "bash",
+        "-c",
+        script_build,
+        external=True,
+    )
+
+    script_check = """set -ex
+cd /io/examples
+python3 --version
+pip3 install rust_with_cffi/dist/rust_with_cffi*.whl
+python3 -c "from rust_with_cffi import rust; assert rust.rust_func() == 14"
+python3 -c "from rust_with_cffi.cffi import lib; assert lib.cffi_func() == 15"
+"""
+
+    session.run(
+        "docker",
+        "run",
+        "--rm",
+        "-v",
+        f"{pwd}:/io",
+        "-w",
+        "/io",
+        "--platform",
+        docker_platform,
+        "python:3.9",
+        "bash",
+        "-c",
+        script_check,
+        external=True,
+    )
+
+
 @nox.session()
 def mypy(session: nox.Session):
     session.install("mypy", "fat_macho", "types-setuptools", ".")
