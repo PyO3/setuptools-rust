@@ -157,6 +157,7 @@ def add_rust_extension(dist: Distribution) -> None:
             self.target = os.getenv("CARGO_BUILD_TARGET")
 
         def run(self) -> None:
+            super().run()
             if self.distribution.rust_extensions:
                 logger.info("running build_rust")
                 build_rust = self.get_finalized_command("build_rust")
@@ -165,8 +166,6 @@ def add_rust_extension(dist: Distribution) -> None:
                 build_rust.verbose = self.verbose
                 build_rust.plat_name = self._get_wheel_plat_name() or self.plat_name
                 build_rust.run()
-
-            build_ext_base_class.run(self)
 
         def _get_wheel_plat_name(self) -> Optional[str]:
             cmd = _get_bdist_wheel_cmd(self.distribution)
@@ -191,7 +190,7 @@ def add_rust_extension(dist: Distribution) -> None:
     # this is required to make install_scripts compatible with RustBin
     class install_rust_extension(install_base_class):  # type: ignore[misc,valid-type]
         def run(self) -> None:
-            install_base_class.run(self)
+            super().run()
             install_rustbin = False
             if self.distribution.rust_extensions:
                 install_rustbin = any(
@@ -210,7 +209,7 @@ def add_rust_extension(dist: Distribution) -> None:
     # prevent RustBin from being installed to data_dir
     class install_lib_rust_extension(install_lib_base_class):  # type: ignore[misc,valid-type]
         def get_exclusions(self) -> Set[str]:
-            exclusions: Set[str] = install_lib_base_class.get_exclusions(self)
+            exclusions: Set[str] = super().get_exclusions()
             build_rust = self.get_finalized_command("build_rust")
             scripts_path = os.path.join(
                 self.install_dir, build_rust.data_dir, "scripts"
@@ -234,7 +233,7 @@ def add_rust_extension(dist: Distribution) -> None:
     # this is required to make install_scripts compatible with RustBin
     class install_scripts_rust_extension(install_scripts_base_class):  # type: ignore[misc,valid-type]
         def run(self) -> None:
-            install_scripts_base_class.run(self)
+            super().run()
             build_ext = self.get_finalized_command("build_ext")
             build_rust = self.get_finalized_command("build_rust")
             scripts_path = os.path.join(
