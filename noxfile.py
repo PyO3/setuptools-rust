@@ -65,7 +65,8 @@ rustup target add {rust_target}
 git config --global --add safe.directory /io
 
 cd examples/rust_with_cffi/
-python3.9 -m pip install crossenv
+# Using crossenv master to workaround https://github.com/benfogle/crossenv/issues/108, will need 1.5.0 when released
+python3.9 -m pip install https://github.com/benfogle/crossenv/archive/refs/heads/master.zip
 python3.9 -m crossenv "/opt/python/cp39-cp39/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 /venv
 . /venv/bin/activate
 
