@@ -66,11 +66,11 @@ git config --global --add safe.directory /io
 
 cd examples/rust_with_cffi/
 python3.9 -m pip install crossenv
-python3.9 -m crossenv "/opt/python/cp39-cp39/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 venv
-. venv/bin/activate
+python3.9 -m crossenv "/opt/python/cp39-cp39/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 /venv
+. /venv/bin/activate
 
-build-pip install -U pip>=23.2.1 setuptools>=68.0.0 wheel>=0.41.1
-cross-pip install -U pip>=23.2.1 setuptools>=68.0.0 wheel>=0.41.1
+build-pip install -U 'pip>=23.2.1' 'setuptools>=68.0.0' 'wheel>=0.41.1'
+cross-pip install -U 'pip>=23.2.1' 'setuptools>=68.0.0' 'wheel>=0.41.1'
 build-pip install cffi
 cross-expose cffi
 cross-pip install -e ../../
