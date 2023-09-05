@@ -65,12 +65,13 @@ rustup target add {rust_target}
 git config --global --add safe.directory /io
 
 cd examples/rust_with_cffi/
-python3.9 -m pip install crossenv
-python3.9 -m crossenv "/opt/python/cp39-cp39/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 /venv
+# Using crossenv master to workaround https://github.com/benfogle/crossenv/issues/108, will need 1.5.0 when released
+python3.11 -m pip install https://github.com/benfogle/crossenv/archive/refs/heads/master.zip
+python3.11 -m crossenv "/opt/python/cp311-cp311/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 /venv
 . /venv/bin/activate
 
-build-pip install -U 'pip>=23.2.1' 'setuptools>=68.0.0' 'wheel>=0.41.1'
-cross-pip install -U 'pip>=23.2.1' 'setuptools>=68.0.0' 'wheel>=0.41.1'
+build-pip install -U 'pip>=23.2.1' 'setuptools>=68.0.0' 'wheel>=0.41.1' 'build>=1'
+cross-pip install -U 'pip>=23.2.1' 'setuptools>=68.0.0' 'wheel>=0.41.1' 'build>=1'
 build-pip install cffi
 cross-expose cffi
 cross-pip install -e ../../
@@ -80,7 +81,7 @@ export DIST_EXTRA_CONFIG=/tmp/build-opts.cfg
 echo -e "[bdist_wheel]\npy_limited_api=cp37" > $DIST_EXTRA_CONFIG
 
 rm -rf dist/*
-cross-pip wheel --no-build-isolation --no-deps --wheel-dir dist . -vv
+cross-python -m build --no-isolation
 ls -la dist/
 python -m zipfile -l dist/*.whl # debug all files inside wheel file
     """
@@ -119,7 +120,7 @@ python3 -c "from rust_with_cffi.cffi import lib; assert lib.cffi_func() == 15"
         "/io",
         "--platform",
         docker_platform,
-        "python:3.9",
+        "python:3.11",
         "bash",
         "-c",
         script_check,

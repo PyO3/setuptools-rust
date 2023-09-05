@@ -210,17 +210,17 @@ def add_rust_extension(dist: Distribution) -> None:
     class install_lib_rust_extension(install_lib_base_class):  # type: ignore[misc,valid-type]
         def get_exclusions(self) -> Set[str]:
             exclusions: Set[str] = super().get_exclusions()
-            build_rust = self.get_finalized_command("build_rust")
-            scripts_path = os.path.join(
-                self.install_dir, build_rust.data_dir, "scripts"
+            install_scripts_obj = cast(
+                install_scripts, self.get_finalized_command("install_scripts")
             )
+            scripts_path = install_scripts_obj.build_dir
             if self.distribution.rust_extensions:
                 exe = sysconfig.get_config_var("EXE")
                 for ext in self.distribution.rust_extensions:
-                    executable_name = ext.name
-                    if exe is not None:
-                        executable_name += exe
                     if isinstance(ext, RustBin):
+                        executable_name = ext.name
+                        if exe is not None:
+                            executable_name += exe
                         exclusions.add(os.path.join(scripts_path, executable_name))
             return exclusions
 
@@ -234,11 +234,10 @@ def add_rust_extension(dist: Distribution) -> None:
     class install_scripts_rust_extension(install_scripts_base_class):  # type: ignore[misc,valid-type]
         def run(self) -> None:
             super().run()
-            build_ext = self.get_finalized_command("build_ext")
-            build_rust = self.get_finalized_command("build_rust")
-            scripts_path = os.path.join(
-                build_ext.build_lib, build_rust.data_dir, "scripts"
+            install_scripts_obj = cast(
+                install_scripts, self.get_finalized_command("install_scripts")
             )
+            scripts_path = install_scripts_obj.build_dir
             if os.path.isdir(scripts_path):
                 for file in os.listdir(scripts_path):
                     script_path = os.path.join(scripts_path, file)

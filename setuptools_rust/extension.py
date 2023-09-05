@@ -232,6 +232,7 @@ class RustExtension:
         if self.script and self.binding == Binding.Exec:
             dirname, executable = os.path.split(exe_path)
             script_name = _script_name(module_name)
+            os.makedirs(dirname, exist_ok=True)
             file = os.path.join(dirname, f"{script_name}.py")
             with open(file, "w") as f:
                 f.write(_SCRIPT_TEMPLATE.format(executable=repr(executable)))
