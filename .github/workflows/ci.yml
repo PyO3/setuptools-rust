@@ -315,9 +315,10 @@ jobs:
       - uses: pypa/cibuildwheel@v2.16.2
         env:
           CIBW_BUILD: cp39-*
-          CIBW_BEFORE_BUILD: pip install -U 'pip>=23.2.1' 'setuptools>=68.0.0' 'wheel<=0.37.1' && pip install -e . && pip list
-          # ^-- cap on `wheel` is a workaround for pypa/auditwheel#436
-          #     setuptools needs to be upgraded before installing setuptools-rust
+          CIBW_BEFORE_BUILD: >
+            pip install -U 'pip>=23.2.1' 'setuptools>=68.0.0' 'wheel>=0.41.2' 'auditwheel>=5.4.0'
+            && pip install -e .
+            && pip list
           CIBW_ARCHS_MACOS: "x86_64 universal2 arm64"
           CIBW_BUILD_VERBOSITY: 3
           CIBW_BUILD_FRONTEND: "build; args: --no-isolation"
