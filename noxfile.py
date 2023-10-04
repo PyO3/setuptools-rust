@@ -174,7 +174,7 @@ def test_mingw(session: nox.Session):
         session.install("--no-build-isolation", str(examples / "html-py-ever"))
         session.run("pytest", str(examples / "html-py-ever"))
 
-        session.install("pytest", "cffi")
+        session.install("pytest", "cffi<1.16")
         session.install("--no-build-isolation", str(examples / "html-py-ever"))
         session.run("pytest", str(examples / "html-py-ever"))
 
