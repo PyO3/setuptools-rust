@@ -517,10 +517,10 @@ class build_rust(RustCommand):
         if target_triple is not None:
             args.extend(["--target", target_triple])
 
-        if release:
-            profile = ext.get_cargo_profile()
-            if not profile:
-                args.append("--release")
+        ext_profile = ext.get_cargo_profile()
+        env_profile = os.getenv("SETUPTOOLS_RUST_CARGO_PROFILE")
+        if release and not ext_profile and not env_profile:
+            args.append("--release")
 
         if quiet:
             args.append("-q")
@@ -540,6 +540,18 @@ class build_rust(RustCommand):
 
         if ext.args is not None:
             args.extend(ext.args)
+
+        if env_profile:
+            if ext_profile:
+                args = [p for p in args if not p.startswith("--profile=")]
+                while True:
+                    try:
+                        index = args.index("--profile")
+                        del args[index : index + 2]
+                    except ValueError:
+                        break
+
+            args.extend(["--profile", env_profile])
 
         if ext.cargo_manifest_args is not None:
             args.extend(ext.cargo_manifest_args)
