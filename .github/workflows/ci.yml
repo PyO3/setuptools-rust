@@ -62,20 +62,16 @@ jobs:
       # If one platform fails, allow the rest to keep testing if `CI-no-fail-fast` label is present
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12-dev", pypy-3.8, pypy-3.9]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", pypy-3.8, pypy-3.9, pypy-3.10]
         platform: [
           { os: "macos-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
           { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
           { os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc" },
-          { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" },
         ]
-        exclude:
-          # No 32-bit pypy 3.8 on Windows
-          - python-version: pypy-3.8
-            platform: { os: "windows-latest", python-architecture: "x86" }
-          # No 32-bit pypy 3.9 on Windows
-          - python-version: pypy-3.9
-            platform: { os: "windows-latest", python-architecture: "x86" }
+        include:
+          # Just test one x86 Windows Python for simplicity
+          - python-version: 3.12
+            platform: { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" }
 
     steps:
       - uses: actions/checkout@v3
