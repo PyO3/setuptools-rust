@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.8.0 (2023-10-26)
 ### Packaging
 - Drop support for Python 3.7. [#357](https://github.com/PyO3/setuptools-rust/pull/357)
 - Remove direct imports from `pkg_resources`. [#359](https://github.com/PyO3/setuptools-rust/pull/359)
