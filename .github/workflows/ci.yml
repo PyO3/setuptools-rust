@@ -203,7 +203,7 @@ jobs:
         ]
     steps:
       - uses: actions/checkout@v3
-      - uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-qemu-action@v3
       - run: pip install nox
       - run: nox -s test-crossenv -- ${{ matrix.platform.arch }}
 
