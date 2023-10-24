@@ -2,7 +2,7 @@
 *.pyo
 *.so
 .eggs
-.tox
+.nox
 dist
 build
 target
