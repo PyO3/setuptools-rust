@@ -18,4 +18,4 @@ path = "rust/lib.rs"  # When omitted, the value of "src/lib.rs" is assumed
 # path = "src/lib.rs"
 
 [dependencies]
-pyo3 = { version = "0.19.2", features = ["extension-module"] }
+pyo3 = { version = "0.20.0", features = ["extension-module"] }
