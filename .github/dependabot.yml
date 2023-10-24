@@ -20,3 +20,8 @@ updates:
     directory: "examples/rust_with_cffi"
     schedule:
       interval: "monthly"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"

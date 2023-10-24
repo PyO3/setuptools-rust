@@ -1,5 +1,4 @@
 import os
-import tarfile
 from inspect import cleandoc as heredoc
 from glob import glob
 from pathlib import Path
@@ -19,24 +18,33 @@ def test_sdist_vendor(session: nox.Session):
     session.install(".", "build", "wheel")
     namespace_package = Path(__file__).parent / "examples" / "namespace_package"
     os.chdir(namespace_package)
-    tmp = session.create_tmp()
+    tmp = Path(session.create_tmp())
+    extra_config = tmp / "setup.cfg"
 
     build_config = """
         [sdist]
         vendor_crates = True
         """
-    Path(tmp, "setup.cfg").write_text(heredoc(build_config), encoding="utf-8")
+    extra_config.write_text(heredoc(build_config), encoding="utf-8")
 
     env = os.environ.copy()
-    env.update(DIST_EXTRA_CONFIG=str(Path(tmp, "setup.cfg")))
+    env.update(DIST_EXTRA_CONFIG=str(extra_config))
     cmd = ["python", "-m", "build", "--sdist", "--no-isolation"]
     session.run(*cmd, env=env, external=True)
 
-    dist = namespace_package / "dist"
-    with tarfile.open(str(dist / "namespace_package-0.1.0.tar.gz")) as tf:
-        tf.extractall(str(dist))
-    os.chdir(dist / "namespace_package-0.1.0")
-    session.run("cargo", "build", "--offline", external=True)
+    session.run(
+        "python",
+        "-m",
+        "pip",
+        "install",
+        Path("dist") / "namespace_package-0.1.0.tar.gz[dev]",
+        "--no-build-isolation",
+        "-v",
+        # run in offline mode with a blank cargo home to prove the vendored
+        # dependencies are sufficient to build the package
+        env={"CARGO_NET_OFFLINE": "true", "CARGO_HOME": str(tmp / ".cargo")},
+    )
+    session.run("pytest")
 
 
 @nox.session(name="test-crossenv", venv_backend=None)
