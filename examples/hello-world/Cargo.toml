@@ -23,4 +23,4 @@ name = "print-hello"
 path = "rust/print_hello.rs"
 
 [build-dependencies]
-pyo3-build-config = "0.19.2"
+pyo3-build-config = "0.20.0"
