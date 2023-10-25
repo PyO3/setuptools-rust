@@ -19,6 +19,6 @@ def test_adjusted_local_rust_target_windows_gnu():
         assert _adjusted_local_rust_target("win-amd64") == "x86_64-pc-windows-gnu"
 
 
-def test_adjusted_local_rust_target_windows_gnu():
+def test_adjusted_local_rust_target_macos():
     with mock.patch("platform.machine", lambda: "x86_64"):
         assert _adjusted_local_rust_target("macosx-") == "x86_64-apple-darwin"

@@ -1,5 +1,4 @@
 import argparse
-import sys
 
 from ._lib import sum_as_string
 

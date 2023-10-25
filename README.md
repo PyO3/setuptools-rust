@@ -3,7 +3,7 @@
 [![github actions](https://github.com/PyO3/setuptools-rust/actions/workflows/ci.yml/badge.svg)](https://github.com/PyO3/setuptools-rust/actions/workflows/ci.yml)
 [![pypi package](https://badge.fury.io/py/setuptools-rust.svg)](https://pypi.org/project/setuptools-rust/)
 [![readthedocs](https://readthedocs.org/projects/pip/badge/)](https://setuptools-rust.readthedocs.io/en/latest/)
-[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 `setuptools-rust` is a plugin for `setuptools` to build Rust Python extensions implemented with [PyO3](https://github.com/PyO3/pyo3) or [rust-cpython](https://github.com/dgrunwald/rust-cpython).
 
@@ -14,7 +14,7 @@ they were written in C.
 
 The following is a very basic tutorial that shows how to use `setuptools-rust` in `pyproject.toml`.
 It assumes that you already have a bunch of Python and Rust files that you want
-to distribute. You can see examples for these files in the 
+to distribute. You can see examples for these files in the
 [`examples/hello-world`](https://github.com/PyO3/setuptools-rust/tree/main/examples/hello-world)
 directory in the [github repository](https://github.com/PyO3/setuptools-rust).
 The [PyO3 docs](https://pyo3.rs) have detailed information on how to write Python
