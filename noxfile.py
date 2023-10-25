@@ -137,6 +137,13 @@ python3 -c "from rust_with_cffi.cffi import lib; assert lib.cffi_func() == 15"
 
 
 @nox.session()
+def ruff(session: nox.Session):
+    session.install("ruff")
+    session.run("ruff", "format", "--check", ".")
+    session.run("ruff", ".")
+
+
+@nox.session()
 def mypy(session: nox.Session):
     session.install("mypy", "fat_macho", "types-setuptools", ".")
     session.run("mypy", "setuptools_rust", *session.posargs)

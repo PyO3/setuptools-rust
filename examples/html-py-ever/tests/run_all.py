@@ -9,10 +9,8 @@ from bs4 import BeautifulSoup
 
 try:
     import lxml
-
-    HAVE_LXML = True
 except ImportError:
-    HAVE_LXML = False
+    lxml = None
 
 
 def rust(filename: str) -> Tuple[int, float, float]:
@@ -51,7 +49,7 @@ def main():
         print(f"Parse py    {parse_py:6f}s {parse_py/parse_rs:6.3f}x")
         print(f"Select py   {select_py:6f}s {select_py/select_rs:6.3f}x")
 
-        if HAVE_LXML:
+        if lxml is not None:
             count_lxml, parse_lxml, select_lxml = python(filename, "lxml")
             assert count_rs == count_lxml
             print(f"Parse lxml  {parse_lxml:6f}s {parse_lxml/parse_rs:6.3f}x")

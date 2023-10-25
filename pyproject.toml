@@ -49,8 +49,8 @@ Changelog = "https://github.com/PyO3/setuptools-rust/blob/main/CHANGELOG.md"
 requires = ["setuptools>=62.4", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
-[tool.isort]
-profile = "black"
+[tool.ruff.extend-per-file-ignores]
+"__init__.py" = ["F403"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

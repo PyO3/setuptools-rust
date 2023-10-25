@@ -4,6 +4,8 @@
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+from sphinx.transforms import SphinxTransform
+
 # -- Path setup --------------------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -57,8 +59,6 @@ html_theme_options = {}
 # This is necessary because the README.md (for example) has links to the latest
 # documentation, but we want them to be relative to the specific docs version.
 
-from sphinx.transforms import SphinxTransform
-
 DOCS_URL = "https://setuptools-rust.readthedocs.io/en/latest/"
 
 
@@ -68,10 +68,12 @@ class RelativeDocLinks(SphinxTransform):
     def apply(self):
         from docutils.nodes import Text, reference
 
-        baseref = lambda o: (
-            isinstance(o, reference) and o.get("refuri", "").startswith(DOCS_URL)
-        )
-        basetext = lambda o: (isinstance(o, Text) and o.startswith(DOCS_URL))
+        def baseref(o):
+            return isinstance(o, reference) and o.get("refuri", "").startswith(DOCS_URL)
+
+        def basetext(o):
+            return isinstance(o, Text) and o.startswith(DOCS_URL)
+
         for node in self.document.traverse(baseref):
             target = node["refuri"].replace(DOCS_URL, "", 1)
             node.replace_attr("refuri", target)

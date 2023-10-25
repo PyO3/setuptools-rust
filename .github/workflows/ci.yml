@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  fmt:
+  ruff:
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v4
@@ -20,9 +20,9 @@ jobs:
         with:
           python-version: "3.x"
 
-      - run: pip install black
+      - run: pip install nox
 
-      - run: black --check .
+      - run: nox -s ruff
 
   mypy:
     runs-on: "ubuntu-latest"
