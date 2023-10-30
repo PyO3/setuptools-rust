@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.8.1 (2023-10-30)
 ### Fixed
 - Fix regression in `install_extension` crashing since 1.8.0. [#380](https://github.com/PyO3/setuptools-rust/pull/380)
 
