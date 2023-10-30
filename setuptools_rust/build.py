@@ -372,6 +372,8 @@ class build_rust(RustCommand):
                 # will install the rust library into the module directory
                 ext_path = self.get_dylib_ext_path(ext, module_name)
 
+            os.makedirs(os.path.dirname(ext_path), exist_ok=True)
+
             # Make filenames relative to cwd where possible, to make logs and
             # errors below a little neater
 
@@ -381,7 +383,6 @@ class build_rust(RustCommand):
             if ext_path.startswith(cwd):
                 ext_path = os.path.relpath(ext_path, cwd)
 
-            os.makedirs(os.path.dirname(ext_path), exist_ok=True)
             logger.info("Copying rust artifact from %s to %s", dylib_path, ext_path)
 
             # We want to atomically replace any existing library file. We can't
