@@ -70,7 +70,7 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-pyo3 = { version = "0.19.2", features = ["extension-module"] }
+pyo3 = { version = "0.20.0", features = ["extension-module"] }
 
 [lib]
 name = "_lib"  # private module to be nested into Python package,
@@ -143,7 +143,7 @@ python
 - `Cargo.toml` allow only one `[lib]` table per file.
   If you require multiple extension modules you will need to write multiple `Cargo.toml` files.
   Alternatively you can create a single private Rust top-level module that exposes
-  multiple submodules (using [PyO3's submodules](https://pyo3.rs/v0.19.2/module#python-submodules)),
+  multiple submodules (using [PyO3's submodules](https://pyo3.rs/v0.20.0/module#python-submodules)),
   which may also reduce the size of the build artifacts.
   You can always keep your extension modules private and wrap them in pure Python
   to have fine control over the public API.

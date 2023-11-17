@@ -11,3 +11,5 @@ target
 *.egg-info
 pyo3
 docs/_build
+
+Cargo.lock

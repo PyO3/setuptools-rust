@@ -2,14 +2,22 @@ version: 2
 updates:
 
   - package-ecosystem: "cargo"
-    directory: "examples"
+    directory: "/"
     schedule:
       interval: "monthly"
+    groups:
+      rust-dependencies:
+        patterns:
+          - "*"
 
   - package-ecosystem: "pip"
     directory: "docs"
     schedule:
       interval: "monthly"
+    groups:
+      docs-dependencies:
+        patterns:
+          - "*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
