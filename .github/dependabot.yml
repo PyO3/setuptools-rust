@@ -2,22 +2,12 @@ version: 2
 updates:
 
   - package-ecosystem: "cargo"
-    directory: "examples/hello-world"
+    directory: "examples"
     schedule:
       interval: "monthly"
 
-  - package-ecosystem: "cargo"
-    directory: "examples/html-py-ever"
-    schedule:
-      interval: "monthly"
-
-  - package-ecosystem: "cargo"
-    directory: "examples/namespace_package"
-    schedule:
-      interval: "monthly"
-
-  - package-ecosystem: "cargo"
-    directory: "examples/rust_with_cffi"
+  - package-ecosystem: "pip"
+    directory: "docs"
     schedule:
       interval: "monthly"
 
