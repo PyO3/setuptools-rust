@@ -388,7 +388,7 @@ jobs:
         with:
           components: rust-src
           targets: wasm32-unknown-emscripten
-      - uses: mymindstorm/setup-emsdk@v12
+      - uses: mymindstorm/setup-emsdk@v13
         with:
           version: ${{env.EMSCRIPTEN_VERSION}}
           actions-cache-folder: emsdk-cache
