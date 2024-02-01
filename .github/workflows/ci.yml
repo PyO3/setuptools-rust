@@ -397,7 +397,7 @@ jobs:
         with:
           python-version: ${{env.PYTHON_VERSION}}
       - run: pip install nox
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: |
             tests/pyodide
