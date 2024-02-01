@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+### Changed
+- Deprecate `py_limited_api` option to `RustExtension` in favour of always using `"auto"` to configure this from `bdist_wheel`. [#410](https://github.com/PyO3/setuptools-rust/pull/410)
+
 ## 1.8.1 (2023-10-30)
 ### Fixed
 - Fix regression in `install_extension` crashing since 1.8.0. [#380](https://github.com/PyO3/setuptools-rust/pull/380)

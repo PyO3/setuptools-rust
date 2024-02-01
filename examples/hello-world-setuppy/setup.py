@@ -14,7 +14,6 @@ setup(
             #     in Cargo.toml and the function name in the `.rs` file,
             #     but you can add a prefix to nest it inside of a Python package.
             path="Cargo.toml",  # Default value, can be omitted
-            py_limited_api="auto",  # Default value, can be omitted
             binding=Binding.PyO3,  # Default value, can be omitted
         )
     ],
