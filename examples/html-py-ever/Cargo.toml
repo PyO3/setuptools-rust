@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 kuchiki = "0.8.0"
-pyo3 = { version = "0.20.1", features = ["extension-module"] }
+pyo3 = { version = "0.20.2", features = ["extension-module"] }
 tendril = "0.4.3"
 
 [lib]
