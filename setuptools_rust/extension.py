@@ -107,22 +107,7 @@ class RustExtension:
         optional: If it is true, a build failure in the extension will not
             abort the build process, and instead simply not install the failing
             extension.
-        py_limited_api: Similar to ``py_limited_api`` on
-            ``setuptools.Extension``, this controls whether the built extension
-            should be considered compatible with the PEP 384 "limited API".
-
-            - ``'auto'``: the ``py_limited_api`` option of
-              ``bdist_wheel`` will control whether the extension is
-              built as a limited api extension. The corresponding
-              ``pyo3/abi3-pyXY`` feature will be set accordingly.
-              This is the recommended setting, as it allows
-              to build a version-specific extension for best performance.
-
-            - ``True``: the extension is assumed to be compatible with the
-              limited abi. You must ensure this is the case (e.g. by setting
-              the ``pyo3/abi3`` feature).
-
-            - ``False``: the extension is version-specific.
+        py_limited_api: Deprecated.
     """
 
     def __init__(
@@ -177,6 +162,13 @@ class RustExtension:
         if binding == Binding.Exec and script:
             warnings.warn(
                 "`Binding.Exec` with `script=True` is deprecated, use `RustBin` instead.",
+                DeprecationWarning,
+            )
+
+        if self.py_limited_api != "auto":
+            warnings.warn(
+                "`RustExtension.py_limited_api` is deprecated, use [bdist_wheel] configuration "
+                "in `setup.cfg` or `DIST_EXTRA_CONFIG` to build abi3 wheels.",
                 DeprecationWarning,
             )
 

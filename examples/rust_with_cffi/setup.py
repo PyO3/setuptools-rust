@@ -17,7 +17,7 @@ setup(
     packages=find_packages(where="python"),
     package_dir={"": "python"},
     rust_extensions=[
-        RustExtension("rust_with_cffi.rust", py_limited_api="auto"),
+        RustExtension("rust_with_cffi.rust"),
     ],
     cffi_modules=["cffi_module.py:ffi"],
     install_requires=["cffi"],

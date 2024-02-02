@@ -56,7 +56,6 @@ target = "hello_world._lib"  # The last part of the name (e.g. "_lib") has to ma
                              # but you can add a prefix to nest it inside of a Python package.
 path = "Cargo.toml"      # Default value, can be omitted
 binding = "PyO3"         # Default value, can be omitted
-py-limited-api = "auto"  # Default value, can be omitted
 ```
 
 Each extension module should map directly into the corresponding `[lib]` table on the

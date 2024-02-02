@@ -4,19 +4,36 @@ Because `setuptools-rust` is an extension to `setuptools`, the standard [`python
 (or [`pip wheel --no-deps . --wheel-dir dist`](https://pip.pypa.io/en/stable/cli/pip_wheel/)) can be used to build distributable wheels.
 These wheels can be uploaded to PyPI using standard tools such as [twine](https://github.com/pypa/twine).
 
-`setuptools-rust` supports building for the [PEP 384](https://www.python.org/dev/peps/pep-0384/) "stable" (aka "limited") API when the `py_limited_api` option is set on the `[bdist_wheel]` section of `setup.cfg`.
-If using PyO3 bindings for `RustExtension`, then the correct [`pyo3/abi3`](https://pyo3.rs/v0.14.5/features.html#abi3) sub-feature is automatically enabled.
-In this way, abi3 wheels can be uploaded to make package distributors' roles easier, and package users installing from source with `pip install .` can use optimizations specific to their Python version.
+A key choice to make is whether to upload [PEP 384](https://www.python.org/dev/peps/pep-0384/) "stable" (aka "limited") API wheels which support multiple Python versions in a single binary, or to build individual artifacts for each Python version. There is a longer discussion of this [in the PyO3 docs](https://pyo3.rs/latest/building_and_distribution#py_limited_apiabi3).
 
-This chapter of the documentation explains two possible ways to build wheels for multiple Python versions below.
+This chapter covers each of these options below.
 
-## Using `cibuildwheel`
+## Building for ABI3
+
+`setuptools-rust` will automatically configure for the limited API when this is set in the `[bdist_wheel]` configuration section of [`setup.cfg`](https://setuptools.pypa.io/en/latest/deprecated/distutils/configfile.html#writing-the-setup-configuration-file):
+
+```ini
+[bdist_wheel]
+py_limited_api=cp37  # replace with desired minimum Python version
+```
+
+If using a `pyproject.toml`-based build, then save the above in a file and use the `DIST_EXTRA_CONFIG` environment variable to instruct `setuptools` to pick up this extra configuration. (`DIST_EXTRA_CONFIG` is documented [on this page](https://setuptools.pypa.io/en/latest/deprecated/distutils/configfile.html#writing-the-setup-configuration-file) of the `setuptools` docs.)
+
+It is also possible to pass this setting via the command line, e.g.
+
+```
+python -m build --config-settings=--build-option=--py-limited-api=cp37
+```
+
+## Building for multiple Python versions
+
+### Using `cibuildwheel`
 
 [`cibuildwheel`][cibuildwheel] is a tool to build wheels for multiple platforms using Github Actions.
 
 The [`rtoml` package does this, for example](https://github.com/samuelcolvin/rtoml/blob/143ee0907bba616cbcd5cc58eefe9000fcc2b5f2/.github/workflows/ci.yml#L99-L195).
 
-## Building manually
+### Building manually
 
 Place a script called `build-wheels.sh` with the following contents in your project root (next to the `setup.py` file):
 
@@ -27,7 +44,7 @@ Place a script called `build-wheels.sh` with the following contents in your proj
 
 This script can be used to produce wheels for multiple Python versions.
 
-### Binary wheels on linux
+#### Binary wheels on linux
 
 To build binary wheels on linux, you need to use the [manylinux docker container](https://github.com/pypa/manylinux). You will run the `build-wheels.sh` from above inside that container.
 
@@ -54,7 +71,7 @@ hello_rust-0.1.0-cp39-cp39-linux_x86_64.whl           hello_rust-0.1.0-cp39-cp39
 
 It is possible to use any of the `manylinux` docker images: `manylinux1`, `manylinux2010` or `manylinux2014`. (Just replace `manylinux2014` in the above instructions with the alternative version you wish to use.)
 
-### Binary wheels on macOS
+#### Binary wheels on macOS
 
 For building wheels on macOS it is sufficient to use one of the default `python -m build` or `pip wheel --no-deps . --wheel-dir dist` commands.
 

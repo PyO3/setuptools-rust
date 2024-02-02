@@ -19,7 +19,6 @@ find = { where = ["python"] }
 # Private Rust extension module to be nested into Python package
 target = "hello_world._lib"  # The last part of the name (e.g. "_lib") has to match lib.name in Cargo.toml,
                              # but you can add a prefix to nest it inside of a Python package.
-py-limited-api = "auto"  # Default value, can be omitted
 binding = "PyO3"  # Default value, can be omitted
 # See reference for RustExtension in https://setuptools-rust.readthedocs.io/en/latest/reference.html
 
