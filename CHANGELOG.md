@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.9.0 (2024-02-24)
 ### Changed
 - Deprecate `py_limited_api` option to `RustExtension` in favour of always using `"auto"` to configure this from `bdist_wheel`. [#410](https://github.com/PyO3/setuptools-rust/pull/410)
 
