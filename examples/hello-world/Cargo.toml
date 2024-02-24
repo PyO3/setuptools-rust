@@ -1,12 +1,12 @@
 [package]
 name = "hello-world"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pyo3 = { version = "0.20.2", features = ["extension-module"] }
+pyo3 = "0.20.3"
 
 [profile.release-lto]
 inherits = "release"
@@ -21,6 +21,3 @@ path = "rust/lib.rs"
 [[bin]]
 name = "print-hello"
 path = "rust/print_hello.rs"
-
-[build-dependencies]
-pyo3-build-config = "0.20.0"

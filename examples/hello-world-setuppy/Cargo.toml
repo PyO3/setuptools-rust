@@ -1,13 +1,10 @@
 [package]
 name = "hello-world-setuppy"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-pyo3 = { version = "0.20.0", features = ["extension-module"] }
-
-[build-dependencies]
-pyo3-build-config = "0.20.0"
+pyo3 = "0.20.3"
 
 [lib]
 # See https://github.com/PyO3/pyo3 for details
