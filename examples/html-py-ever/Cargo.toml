@@ -2,11 +2,11 @@
 name = "html-py-ever"
 version = "0.1.0"
 authors = ["konstin <konstin@mailbox.org>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 kuchiki = "0.8.0"
-pyo3 = { version = "0.20.2", features = ["extension-module"] }
+pyo3 = "0.20.3"
 tendril = "0.4.3"
 
 [lib]

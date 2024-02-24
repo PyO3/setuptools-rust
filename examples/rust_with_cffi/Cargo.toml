@@ -2,10 +2,10 @@
 name = "rust_with_cffi"
 version = "0.1.0"
 authors = ["Alex Gaynor <alex.gaynor@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-pyo3 = { version = "0.20.2", features = ["extension-module"] }
+pyo3 = "0.20.3"
 
 [lib]
 name = "rust_with_cffi"

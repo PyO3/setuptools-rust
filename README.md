@@ -66,10 +66,10 @@ Each extension module should map directly into the corresponding `[lib]` table o
 [package]
 name = "hello-world"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-pyo3 = { version = "0.20.0", features = ["extension-module"] }
+pyo3 = "0.20.3"
 
 [lib]
 name = "_lib"  # private module to be nested into Python package,
