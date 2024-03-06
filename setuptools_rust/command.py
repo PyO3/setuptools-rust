@@ -107,5 +107,4 @@ class RustCommand(Command, ABC):
                     print(str(e))
 
     @abstractmethod
-    def run_for_extension(self, extension: RustExtension) -> None:
-        ...
+    def run_for_extension(self, extension: RustExtension) -> None: ...
