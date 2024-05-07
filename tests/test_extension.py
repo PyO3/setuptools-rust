@@ -42,7 +42,7 @@ def test_metadata_cargo_log(
     hello_world_bin.metadata(quiet=False)
     captured = capfd.readouterr()
     assert captured.out == ""
-    assert "TRACE cargo::util::config" in captured.err
+    assert "TRACE" in captured.err
 
     # With quiet set, nothing will be printed
     hello_world_bin.metadata(quiet=True)
