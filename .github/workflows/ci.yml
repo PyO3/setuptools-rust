@@ -97,10 +97,6 @@ jobs:
         with:
           targets: ${{ matrix.platform.rust-target }}
 
-      - name: Install Rust x86_64-apple-darwin target
-        if: matrix.platform.os == 'macos-latest'
-        run: rustup target add x86_64-apple-darwin
-
       - name: Install test dependencies
         run: pip install --upgrade nox
 
@@ -120,6 +116,8 @@ jobs:
           MACOSX_DEPLOYMENT_TARGET: '10.9'
           ARCHFLAGS: -arch x86_64 -arch arm64
         run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
           cd examples/namespace_package
           pip install build wheel
           python -m build --no-isolation
