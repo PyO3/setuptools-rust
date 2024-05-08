@@ -114,12 +114,11 @@ jobs:
         run: nox -s test-examples
 
       - name: Test macOS universal2
-        if: matrix.platform.os == 'macos-latest' && !startsWith(matrix.python-version, 'pypy')
+        if: ${{ startsWith(matrix.platform.os, 'macos') && !startsWith(matrix.python-version, 'pypy') }}
         shell: bash
         env:
           MACOSX_DEPLOYMENT_TARGET: '10.9'
           ARCHFLAGS: -arch x86_64 -arch arm64
-          PYO3_CROSS_LIB_DIR: /Library/Frameworks/Python.framework/Versions/${{ matrix.python-version }}/lib
         run: |
           cd examples/namespace_package
           pip install build wheel
