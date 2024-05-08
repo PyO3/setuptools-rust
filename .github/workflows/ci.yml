@@ -64,7 +64,7 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", pypy-3.8, pypy-3.9, pypy-3.10]
         platform: [
-          { os: "macos-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
+          { os: "macos-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" },
           { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
           { os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc" },
         ]
@@ -72,6 +72,16 @@ jobs:
           # Just test one x86 Windows Python for simplicity
           - python-version: 3.12
             platform: { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" }
+          # Just test one x64 macOS Python for simplicity
+          - python-version: 3.12
+            platform: { os: "macos-13", python-architecture: "x64", rust-target: "x86_64-apple-darwin" }
+          # Just test one x64 macOS Python for simplicity
+        exclude:
+          # macOS arm doesn't have Python builds before 3.10
+          - python-version: 3.9
+            platform: { os: "macos-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
+          - python-version: 3.8
+            platform: { os: "macos-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
 
     steps:
       - uses: actions/checkout@v4
@@ -87,10 +97,6 @@ jobs:
         with:
           targets: ${{ matrix.platform.rust-target }}
 
-      - name: Install Rust aarch64-apple-darwin target
-        if: matrix.platform.os == 'macos-latest'
-        run: rustup target add aarch64-apple-darwin
-
       - name: Install test dependencies
         run: pip install --upgrade nox
 
@@ -104,14 +110,14 @@ jobs:
         run: nox -s test-examples
 
       - name: Test macOS universal2
-        if: matrix.platform.os == 'macos-latest' && !startsWith(matrix.python-version, 'pypy')
+        if: ${{ startsWith(matrix.platform.os, 'macos') && !startsWith(matrix.python-version, 'pypy') }}
         shell: bash
         env:
-          DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
           MACOSX_DEPLOYMENT_TARGET: '10.9'
           ARCHFLAGS: -arch x86_64 -arch arm64
-          PYO3_CROSS_LIB_DIR: /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.8/lib
         run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
           cd examples/namespace_package
           pip install build wheel
           python -m build --no-isolation
@@ -142,10 +148,6 @@ jobs:
           python-version: 3.9
 
       - uses: dtolnay/rust-toolchain@stable
-
-      - name: Install Rust aarch64-apple-darwin target
-        if: matrix.os == 'macos-latest'
-        run: rustup target add aarch64-apple-darwin
 
       - name: Build package
         run: pip install -e .
@@ -307,7 +309,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-apple-darwin
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
       - uses: pypa/cibuildwheel@v2.17.0
         env:
           CIBW_BUILD: cp39-*
