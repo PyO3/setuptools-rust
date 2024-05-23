@@ -610,9 +610,13 @@ def _replace_vendor_with_unknown(target: str) -> Optional[str]:
 def _prepare_build_environment() -> Dict[str, str]:
     """Prepares environment variables to use when executing cargo build."""
 
+    executable = getattr(sys, "_base_executable", sys.executable)
+    if not os.path.exists(executable):
+        executable = sys.executable
+
     # Make sure that if pythonXX-sys is used, it builds against the current
     # executing python interpreter.
-    bindir = os.path.dirname(sys.executable)
+    bindir = os.path.dirname(executable)
 
     env = os.environ.copy()
     env.update(
@@ -622,9 +626,9 @@ def _prepare_build_environment() -> Dict[str, str]:
             # interpreter from the path.
             "PATH": os.path.join(bindir, os.environ.get("PATH", "")),
             "PYTHON_SYS_EXECUTABLE": os.environ.get(
-                "PYTHON_SYS_EXECUTABLE", sys.executable
+                "PYTHON_SYS_EXECUTABLE", executable
             ),
-            "PYO3_PYTHON": os.environ.get("PYO3_PYTHON", sys.executable),
+            "PYO3_PYTHON": os.environ.get("PYO3_PYTHON", executable),
         }
     )
     return env
