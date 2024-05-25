@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+### Changed
+ - Use the base interpreter path when running inside a virtual environment to avoid recompilation when switching between virtual environments. [#429](https://github.com/PyO3/setuptools-rust/pull/429)
+
 ## 1.9.0 (2024-02-24)
 ### Changed
 - Deprecate `py_limited_api` option to `RustExtension` in favour of always using `"auto"` to configure this from `bdist_wheel`. [#410](https://github.com/PyO3/setuptools-rust/pull/410)
