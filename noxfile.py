@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import nox
+import nox.command
 
 
 @nox.session(name="test-examples", venv_backend="none")
@@ -167,14 +168,10 @@ def test_mingw(session: nox.Session):
         kwargs["external"] = True
         oldrun(*args, **kwargs)
 
-    def chdir(path: Path):
-        print(path)
-        os.chdir(path)
-
     examples = Path(os.path.dirname(__file__)).absolute() / "examples"
 
     with patch.object(nox.command, "run", newrun):
-        session.install(".")
+        session.install(".", "wheel")
 
         session.install("--no-build-isolation", str(examples / "hello-world"))
         session.run("print-hello")
@@ -185,13 +182,17 @@ def test_mingw(session: nox.Session):
         session.install("--no-build-isolation", str(examples / "html-py-ever"))
         session.run("pytest", str(examples / "html-py-ever"))
 
-        session.install("pytest")
-        session.install("--no-build-isolation", str(examples / "html-py-ever"))
-        session.run("pytest", str(examples / "html-py-ever"))
+        session.install("--no-build-isolation", str(examples / "namespace_package"))
+        session.run("pytest", str(examples / "namespace_package"))
 
-        session.install("pytest", "cffi<1.16")
-        session.install("--no-build-isolation", str(examples / "html-py-ever"))
-        session.run("pytest", str(examples / "html-py-ever"))
+        try:
+            session.install("cffi", "--only-binary=cffi")
+        except nox.command.CommandFailed:
+            # no compatible cffi currently available on mingw
+            pass
+        else:
+            session.install("--no-build-isolation", str(examples / "rust_with_cffi"))
+            session.run("pytest", str(examples / "rust_with_cffi"))
 
 
 @nox.session(name="test-examples-emscripten")
