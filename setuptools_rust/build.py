@@ -190,8 +190,8 @@ class build_rust(RustCommand):
                     *ext.rustc_flags,
                 ]
 
-            # OSX requires special linker arguments
-            if rustc_cfgs.get("target_os") == "macos":
+            # Apple platforms require special linker arguments
+            if rustc_cfgs.get("target_os") in {"macos", "ios", "tvos", "watchos"}:
                 ext_basename = os.path.basename(self.get_dylib_ext_path(ext, ext.name))
                 rustc_args.extend(
                     [
