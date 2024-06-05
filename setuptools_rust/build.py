@@ -610,8 +610,10 @@ def _replace_vendor_with_unknown(target: str) -> Optional[str]:
 def _prepare_build_environment() -> Dict[str, str]:
     """Prepares environment variables to use when executing cargo build."""
 
-    executable = getattr(sys, "_base_executable", sys.executable)
-    if not os.path.exists(executable):
+    base_executable = getattr(sys, "_base_executable")
+    if base_executable and os.path.exists(base_executable):
+        executable = os.path.realpath(base_executable)
+    else:
         executable = sys.executable
 
     # Make sure that if pythonXX-sys is used, it builds against the current
