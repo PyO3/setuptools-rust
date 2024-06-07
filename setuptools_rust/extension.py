@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 import re
@@ -14,11 +16,13 @@ from typing import (
     NewType,
     Optional,
     Sequence,
+    TYPE_CHECKING,
     Union,
     cast,
 )
 
-from semantic_version import SimpleSpec
+if TYPE_CHECKING:
+    from semantic_version import SimpleSpec
 
 from ._utils import format_called_process_error
 
@@ -185,6 +189,7 @@ class RustExtension:
         if self.rust_version is None:
             return None
         try:
+            from semantic_version import SimpleSpec
             return SimpleSpec(self.rust_version)
         except ValueError:
             raise SetupError(
