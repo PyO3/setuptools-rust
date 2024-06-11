@@ -26,7 +26,6 @@ classifiers = [
 dependencies = [
     "setuptools>=62.4",
     "semantic_version>=2.8.2,<3",
-    'tomli>=1.2.1; python_version<"3.11"'
 ]
 
 [project.entry-points."distutils.commands"]

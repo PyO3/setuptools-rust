@@ -1,15 +1,20 @@
+from __future__ import annotations
+
 import subprocess
 from setuptools.errors import PlatformError
 from functools import lru_cache
-from typing import Dict, List, NewType, Optional
+from typing import Dict, List, NewType, Optional, TYPE_CHECKING
 
-from semantic_version import Version
+if TYPE_CHECKING:
+    from semantic_version import Version
 
 
 def get_rust_version() -> Optional[Version]:  # type: ignore[no-any-unimported]
     try:
         # first line of rustc -Vv is something like
         # rustc 1.61.0 (fe5b13d68 2022-05-18)
+        from semantic_version import Version
+
         return Version(_rust_version().split(" ")[1])
     except (subprocess.CalledProcessError, OSError):
         return None

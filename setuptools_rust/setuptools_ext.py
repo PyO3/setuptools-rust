@@ -26,7 +26,10 @@ except ImportError:
 if sys.version_info[:2] >= (3, 11):
     from tomllib import load as toml_load
 else:
-    from tomli import load as toml_load
+    try:
+        from tomli import load as toml_load
+    except ImportError:
+        from setuptools.extern.tomli import load as toml_load
 
 
 logger = logging.getLogger(__name__)
