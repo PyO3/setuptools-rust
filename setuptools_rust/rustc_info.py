@@ -14,6 +14,7 @@ def get_rust_version() -> Optional[Version]:  # type: ignore[no-any-unimported]
         # first line of rustc -Vv is something like
         # rustc 1.61.0 (fe5b13d68 2022-05-18)
         from semantic_version import Version
+
         return Version(_rust_version().split(" ")[1])
     except (subprocess.CalledProcessError, OSError):
         return None

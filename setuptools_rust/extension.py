@@ -190,6 +190,7 @@ class RustExtension:
             return None
         try:
             from semantic_version import SimpleSpec
+
             return SimpleSpec(self.rust_version)
         except ValueError:
             raise SetupError(
