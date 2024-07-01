@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.10.0 (2024-07-01)
 ### Packaging
+- Extend macOS build flags to iOS, tvOS and watchOS. [#436](https://github.com/PyO3/setuptools-rust/pull/436)
 - Support Python 3.13. [#446](https://github.com/PyO3/setuptools-rust/pull/446)
 
 ### Changed
