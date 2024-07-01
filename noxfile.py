@@ -141,7 +141,7 @@ python3 -c "from rust_with_cffi.cffi import lib; assert lib.cffi_func() == 15"
 def ruff(session: nox.Session):
     session.install("ruff")
     session.run("ruff", "format", "--check", ".")
-    session.run("ruff", ".")
+    session.run("ruff", "check", ".")
 
 
 @nox.session()
