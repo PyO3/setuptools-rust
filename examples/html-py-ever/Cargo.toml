@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 kuchiki = "0.8.0"
-pyo3 = "0.22.0"
+pyo3 = "0.22.2"
 tendril = "0.4.3"
 
 [lib]
