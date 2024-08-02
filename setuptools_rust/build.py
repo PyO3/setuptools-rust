@@ -610,7 +610,10 @@ def _replace_vendor_with_unknown(target: str) -> Optional[str]:
 def _prepare_build_environment() -> Dict[str, str]:
     """Prepares environment variables to use when executing cargo build."""
 
-    base_executable = getattr(sys, "_base_executable")
+    base_executable = None
+    if os.getenv("SETUPTOOLS_RUST_PEP517_USE_BASE_PYTHON"):
+        base_executable = getattr(sys, "_base_executable")
+
     if base_executable and os.path.exists(base_executable):
         executable = os.path.realpath(base_executable)
     else:
