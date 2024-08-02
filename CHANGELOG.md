@@ -5,7 +5,7 @@
 - Support Python 3.13. [#446](https://github.com/PyO3/setuptools-rust/pull/446)
 
 ### Changed
- - Use the base interpreter path when running inside a virtual environment to avoid recompilation when switching between virtual environments. [#429](https://github.com/PyO3/setuptools-rust/pull/429)
+ - Add `SETUPTOOLS_RUST_PEP517_USE_BASE_PYTHON` environment variable to use the base interpreter path when running inside a virtual environment to avoid recompilation when switching between virtual environments. [#429](https://github.com/PyO3/setuptools-rust/pull/429)
  - Delay import of dependencies until use to avoid import errors during a partially complete install when multiple packages are installing at once. [#437](https://github.com/PyO3/setuptools-rust/pull/437)
  - Deprecate `--build-temp` argument to `build_rust` command (it does nothing). [#457](https://github.com/PyO3/setuptools-rust/pull/457)
 
