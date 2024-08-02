@@ -8,6 +8,7 @@ import subprocess
 import sys
 import sysconfig
 import logging
+import warnings
 from setuptools.errors import (
     CompileError,
     ExecError,
@@ -19,7 +20,6 @@ from pathlib import Path
 from typing import Dict, List, Literal, NamedTuple, Optional, Set, Tuple, cast
 
 from setuptools import Distribution
-from setuptools.command.build import build as CommandBuild
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
 from setuptools.command.install_scripts import install_scripts as CommandInstallScripts
@@ -75,28 +75,27 @@ class build_rust(RustCommand):
     ]
     boolean_options = ["inplace", "debug", "release", "qbuild"]
 
+    inplace: bool = False
+    debug: bool = False
+    release: bool = False
+    qbuild: bool = False
+
     plat_name: Optional[str] = None
+    build_temp: Optional[str] = None
 
     def initialize_options(self) -> None:
         super().initialize_options()
-        self.inplace = None
-        self.debug = None
-        self.release = None
-        self.qbuild = None
-        self.build_temp = None
-        self.plat_name = None
-        self.build_number = None
         self.target = os.getenv("CARGO_BUILD_TARGET")
         self.cargo = os.getenv("CARGO", "cargo")
 
     def finalize_options(self) -> None:
         super().finalize_options()
 
-        if self.plat_name is None:
-            self.plat_name = cast(
-                CommandBuild, self.get_finalized_command("build")
-            ).plat_name
-            assert isinstance(self.plat_name, str)
+        # Inherit settings from the `build` and `build_ext` commands
+        self.set_undefined_options(
+            "build",
+            ("plat_name", "plat_name"),
+        )
 
         # Inherit settings from the `build_ext` command
         self.set_undefined_options(
@@ -106,8 +105,11 @@ class build_rust(RustCommand):
             ("inplace", "inplace"),
         )
 
-        if self.build_number is not None and not self.build_number[:1].isdigit():
-            raise ValueError("Build tag (build-number) must start with a digit.")
+        if self.build_temp is not None:
+            warnings.warn(
+                "`--build-temp` argument does nothing for Rust extensions, set `CARGO_TARGET_DIR` instead.",
+                DeprecationWarning,
+            )
 
     def run_for_extension(self, ext: RustExtension) -> None:
         assert self.plat_name is not None
