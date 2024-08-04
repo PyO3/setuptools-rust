@@ -329,10 +329,7 @@ class build_rust(RustCommand):
     def install_extension(
         self, ext: RustExtension, dylib_paths: List["_BuiltModule"]
     ) -> None:
-        debug_build = ext.debug if ext.debug is not None else self.inplace
-        debug_build = self.debug if self.debug is not None else debug_build
-        if self.release:
-            debug_build = False
+        debug_build = self._is_debug_build(ext)
 
         # Ask build_ext where the shared library would go if it had built it,
         # then copy it there.
@@ -502,8 +499,8 @@ class build_rust(RustCommand):
     def _is_debug_build(self, ext: RustExtension) -> bool:
         if self.release:
             return False
-        elif self.debug is not None:
-            return self.debug
+        elif self.debug:
+            return True
         elif ext.debug is not None:
             return ext.debug
         else:
