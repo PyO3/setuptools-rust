@@ -230,16 +230,16 @@ class build_rust(RustCommand):
                 *rustc_args,
             ]
 
-        if rustflags:
-            existing_rustflags = env.get("RUSTFLAGS")
-            if existing_rustflags is not None:
-                rustflags.append(existing_rustflags)
-            new_rustflags = " ".join(rustflags)
-            env["RUSTFLAGS"] = new_rustflags
+        # order is important
+        new_rustflags = list(filter(None, (rustflags, env.get("RUSTFLAGS"))))
+
+        if new_rustflags:
+            new_rustflags_str = " ".join(new_rustflags)
+            env["RUSTFLAGS"] = new_rustflags_str
 
             # print RUSTFLAGS being added before the command
             if not quiet:
-                print(f"[RUSTFLAGS={new_rustflags}]", end=" ", file=sys.stderr)
+                print(f"[RUSTFLAGS={new_rustflags_str}]", end=" ", file=sys.stderr)
 
         if not quiet:
             print(" ".join(command), file=sys.stderr)
