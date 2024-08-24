@@ -231,7 +231,7 @@ class build_rust(RustCommand):
             ]
 
         # order is important
-        new_rustflags = list(filter(None, (rustflags, env.get("RUSTFLAGS"))))
+        new_rustflags = list(filter(None, (rustflags, os.getenv("RUSTFLAGS"))))
 
         if new_rustflags:
             new_rustflags_str = " ".join(new_rustflags)
