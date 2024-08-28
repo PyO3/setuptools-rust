@@ -19,9 +19,12 @@ from .build import _get_bdist_wheel_cmd
 from .extension import Binding, RustBin, RustExtension, Strip
 
 try:
-    from wheel.bdist_wheel import bdist_wheel
+    from setuptools.command.bdist_wheel import bdist_wheel
 except ImportError:
-    bdist_wheel = None
+    try:  # old version of setuptools
+        from wheel.bdist_wheel import bdist_wheel
+    except ImportError:
+        bdist_wheel = None
 
 if sys.version_info[:2] >= (3, 11):
     from tomllib import load as toml_load

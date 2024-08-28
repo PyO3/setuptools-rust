@@ -37,8 +37,8 @@ logger = logging.getLogger(__name__)
 
 
 try:
-    from wheel.bdist_wheel import bdist_wheel as CommandBdistWheel
-except ImportError:  # wheel installation might be deferred in PEP 517
+    from setuptools.command.bdist_wheel import bdist_wheel as CommandBdistWheel
+except ImportError:  # old version of setuptools
     from setuptools import Command as CommandBdistWheel
 
 
