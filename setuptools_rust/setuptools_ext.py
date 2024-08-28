@@ -22,9 +22,9 @@ try:
     from setuptools.command.bdist_wheel import bdist_wheel
 except ImportError:
     try:  # old version of setuptools
-        from wheel.bdist_wheel import bdist_wheel
+        from wheel.bdist_wheel import bdist_wheel  # type: ignore[no-redef]
     except ImportError:
-        bdist_wheel = None
+        bdist_wheel = None  # type: ignore[assignment,misc]
 
 if sys.version_info[:2] >= (3, 11):
     from tomllib import load as toml_load

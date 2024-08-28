@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 try:
     from setuptools.command.bdist_wheel import bdist_wheel as CommandBdistWheel
 except ImportError:  # old version of setuptools
-    from setuptools import Command as CommandBdistWheel
+    from setuptools import Command as CommandBdistWheel  # type: ignore[assignment]
 
 
 def _check_cargo_supports_crate_type_option() -> bool:
