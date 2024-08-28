@@ -7,7 +7,7 @@ SETUPTOOLS_RUST = dirname(dirname(dirname(__file__)))
 
 @nox.session()
 def test(session: nox.Session):
-    session.install(SETUPTOOLS_RUST, "wheel", "build", "pytest")
+    session.install(SETUPTOOLS_RUST, "build", "pytest")
     # Ensure build works as intended
     session.install("--no-build-isolation", ".")
     # Test Rust binary

@@ -7,7 +7,7 @@ SETUPTOOLS_RUST = dirname(dirname(dirname(__file__)))
 
 @nox.session()
 def test(session: nox.Session):
-    session.install(SETUPTOOLS_RUST, "wheel", "pytest")
+    session.install(SETUPTOOLS_RUST, "pytest")
 
     try:
         session.install("cffi", "--only-binary=cffi")

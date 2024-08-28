@@ -1,3 +1,2 @@
 setuptools-rust
-setuptools
-wheel
+setuptools>=70.1.0
