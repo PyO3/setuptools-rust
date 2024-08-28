@@ -120,7 +120,7 @@ jobs:
           rustup target add aarch64-apple-darwin
           rustup target add x86_64-apple-darwin
           cd examples/namespace_package
-          pip install build wheel
+          pip install build
           python -m build --no-isolation
           ls -l dist/
           pip install --force-reinstall dist/namespace_package*_universal2.whl
@@ -163,7 +163,7 @@ jobs:
           set -e
           cd examples/rust_with_cffi/
           python --version
-          pip install -U build cffi wheel
+          pip install -U build cffi 'setuptools>=70.1,<74'  # TODO: Remove pin once python-cffi/cffi#117 is solved
           echo -e "[bdist_wheel]\npy_limited_api=cp39" > $DIST_EXTRA_CONFIG
           python -m build --no-isolation
           ls -la dist/
@@ -180,7 +180,6 @@ jobs:
         run: |
           set -e
           cd examples/
-          pip install -U wheel
           python --version
           pip install rust_with_cffi/dist/rust_with_cffi*.whl
           python -c "from rust_with_cffi import rust; assert rust.rust_func() == 14"
@@ -235,7 +234,7 @@ jobs:
         run: |
           cd examples/namespace_package
           docker build -t cross-pyo3:aarch64-unknown-linux-gnu .
-          python -m pip install build wheel
+          python -m pip install build
           echo -e "[bdist_wheel]\nplat_name=manylinux2014_aarch64" > $DIST_EXTRA_CONFIG
           python -m build --no-isolation
           ls -la dist/
@@ -283,7 +282,7 @@ jobs:
           mkdir -p $PYO3_CROSS_LIB_DIR
           docker cp -L $(docker create --rm quay.io/pypa/manylinux2014_aarch64:latest):/opt/python/cp38-cp38 /opt/python
           cd examples/namespace_package
-          python -m pip install build wheel
+          python -m pip install build
           echo -e "[bdist_wheel]\nplat_name=manylinux2014_aarch64" > $DIST_EXTRA_CONFIG
           python -m build --no-isolation
           ls -la dist/
@@ -315,7 +314,7 @@ jobs:
         env:
           CIBW_BUILD: cp39-*
           CIBW_BEFORE_BUILD: >
-            pip install -U 'pip>=23.2.1' 'setuptools>=68.0.0' 'wheel>=0.41.2' 'auditwheel>=5.4.0'
+            pip install -U 'pip>=23.2.1' 'setuptools>=70.1.0' 'auditwheel>=5.4.0'
             && pip install -e .
             && pip list
           CIBW_ARCHS_MACOS: "x86_64 universal2 arm64"
@@ -354,7 +353,7 @@ jobs:
 
       - name: Install test dependencies
         shell: msys2 {0}
-        run: python -m pip install --upgrade nox pip wheel
+        run: python -m pip install --upgrade nox pip
 
       - name: Create libpython symlink
         shell: msys2 {0}
