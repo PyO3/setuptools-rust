@@ -14,6 +14,9 @@ def test(session: nox.Session):
     except nox.command.CommandFailed:
         session.skip("cffi not available on this platform")
 
+    session.install("setuptools<74.0.0")
+    # TODO: Remove custom installation once python-cffi/cffi#117 is solved
+
     # Ensure build uses version of setuptools-rust under development
     session.install("--no-build-isolation", ".")
     # Test Python package

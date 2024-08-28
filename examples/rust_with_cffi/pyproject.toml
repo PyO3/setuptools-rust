@@ -1,3 +1,7 @@
 [build-system]
-requires = ["setuptools", "setuptools-rust", "cffi"]
+requires = [
+  "setuptools<74.0.0", # TODO: Remove pin once python-cffi/cffi#117 is solved
+  "setuptools-rust",
+  "cffi"
+]
 build-backend = "setuptools.build_meta"
