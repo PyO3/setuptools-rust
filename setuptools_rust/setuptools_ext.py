@@ -254,7 +254,7 @@ def add_rust_extension(dist: Distribution) -> None:
     dist.cmdclass["install_scripts"] = install_scripts_rust_extension
 
     if bdist_wheel is not None:
-        bdist_wheel_base_class = cast(  # type: ignore[no-any-unimported]
+        bdist_wheel_base_class = cast(
             Type[bdist_wheel], dist.cmdclass.get("bdist_wheel", bdist_wheel)
         )
         bdist_wheel_options = bdist_wheel_base_class.user_options.copy()

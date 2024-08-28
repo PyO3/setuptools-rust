@@ -789,12 +789,12 @@ def _replace_cross_target_dir(path: str, ext: RustExtension, *, quiet: bool) -> 
     return path.replace(cross_target_dir, local_target_dir)
 
 
-def _get_bdist_wheel_cmd(  # type: ignore[no-any-unimported]
+def _get_bdist_wheel_cmd(
     dist: Distribution, create: Literal[True, False] = True
 ) -> Optional[CommandBdistWheel]:
     try:
         cmd_obj = dist.get_command_obj("bdist_wheel", create=create)
         cmd_obj.ensure_finalized()  # type: ignore[union-attr]
-        return cast(CommandBdistWheel, cmd_obj)  # type: ignore[no-any-unimported]
+        return cast(CommandBdistWheel, cmd_obj)
     except Exception:
         return None
