@@ -163,7 +163,7 @@ jobs:
           set -e
           cd examples/rust_with_cffi/
           python --version
-          pip install -U build cffi 'setuptools>=70.1,<74'  # TODO: Remove pin once python-cffi/cffi#117 is solved
+          pip install -U build cffi 'setuptools>=70.1'
           echo -e "[bdist_wheel]\npy_limited_api=cp39" > $DIST_EXTRA_CONFIG
           python -m build --no-isolation
           ls -la dist/
