@@ -19,9 +19,12 @@ from .build import _get_bdist_wheel_cmd
 from .extension import Binding, RustBin, RustExtension, Strip
 
 try:
-    from wheel.bdist_wheel import bdist_wheel
+    from setuptools.command.bdist_wheel import bdist_wheel
 except ImportError:
-    bdist_wheel = None
+    try:  # old version of setuptools
+        from wheel.bdist_wheel import bdist_wheel  # type: ignore[no-redef]
+    except ImportError:
+        bdist_wheel = None  # type: ignore[assignment,misc]
 
 if sys.version_info[:2] >= (3, 11):
     from tomllib import load as toml_load
@@ -251,7 +254,7 @@ def add_rust_extension(dist: Distribution) -> None:
     dist.cmdclass["install_scripts"] = install_scripts_rust_extension
 
     if bdist_wheel is not None:
-        bdist_wheel_base_class = cast(  # type: ignore[no-any-unimported]
+        bdist_wheel_base_class = cast(
             Type[bdist_wheel], dist.cmdclass.get("bdist_wheel", bdist_wheel)
         )
         bdist_wheel_options = bdist_wheel_base_class.user_options.copy()

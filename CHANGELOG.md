@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.10.2 (2024-10-01)
+### Fixed
+- Fix deprecation warning from use of `wheel.bdist_wheel`.
+
 ## 1.10.1 (2024-08-04)
 ### Fixed
 - Fix regression in 1.10.0 where editable builds would be built in release mode

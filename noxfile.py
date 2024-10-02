@@ -16,7 +16,7 @@ def test_examples(session: nox.Session):
 
 @nox.session(name="test-sdist-vendor")
 def test_sdist_vendor(session: nox.Session):
-    session.install(".", "build", "wheel")
+    session.install(".", "build")
     namespace_package = Path(__file__).parent / "examples" / "namespace_package"
     os.chdir(namespace_package)
     tmp = Path(session.create_tmp())
@@ -79,8 +79,8 @@ python3.11 -m pip install https://github.com/benfogle/crossenv/archive/refs/head
 python3.11 -m crossenv "/opt/python/cp311-cp311/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 /venv
 . /venv/bin/activate
 
-build-pip install -U 'pip>=23.2.1' 'setuptools>=68.0.0' 'wheel>=0.41.1' 'build>=1'
-cross-pip install -U 'pip>=23.2.1' 'setuptools>=68.0.0' 'wheel>=0.41.1' 'build>=1'
+build-pip install -U 'pip>=23.2.1' 'setuptools>=70.1' 'build>=1'
+cross-pip install -U 'pip>=23.2.1' 'setuptools>=70.1' 'build>=1'
 build-pip install cffi
 cross-expose cffi
 cross-pip install -e ../../
@@ -171,7 +171,7 @@ def test_mingw(session: nox.Session):
     examples = Path(os.path.dirname(__file__)).absolute() / "examples"
 
     with patch.object(nox.command, "run", newrun):
-        session.install(".", "wheel")
+        session.install(".")
 
         session.install("--no-build-isolation", str(examples / "hello-world"))
         session.run("print-hello")

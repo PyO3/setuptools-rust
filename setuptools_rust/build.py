@@ -37,9 +37,12 @@ logger = logging.getLogger(__name__)
 
 
 try:
-    from wheel.bdist_wheel import bdist_wheel as CommandBdistWheel
-except ImportError:  # wheel installation might be deferred in PEP 517
-    from setuptools import Command as CommandBdistWheel
+    from setuptools.command.bdist_wheel import bdist_wheel as CommandBdistWheel
+except ImportError:  # old version of setuptools
+    try:
+        from wheel.bdist_wheel import bdist_wheel as CommandBdistWheel  # type: ignore[no-redef]
+    except ImportError:
+        from setuptools import Command as CommandBdistWheel  # type: ignore[assignment]
 
 
 def _check_cargo_supports_crate_type_option() -> bool:
@@ -789,12 +792,12 @@ def _replace_cross_target_dir(path: str, ext: RustExtension, *, quiet: bool) -> 
     return path.replace(cross_target_dir, local_target_dir)
 
 
-def _get_bdist_wheel_cmd(  # type: ignore[no-any-unimported]
+def _get_bdist_wheel_cmd(
     dist: Distribution, create: Literal[True, False] = True
 ) -> Optional[CommandBdistWheel]:
     try:
         cmd_obj = dist.get_command_obj("bdist_wheel", create=create)
         cmd_obj.ensure_finalized()  # type: ignore[union-attr]
-        return cast(CommandBdistWheel, cmd_obj)  # type: ignore[no-any-unimported]
+        return cast(CommandBdistWheel, cmd_obj)
     except Exception:
         return None

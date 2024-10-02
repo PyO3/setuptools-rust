@@ -7,7 +7,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 # Compile wheels
 for PYBIN in /opt/python/cp{37,38,39,310}*/bin; do
     rm -rf /io/build/
-    "${PYBIN}/pip" install -U setuptools setuptools-rust wheel
+    "${PYBIN}/pip" install -U setuptools setuptools-rust
     "${PYBIN}/pip" wheel /io/ -w /io/dist/ --no-deps
 done
 

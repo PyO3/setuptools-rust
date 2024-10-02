@@ -96,7 +96,7 @@ test_bench_selector_python[/home/david/dev/setuptools-rust/examples/html-py-ever
 
 **building and installing**
 ```
-pip install setuptools-rust setuptools wheel
+pip install setuptools-rust setuptools
 python3 setup.py install --user
 ```
 
