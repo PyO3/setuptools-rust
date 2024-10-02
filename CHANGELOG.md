@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.10.2 (2024-10-01)
+## 1.10.2 (2024-10-02)
 ### Fixed
 - Fix deprecation warning from use of `wheel.bdist_wheel`.
 

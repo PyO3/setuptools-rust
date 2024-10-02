@@ -1,6 +1,6 @@
 [project]
 name = "setuptools-rust"
-version = "1.10.1"
+version = "1.10.2"
 description = "Setuptools Rust extension plugin"
 readme = "README.md"
 requires-python = ">=3.8"
