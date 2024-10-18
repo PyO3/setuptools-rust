@@ -3,7 +3,7 @@ name = "setuptools-rust"
 version = "1.10.2"
 description = "Setuptools Rust extension plugin"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 keywords = ["distutils", "setuptools", "rust"]
 authors = [
     {name = "Nikolay Kim", email = "fafhrd91@gmail.com"},
