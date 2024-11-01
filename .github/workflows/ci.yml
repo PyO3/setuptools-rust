@@ -271,7 +271,7 @@ jobs:
           python -m build --no-isolation
           ls -la dist/
           unzip -l dist/*.whl  # debug all files inside wheel file
-      - uses: uraimo/run-on-arch-action@v2.7.2
+      - uses: uraimo/run-on-arch-action@v2.8.1
         name: Install built wheel
         with:
           arch: aarch64
@@ -321,7 +321,7 @@ jobs:
           python -m build --no-isolation
           ls -la dist/
           unzip -l dist/*.whl  # debug all files inside wheel file
-      - uses: uraimo/run-on-arch-action@v2.7.2
+      - uses: uraimo/run-on-arch-action@v2.8.1
         name: Install built wheel
         with:
           arch: aarch64
