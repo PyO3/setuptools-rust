@@ -2,52 +2,8 @@ version: 2
 updates:
 
   - package-ecosystem: "cargo"
-    directory: "examples/hello-world"
-    schedule:
-      interval: "monthly"
-    groups:
-      deps:
-        patterns:
-          - "*"
-
-  - package-ecosystem: "cargo"
-    directory: "examples/hello-world-script"
-    schedule:
-      interval: "monthly"
-    groups:
-      deps:
-        patterns:
-          - "*"
-
-  - package-ecosystem: "cargo"
-    directory: "examples/hello-world-setuppy"
-    schedule:
-      interval: "monthly"
-    groups:
-      deps:
-        patterns:
-          - "*"
-
-  - package-ecosystem: "cargo"
-    directory: "examples/html-py-ever"
-    schedule:
-      interval: "monthly"
-    groups:
-      deps:
-        patterns:
-          - "*"
-
-  - package-ecosystem: "cargo"
-    directory: "examples/namespace_package"
-    schedule:
-      interval: "monthly"
-    groups:
-      deps:
-        patterns:
-          - "*"
-
-  - package-ecosystem: "cargo"
-    directory: "examples/rust_with_cffi"
+    directories:
+      - "examples/*"
     schedule:
       interval: "monthly"
     groups:
