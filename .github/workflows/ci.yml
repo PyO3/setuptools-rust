@@ -355,6 +355,7 @@ jobs:
           CIBW_ARCHS_MACOS: "x86_64 universal2 arm64"
           CIBW_BUILD_VERBOSITY: 3
           CIBW_BUILD_FRONTEND: "build; args: --no-isolation"
+          MACOSX_DEPLOYMENT_TARGET: 10.12
         with:
           package-dir: examples/namespace_package
 
