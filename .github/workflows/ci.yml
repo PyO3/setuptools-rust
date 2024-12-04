@@ -345,7 +345,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
-      - uses: pypa/cibuildwheel@v2.21.3
+      - uses: pypa/cibuildwheel@v2.22.0
         env:
           CIBW_BUILD: cp39-*
           CIBW_BEFORE_BUILD: >
@@ -355,6 +355,7 @@ jobs:
           CIBW_ARCHS_MACOS: "x86_64 universal2 arm64"
           CIBW_BUILD_VERBOSITY: 3
           CIBW_BUILD_FRONTEND: "build; args: --no-isolation"
+          MACOSX_DEPLOYMENT_TARGET: 10.12
         with:
           package-dir: examples/namespace_package
 
