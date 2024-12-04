@@ -403,7 +403,9 @@ jobs:
 
       - name: Create libpython symlink
         shell: msys2 {0}
-        run: ln -s /${{ matrix.path }}/lib/libpython3.11.dll.a /${{ matrix.path }}/lib/libpython311.dll.a
+        run: |
+          PYTHON_MINOR_VER=$(python -c "import sys; print(sys.version_info.minor)")
+          ln -s /${{ matrix.path }}/lib/libpython3.${PYTHON_MINOR_VER}.dll.a /${{ matrix.path }}/lib/libpython3${PYTHON_MINOR_VER}.dll.a
 
       - name: Test examples
         shell: msys2 {0}
