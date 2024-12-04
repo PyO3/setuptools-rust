@@ -5,7 +5,7 @@ authors = ["Alex Gaynor <alex.gaynor@gmail.com>"]
 edition = "2021"
 
 [dependencies]
-pyo3 = "0.22.5"
+pyo3 = "0.23.3"
 
 [lib]
 name = "rust_with_cffi"
