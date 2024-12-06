@@ -404,12 +404,19 @@ jobs:
 
       - name: Create libpython symlink
         shell: msys2 {0}
-        run: ln -s /${{ matrix.path }}/lib/libpython3.11.dll.a /${{ matrix.path }}/lib/libpython311.dll.a
+        run: |
+          PYTHON_MINOR_VER=$(python -c "import sys; print(sys.version_info.minor)")
+          ln -s /${{ matrix.path }}/lib/libpython3.${PYTHON_MINOR_VER}.dll.a /${{ matrix.path }}/lib/libpython3${PYTHON_MINOR_VER}.dll.a
 
       - name: Test examples
         shell: msys2 {0}
         run: |
           PATH="$PATH:/c/Users/runneradmin/.cargo/bin" nox -s test-mingw
+        env:
+          # Temporary hack; nox does not work properly on mingw
+          # https://github.com/PyO3/setuptools-rust/pull/501 is a better solution
+          # dependent on https://github.com/wntrblm/nox/pull/901
+          PIP_BREAK_SYSTEM_PACKAGES: 1
 
   test-emscripten:
     name: Test Emscripten
