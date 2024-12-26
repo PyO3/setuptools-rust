@@ -25,6 +25,6 @@ class clean_rust(RustCommand):
 
         # Execute cargo command
         try:
-            subprocess.check_output(args)
+            subprocess.check_output(args, env=ext.env.env)
         except Exception:
             pass

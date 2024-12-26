@@ -1,4 +1,28 @@
 import subprocess
+from typing import Optional
+
+
+class Env:
+    """Allow using ``functools.lru_cache`` with an environment variable dictionary.
+
+    Dictionaries are unhashable, but ``functools.lru_cache`` needs all parameters to
+    be hashable, which we solve which a custom ``__hash__``."""
+
+    env: Optional[dict[str, str]]
+
+    def __init__(self, env: Optional[dict[str, str]]):
+        self.env = env
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Env):
+            return False
+        return self.env == other.env
+
+    def __hash__(self) -> int:
+        if self.env is not None:
+            return hash(tuple(sorted(self.env.items())))
+        else:
+            return hash(None)
 
 
 def format_called_process_error(

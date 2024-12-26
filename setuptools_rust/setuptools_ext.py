@@ -96,7 +96,15 @@ def add_rust_extension(dist: Distribution) -> None:
                 #
                 # https://doc.rust-lang.org/cargo/commands/cargo-build.html#manifest-options
                 cargo_manifest_args: Set[str] = set()
+                env = None
                 for ext in self.distribution.rust_extensions:
+                    if env is not None:
+                        if ext.env != env:
+                            raise ValueError(
+                                "For vendoring, all extensions must have the same environment variables"
+                            )
+                    else:
+                        env = ext.env
                     manifest_paths.append(ext.path)
                     if ext.cargo_manifest_args:
                         cargo_manifest_args.update(ext.cargo_manifest_args)
@@ -120,7 +128,7 @@ def add_rust_extension(dist: Distribution) -> None:
                     # set --manifest-path before vendor_path and after --sync to workaround that
                     # See https://docs.rs/clap/latest/clap/struct.Arg.html#method.multiple for detail
                     command.extend(["--manifest-path", manifest_paths[0], vendor_path])
-                    subprocess.run(command, check=True)
+                    subprocess.run(command, check=True, env=env)
 
                     cargo_config = _CARGO_VENDOR_CONFIG
 
