@@ -52,8 +52,16 @@ class RustCommand(Command, ABC):
             return
 
         all_optional = all(ext.optional for ext in self.extensions)
+        # Use the environment of the first non-optional extension, or the first optional
+        # extension if there is no non-optional extension.
+        env = None
+        for ext in self.extensions:
+            if ext.env:
+                env = ext.env
+                if not ext.optional:
+                    break
         try:
-            version = get_rust_version()
+            version = get_rust_version(env)
             if version is None:
                 min_version = max(  # type: ignore[type-var]
                     filter(
