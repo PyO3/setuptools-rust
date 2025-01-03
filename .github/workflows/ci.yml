@@ -400,16 +400,18 @@ jobs:
 
       - name: Install test dependencies
         shell: msys2 {0}
-        run: python -m pip install --upgrade nox pip
+        # TODO: use stable nox after the targeted commit is released
+        run: python -m pip install --upgrade pip 'nox @ git+https://github.com/wntrblm/nox.git@60acbbe5574e4458931d96ac4733b91d0db1b50d'
 
       - name: Create libpython symlink
         shell: msys2 {0}
-        run: ln -s /${{ matrix.path }}/lib/libpython3.11.dll.a /${{ matrix.path }}/lib/libpython311.dll.a
+        run: |
+          PYTHON_MINOR_VER=$(python -c "import sys; print(sys.version_info.minor)")
+          ln -s /${{ matrix.path }}/lib/libpython3.${PYTHON_MINOR_VER}.dll.a /${{ matrix.path }}/lib/libpython3${PYTHON_MINOR_VER}.dll.a
 
       - name: Test examples
         shell: msys2 {0}
-        run: |
-          PATH="$PATH:/c/Users/runneradmin/.cargo/bin" nox -s test-mingw
+        run: PATH="$PATH:/c/Users/runneradmin/.cargo/bin" nox -s test-examples
 
   test-emscripten:
     name: Test Emscripten
