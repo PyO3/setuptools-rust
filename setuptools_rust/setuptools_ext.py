@@ -98,14 +98,19 @@ def add_rust_extension(dist: Distribution) -> None:
                 # https://doc.rust-lang.org/cargo/commands/cargo-build.html#manifest-options
                 cargo_manifest_args: Set[str] = set()
                 env: Optional[Env] = None
+                env_source: Optional[str] = None
                 for ext in self.distribution.rust_extensions:
                     if env is not None:
                         if ext.env != env:
                             raise ValueError(
-                                "For vendoring, all extensions must have the same environment variables"
+                                f"For vendoring, all extensions must have the same environment variables, "
+                                f"but {env_source} and {ext.name} differ:\n"
+                                f"{env_source}: {env}\n"
+                                f"{ext.name}: {ext.env}"
                             )
                     else:
                         env = ext.env
+                        env_source = ext.name
                     manifest_paths.append(ext.path)
                     if ext.cargo_manifest_args:
                         cargo_manifest_args.update(ext.cargo_manifest_args)
