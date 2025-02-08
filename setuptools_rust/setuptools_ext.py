@@ -15,6 +15,7 @@ from setuptools.command.install_scripts import install_scripts
 from setuptools.command.sdist import sdist
 from setuptools.dist import Distribution
 
+from ._utils import Env
 from .build import _get_bdist_wheel_cmd
 from .extension import Binding, RustBin, RustExtension, Strip
 
@@ -51,7 +52,7 @@ def add_rust_extension(dist: Distribution) -> None:
             (
                 "no-vendor-crates",
                 None,
-                "don't vendor Rust crates." "[default; enable with --vendor-crates]",
+                "don't vendor Rust crates.[default; enable with --vendor-crates]",
             ),
         ]
     )
@@ -96,7 +97,20 @@ def add_rust_extension(dist: Distribution) -> None:
                 #
                 # https://doc.rust-lang.org/cargo/commands/cargo-build.html#manifest-options
                 cargo_manifest_args: Set[str] = set()
+                env: Optional[Env] = None
+                env_source: Optional[str] = None
                 for ext in self.distribution.rust_extensions:
+                    if env is not None:
+                        if ext.env != env:
+                            raise ValueError(
+                                f"For vendoring, all extensions must have the same environment variables, "
+                                f"but {env_source} and {ext.name} differ:\n"
+                                f"{env_source}: {env}\n"
+                                f"{ext.name}: {ext.env}"
+                            )
+                    else:
+                        env = ext.env
+                        env_source = ext.name
                     manifest_paths.append(ext.path)
                     if ext.cargo_manifest_args:
                         cargo_manifest_args.update(ext.cargo_manifest_args)
@@ -120,7 +134,7 @@ def add_rust_extension(dist: Distribution) -> None:
                     # set --manifest-path before vendor_path and after --sync to workaround that
                     # See https://docs.rs/clap/latest/clap/struct.Arg.html#method.multiple for detail
                     command.extend(["--manifest-path", manifest_paths[0], vendor_path])
-                    subprocess.run(command, check=True)
+                    subprocess.run(command, check=True, env=env.env if env else None)
 
                     cargo_config = _CARGO_VENDOR_CONFIG
 
