@@ -4,6 +4,7 @@
 ### Packaging
 - Drop support for Python 3.8. [#479](https://github.com/PyO3/setuptools-rust/pull/479)
 - Support free-threaded Python. [#502](https://github.com/PyO3/setuptools-rust/pull/502)
+- Support adding custom env vars. [#504](https://github.com/PyO3/setuptools-rust/pull/504)
 
 ## 1.10.2 (2024-10-02)
 ### Fixed
