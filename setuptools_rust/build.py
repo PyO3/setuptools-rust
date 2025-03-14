@@ -24,7 +24,12 @@ from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
 from setuptools.command.install_scripts import install_scripts as CommandInstallScripts
 
-from ._utils import check_subprocess_output, format_called_process_error, Env
+from ._utils import (
+    check_subprocess_output,
+    format_called_process_error,
+    Env,
+    run_subprocess,
+)
 from .command import RustCommand
 from .extension import Binding, RustBin, RustExtension, Strip
 from .rustc_info import (
@@ -252,12 +257,14 @@ class build_rust(RustCommand):
             # If quiet, capture all output and only show it in the exception
             # If not quiet, forward all cargo output to stderr
             stderr = subprocess.PIPE if quiet else None
-            cargo_messages = check_subprocess_output(
+            cargo_messages = run_subprocess(
                 command,
                 env=env,
+                check=True,
+                stdout=subprocess.PIPE,
                 stderr=stderr,
                 text=True,
-            )
+            ).stdout
         except subprocess.CalledProcessError as e:
             # Don't include stdout in the formatted error as it is a huge dump
             # of cargo json lines which aren't helpful for the end user.

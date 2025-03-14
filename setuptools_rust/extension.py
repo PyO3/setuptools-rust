@@ -24,7 +24,7 @@ from typing import (
 if TYPE_CHECKING:
     from semantic_version import SimpleSpec
 
-from ._utils import check_subprocess_output, format_called_process_error, Env
+from ._utils import format_called_process_error, Env, run_subprocess
 
 
 class Binding(IntEnum):
@@ -265,9 +265,14 @@ class RustExtension:
             # If quiet, capture stderr and only show it on exceptions
             # If not quiet, let stderr be inherited
             stderr = subprocess.PIPE if quiet else None
-            payload = check_subprocess_output(
-                metadata_command, stderr=stderr, encoding="latin-1", env=self.env.env
-            )
+            payload = run_subprocess(
+                metadata_command,
+                env=self.env,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=stderr,
+                encoding="latin-1",
+            ).stdout
         except subprocess.CalledProcessError as e:
             raise SetupError(format_called_process_error(e))
         try:
