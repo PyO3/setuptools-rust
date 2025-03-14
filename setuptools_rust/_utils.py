@@ -1,5 +1,5 @@
 import subprocess
-from typing import Any, Optional
+from typing import Any, Optional, Union, cast
 
 
 class Env:
@@ -26,19 +26,23 @@ class Env:
 
 
 def run_subprocess(
-    *args: Any, env: Optional[Env], **kwargs: Any
+    *args: Any, env: Union[Env, dict[str, str], None], **kwargs: Any
 ) -> subprocess.CompletedProcess:
-    """Wrapper around subprocess.run that requires a decision to pass an Env object."""
-    if env is not None:
-        kwargs["env"] = env.env
+    """Wrapper around subprocess.run that requires a decision to pass env."""
+    if isinstance(env, Env):
+        env = env.env
+    kwargs["env"] = env
     return subprocess.run(*args, **kwargs)  # noqa: TID251 # this is a wrapper to implement the rule
 
 
-def check_subprocess_output(*args: Any, env: Optional[Env], **kwargs: Any) -> str:
-    """Wrapper around subprocess.run that requires a decision to pass an Env object."""
-    if env is not None:
-        kwargs["env"] = env.env
-    return subprocess.check_output(*args, **kwargs)  # noqa: TID251 # this is a wrapper to implement the rule
+def check_subprocess_output(
+    *args: Any, env: Union[Env, dict[str, str], None], **kwargs: Any
+) -> str:
+    """Wrapper around subprocess.run that requires a decision to pass env."""
+    if isinstance(env, Env):
+        env = env.env
+    kwargs["env"] = env
+    return cast(str, subprocess.check_output(*args, **kwargs))  # noqa: TID251 # this is a wrapper to implement the rule
 
 
 def format_called_process_error(
