@@ -24,7 +24,7 @@ from typing import (
 if TYPE_CHECKING:
     from semantic_version import SimpleSpec
 
-from ._utils import format_called_process_error
+from ._utils import check_subprocess_output, format_called_process_error, Env
 
 
 class Binding(IntEnum):
@@ -112,6 +112,9 @@ class RustExtension:
             abort the build process, and instead simply not install the failing
             extension.
         py_limited_api: Deprecated.
+        env: Environment variables to use when calling cargo or rustc (``env=``
+            in ``subprocess.Popen``). setuptools-rust may add additional
+            variables or modify ``PATH``.
     """
 
     def __init__(
@@ -131,6 +134,7 @@ class RustExtension:
         native: bool = False,
         optional: bool = False,
         py_limited_api: Literal["auto", True, False] = "auto",
+        env: Optional[Dict[str, str]] = None,
     ):
         if isinstance(target, dict):
             name = "; ".join("%s=%s" % (key, val) for key, val in target.items())
@@ -153,6 +157,7 @@ class RustExtension:
         self.script = script
         self.optional = optional
         self.py_limited_api = py_limited_api
+        self.env = Env(env)
 
         if native:
             warnings.warn(
@@ -260,8 +265,8 @@ class RustExtension:
             # If quiet, capture stderr and only show it on exceptions
             # If not quiet, let stderr be inherited
             stderr = subprocess.PIPE if quiet else None
-            payload = subprocess.check_output(
-                metadata_command, stderr=stderr, encoding="latin-1"
+            payload = check_subprocess_output(
+                metadata_command, stderr=stderr, encoding="latin-1", env=self.env.env
             )
         except subprocess.CalledProcessError as e:
             raise SetupError(format_called_process_error(e))
@@ -319,6 +324,7 @@ class RustBin(RustExtension):
         debug: Optional[bool] = None,
         strip: Strip = Strip.No,
         optional: bool = False,
+        env: Optional[dict[str, str]] = None,
     ):
         super().__init__(
             target=target,
@@ -333,6 +339,7 @@ class RustBin(RustExtension):
             optional=optional,
             strip=strip,
             py_limited_api=False,
+            env=env,
         )
 
     def entry_points(self) -> List[str]:

@@ -24,7 +24,7 @@ from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
 from setuptools.command.install_scripts import install_scripts as CommandInstallScripts
 
-from ._utils import format_called_process_error
+from ._utils import check_subprocess_output, format_called_process_error, Env
 from .command import RustCommand
 from .extension import Binding, RustBin, RustExtension, Strip
 from .rustc_info import (
@@ -45,8 +45,8 @@ except ImportError:  # old version of setuptools
         from setuptools import Command as CommandBdistWheel  # type: ignore[assignment]
 
 
-def _check_cargo_supports_crate_type_option() -> bool:
-    version = get_rust_version()
+def _check_cargo_supports_crate_type_option(env: Optional[Env]) -> bool:
+    version = get_rust_version(env)
 
     if version is None:
         return False
@@ -144,10 +144,10 @@ class build_rust(RustCommand):
     def build_extension(
         self, ext: RustExtension, forced_target_triple: Optional[str] = None
     ) -> List["_BuiltModule"]:
-        target_triple = self._detect_rust_target(forced_target_triple)
-        rustc_cfgs = get_rustc_cfgs(target_triple)
+        target_triple = self._detect_rust_target(forced_target_triple, ext.env)
+        rustc_cfgs = get_rustc_cfgs(target_triple, ext.env)
 
-        env = _prepare_build_environment()
+        env = _prepare_build_environment(ext.env)
 
         if not os.path.exists(ext.path):
             raise FileError(
@@ -156,7 +156,7 @@ class build_rust(RustCommand):
 
         quiet = self.qbuild or ext.quiet
         debug = self._is_debug_build(ext)
-        use_cargo_crate_type = _check_cargo_supports_crate_type_option()
+        use_cargo_crate_type = _check_cargo_supports_crate_type_option(ext.env)
 
         package_id = ext.metadata(quiet=quiet)["resolve"]["root"]
         if package_id is None:
@@ -252,7 +252,7 @@ class build_rust(RustCommand):
             # If quiet, capture all output and only show it in the exception
             # If not quiet, forward all cargo output to stderr
             stderr = subprocess.PIPE if quiet else None
-            cargo_messages = subprocess.check_output(
+            cargo_messages = check_subprocess_output(
                 command,
                 env=env,
                 stderr=stderr,
@@ -417,7 +417,7 @@ class build_rust(RustCommand):
                     args.insert(0, "strip")
                     args.append(ext_path)
                     try:
-                        subprocess.check_output(args)
+                        check_subprocess_output(args, env=None)
                     except subprocess.CalledProcessError:
                         pass
 
@@ -477,7 +477,7 @@ class build_rust(RustCommand):
             return cast(_PyLimitedApi, bdist_wheel.py_limited_api)
 
     def _detect_rust_target(
-        self, forced_target_triple: Optional[str] = None
+        self, forced_target_triple: Optional[str], env: Env
     ) -> Optional[str]:
         assert self.plat_name is not None
         if forced_target_triple is not None:
@@ -486,14 +486,14 @@ class build_rust(RustCommand):
             return forced_target_triple
 
         # Determine local rust target which needs to be "forced" if necessary
-        local_rust_target = _adjusted_local_rust_target(self.plat_name)
+        local_rust_target = _adjusted_local_rust_target(self.plat_name, env)
 
         # Match cargo's behaviour of not using an explicit target if the
         # target we're compiling for is the host
         if (
             local_rust_target is not None
             # check for None first to avoid calling to rustc if not needed
-            and local_rust_target != get_rust_host()
+            and local_rust_target != get_rust_host(env)
         ):
             return local_rust_target
 
@@ -566,7 +566,7 @@ def create_universal2_binary(output_path: str, input_paths: List[str]) -> None:
     # Try lipo first
     command = ["lipo", "-create", "-output", output_path, *input_paths]
     try:
-        subprocess.check_output(command, text=True)
+        check_subprocess_output(command, env=None, text=True)
     except subprocess.CalledProcessError as e:
         output = e.output
         raise CompileError("lipo failed with code: %d\n%s" % (e.returncode, output))
@@ -609,7 +609,7 @@ def _replace_vendor_with_unknown(target: str) -> Optional[str]:
     return "-".join(components)
 
 
-def _prepare_build_environment() -> Dict[str, str]:
+def _prepare_build_environment(env: Env) -> Dict[str, str]:
     """Prepares environment variables to use when executing cargo build."""
 
     base_executable = None
@@ -625,20 +625,18 @@ def _prepare_build_environment() -> Dict[str, str]:
     # executing python interpreter.
     bindir = os.path.dirname(executable)
 
-    env = os.environ.copy()
-    env.update(
+    env_vars = (env.env or os.environ).copy()
+    env_vars.update(
         {
             # disables rust's pkg-config seeking for specified packages,
             # which causes pythonXX-sys to fall back to detecting the
             # interpreter from the path.
-            "PATH": os.path.join(bindir, os.environ.get("PATH", "")),
-            "PYTHON_SYS_EXECUTABLE": os.environ.get(
-                "PYTHON_SYS_EXECUTABLE", executable
-            ),
-            "PYO3_PYTHON": os.environ.get("PYO3_PYTHON", executable),
+            "PATH": os.path.join(bindir, env_vars.get("PATH", "")),
+            "PYTHON_SYS_EXECUTABLE": env_vars.get("PYTHON_SYS_EXECUTABLE", executable),
+            "PYO3_PYTHON": env_vars.get("PYO3_PYTHON", executable),
         }
     )
-    return env
+    return env_vars
 
 
 def _is_py_limited_api(
@@ -692,19 +690,19 @@ def _binding_features(
 _PyLimitedApi = Literal["cp37", "cp38", "cp39", "cp310", "cp311", "cp312", True, False]
 
 
-def _adjusted_local_rust_target(plat_name: str) -> Optional[str]:
+def _adjusted_local_rust_target(plat_name: str, env: Env) -> Optional[str]:
     """Returns the local rust target for the given `plat_name`, if it is
     necessary to 'force' a specific target for correctness."""
 
     # If we are on a 64-bit machine, but running a 32-bit Python, then
     # we'll target a 32-bit Rust build.
     if plat_name == "win32":
-        if get_rustc_cfgs(None).get("target_env") == "gnu":
+        if get_rustc_cfgs(None, env).get("target_env") == "gnu":
             return "i686-pc-windows-gnu"
         else:
             return "i686-pc-windows-msvc"
     elif plat_name == "win-amd64":
-        if get_rustc_cfgs(None).get("target_env") == "gnu":
+        if get_rustc_cfgs(None, env).get("target_env") == "gnu":
             return "x86_64-pc-windows-gnu"
         else:
             return "x86_64-pc-windows-msvc"

@@ -1,4 +1,48 @@
 import subprocess
+from typing import Any, Optional, Union, cast
+
+
+class Env:
+    """Allow using ``functools.lru_cache`` with an environment variable dictionary.
+
+    Dictionaries are unhashable, but ``functools.lru_cache`` needs all parameters to
+    be hashable, which we solve which a custom ``__hash__``."""
+
+    env: Optional[dict[str, str]]
+
+    def __init__(self, env: Optional[dict[str, str]]):
+        self.env = env
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Env):
+            return False
+        return self.env == other.env
+
+    def __hash__(self) -> int:
+        if self.env is not None:
+            return hash(tuple(sorted(self.env.items())))
+        else:
+            return hash(None)
+
+
+def run_subprocess(
+    *args: Any, env: Union[Env, dict[str, str], None], **kwargs: Any
+) -> subprocess.CompletedProcess:
+    """Wrapper around subprocess.run that requires a decision to pass env."""
+    if isinstance(env, Env):
+        env = env.env
+    kwargs["env"] = env
+    return subprocess.run(*args, **kwargs)  # noqa: TID251 # this is a wrapper to implement the rule
+
+
+def check_subprocess_output(
+    *args: Any, env: Union[Env, dict[str, str], None], **kwargs: Any
+) -> str:
+    """Wrapper around subprocess.run that requires a decision to pass env."""
+    if isinstance(env, Env):
+        env = env.env
+    kwargs["env"] = env
+    return cast(str, subprocess.check_output(*args, **kwargs))  # noqa: TID251 # this is a wrapper to implement the rule
 
 
 def format_called_process_error(

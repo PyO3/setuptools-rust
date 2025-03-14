@@ -48,8 +48,15 @@ Changelog = "https://github.com/PyO3/setuptools-rust/blob/main/CHANGELOG.md"
 requires = ["setuptools>=62.4", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
+[tool.ruff.lint]
+extend-select = ["TID251"]
+
 [tool.ruff.lint.extend-per-file-ignores]
 "__init__.py" = ["F403"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"subprocess.run".msg = "Use `_utils.run_subprocess` to ensure `env` is passed"
+"subprocess.check_output".msg = "Use `_utils.check_subprocess_output` to ensure `env` is passed"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

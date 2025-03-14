@@ -1,5 +1,6 @@
-import subprocess
 import sys
+
+from setuptools_rust._utils import check_subprocess_output
 
 from .command import RustCommand
 from .extension import RustExtension
@@ -25,6 +26,6 @@ class clean_rust(RustCommand):
 
         # Execute cargo command
         try:
-            subprocess.check_output(args)
+            check_subprocess_output(args, env=ext.env)
         except Exception:
             pass
