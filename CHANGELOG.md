@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.11.0 (2025-03-14)
 ### Packaging
 - Drop support for Python 3.8. [#479](https://github.com/PyO3/setuptools-rust/pull/479)
 - Support free-threaded Python. [#502](https://github.com/PyO3/setuptools-rust/pull/502)
