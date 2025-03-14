@@ -51,7 +51,7 @@ def add_rust_extension(dist: Distribution) -> None:
             (
                 "no-vendor-crates",
                 None,
-                "don't vendor Rust crates.[default; enable with --vendor-crates]",
+                "don't vendor Rust crates. [default; enable with --vendor-crates]",
             ),
         ]
     )
