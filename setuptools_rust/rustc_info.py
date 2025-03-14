@@ -5,7 +5,7 @@ from setuptools.errors import PlatformError
 from functools import lru_cache
 from typing import Dict, List, NewType, Optional, TYPE_CHECKING
 
-from ._utils import Env
+from ._utils import Env, check_subprocess_output
 
 if TYPE_CHECKING:
     from semantic_version import Version
@@ -55,23 +55,23 @@ def get_rust_target_info(target_triple: Optional[str], env: Env) -> List[str]:
     cmd = ["rustc", "--print", "cfg"]
     if target_triple:
         cmd.extend(["--target", target_triple])
-    output = subprocess.check_output(cmd, text=True, env=env.env)
+    output = check_subprocess_output(cmd, env=env, text=True)
     return output.splitlines()
 
 
 @lru_cache()
 def get_rust_target_list(env: Env) -> List[str]:
-    output = subprocess.check_output(
-        ["rustc", "--print", "target-list"], text=True, env=env.env
+    output = check_subprocess_output(
+        ["rustc", "--print", "target-list"], env=env, text=True
     )
     return output.splitlines()
 
 
 @lru_cache()
 def _rust_version(env: Env) -> str:
-    return subprocess.check_output(["rustc", "-V"], text=True, env=env.env)
+    return check_subprocess_output(["rustc", "-V"], env=env, text=True)
 
 
 @lru_cache()
 def _rust_version_verbose(env: Env) -> str:
-    return subprocess.check_output(["rustc", "-Vv"], text=True, env=env.env)
+    return check_subprocess_output(["rustc", "-Vv"], env=env, text=True)

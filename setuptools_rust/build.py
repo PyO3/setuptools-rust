@@ -24,7 +24,7 @@ from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
 from setuptools.command.install_scripts import install_scripts as CommandInstallScripts
 
-from ._utils import format_called_process_error, Env
+from ._utils import check_subprocess_output, format_called_process_error, Env
 from .command import RustCommand
 from .extension import Binding, RustBin, RustExtension, Strip
 from .rustc_info import (
@@ -252,7 +252,7 @@ class build_rust(RustCommand):
             # If quiet, capture all output and only show it in the exception
             # If not quiet, forward all cargo output to stderr
             stderr = subprocess.PIPE if quiet else None
-            cargo_messages = subprocess.check_output(
+            cargo_messages = check_subprocess_output(
                 command,
                 env=env,
                 stderr=stderr,
@@ -417,7 +417,7 @@ class build_rust(RustCommand):
                     args.insert(0, "strip")
                     args.append(ext_path)
                     try:
-                        subprocess.check_output(args)
+                        check_subprocess_output(args, env=None)
                     except subprocess.CalledProcessError:
                         pass
 
@@ -566,7 +566,7 @@ def create_universal2_binary(output_path: str, input_paths: List[str]) -> None:
     # Try lipo first
     command = ["lipo", "-create", "-output", output_path, *input_paths]
     try:
-        subprocess.check_output(command, text=True)
+        check_subprocess_output(command, env=None, text=True)
     except subprocess.CalledProcessError as e:
         output = e.output
         raise CompileError("lipo failed with code: %d\n%s" % (e.returncode, output))

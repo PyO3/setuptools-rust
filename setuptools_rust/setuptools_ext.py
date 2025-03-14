@@ -1,5 +1,4 @@
 import os
-import subprocess
 import sys
 import sysconfig
 import logging
@@ -15,7 +14,7 @@ from setuptools.command.install_scripts import install_scripts
 from setuptools.command.sdist import sdist
 from setuptools.dist import Distribution
 
-from ._utils import Env
+from ._utils import Env, run_subprocess
 from .build import _get_bdist_wheel_cmd
 from .extension import Binding, RustBin, RustExtension, Strip
 
@@ -134,7 +133,7 @@ def add_rust_extension(dist: Distribution) -> None:
                     # set --manifest-path before vendor_path and after --sync to workaround that
                     # See https://docs.rs/clap/latest/clap/struct.Arg.html#method.multiple for detail
                     command.extend(["--manifest-path", manifest_paths[0], vendor_path])
-                    subprocess.run(command, check=True, env=env.env if env else None)
+                    run_subprocess(command, env=env, check=True)
 
                     cargo_config = _CARGO_VENDOR_CONFIG
 

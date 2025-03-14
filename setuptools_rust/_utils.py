@@ -1,5 +1,5 @@
 import subprocess
-from typing import Optional
+from typing import Any, Optional
 
 
 class Env:
@@ -23,6 +23,22 @@ class Env:
             return hash(tuple(sorted(self.env.items())))
         else:
             return hash(None)
+
+
+def run_subprocess(
+    *args: Any, env: Optional[Env], **kwargs: Any
+) -> subprocess.CompletedProcess:
+    """Wrapper around subprocess.run that requires a decision to pass an Env object."""
+    if env is not None:
+        kwargs["env"] = env.env
+    return subprocess.run(*args, **kwargs)  # noqa: TID251 # this is a wrapper to implement the rule
+
+
+def check_subprocess_output(*args: Any, env: Optional[Env], **kwargs: Any) -> str:
+    """Wrapper around subprocess.run that requires a decision to pass an Env object."""
+    if env is not None:
+        kwargs["env"] = env.env
+    return subprocess.check_output(*args, **kwargs)  # noqa: TID251 # this is a wrapper to implement the rule
 
 
 def format_called_process_error(
