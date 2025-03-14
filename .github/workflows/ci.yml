@@ -63,7 +63,7 @@ jobs:
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
         python-version:
-          ["3.9", "3.10", "3.11", "3.12", "3.13", "3.13t", pypy-3.9, pypy-3.10]
+          ["3.9", "3.10", "3.11", "3.12", "3.13", "3.13t", pypy-3.10, pypy-3.11]
         platform:
           [
             {
