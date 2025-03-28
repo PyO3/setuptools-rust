@@ -758,6 +758,15 @@ def _find_cargo_artifacts(
     ...    kinds={"rlib"},
     ... )
     ['/file/two/baz.rlib']
+    >>> _find_cargo_artifacts(
+    ...    [
+    ...        '{"some_irrelevant_message": []}',
+    ...        '{"reason": "compiler-artifact", "package_id": "some_id", "target": {"kind": ["bin"]}, "filenames":[], "executable": "/target/debug/some_exe"}'
+    ...    ],
+    ...    package_id="some_id",
+    ...    kinds={"bin"},
+    ... )
+    ['/target/debug/some_exe']
     """
     artifacts = []
     for message in cargo_messages:
@@ -769,9 +778,12 @@ def _find_cargo_artifacts(
                 parsed.get("reason") == "compiler-artifact"
                 and parsed.get("package_id") == package_id
             ):
-                for artifact_kind, filename in zip(
-                    parsed["target"]["kind"], parsed["filenames"]
-                ):
+                filenames = parsed["filenames"]
+                if not filenames and parsed.get("executable"):
+                    # Use parsed["executable"] as the filename when filenames are empty
+                    # See https://github.com/PyO3/maturin/issues/2370
+                    filenames = [parsed["executable"]]
+                for artifact_kind, filename in zip(parsed["target"]["kind"], filenames):
                     if artifact_kind in kinds:
                         artifacts.append(filename)
     return artifacts
