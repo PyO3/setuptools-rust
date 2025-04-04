@@ -107,6 +107,12 @@ python
 # ... better write some tests with pytest ...
 ```
 
+## Environment variables for configuration
+
+As well as all [environment variables supported by Cargo](https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-reads), `setuptools-rust` also supports the following:
+
+- `SETUPTOOLS_RUST_CARGO_PROFILE`: used to override the profile of the Rust build. Defaults to `release`, e.g. set to `dev` to do a debug build.
+
 ## Next steps and final remarks
 
 - When you are ready to distribute your project, have a look on
