@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.11.1 (2025-04-04)
+### Fixed
+- Fix finding cargo artifacts when filenames are empty. [#521](https://github.com/PyO3/setuptools-rust/pull/521)
+
 ## 1.11.0 (2025-03-14)
 ### Packaging
 - Drop support for Python 3.8. [#479](https://github.com/PyO3/setuptools-rust/pull/479)
