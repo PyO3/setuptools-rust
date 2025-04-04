@@ -9,6 +9,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
+# Setting a fixed target dir ensures that all builds of examples re-use the same common dependencies
+env:
+  CARGO_TARGET_DIR: ${{ github.workspace }}/target
+
 jobs:
   ruff:
     runs-on: "ubuntu-latest"
