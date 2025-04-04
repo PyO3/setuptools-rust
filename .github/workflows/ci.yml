@@ -110,6 +110,8 @@ jobs:
                 rust-target: "aarch64-apple-darwin",
               }
 
+    env:
+      SETUPTOOLS_RUST_CARGO_PROFILE: dev
     steps:
       - uses: actions/checkout@v4
 
