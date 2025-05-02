@@ -35,7 +35,7 @@ class Binding(IntEnum):
         PyO3: This is an extension built using
             `PyO3 <https://github.com/pyo3/pyo3>`_.
         RustCPython: This is an extension built using
-            `rust-cpython <https://github.com/dgrunwald/rust_cpython>`_.
+            `rust-cpython <https://github.com/dgrunwald/rust-cpython>`_.
         NoBinding: Bring your own bindings for the extension.
         Exec: Build an executable instead of an extension.
     """
