@@ -69,7 +69,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-pyo3 = "0.24"
+pyo3 = "0.25"
 
 [lib]
 name = "_lib"  # private module to be nested into Python package,
