@@ -23,7 +23,7 @@ mod _lib {
 
         let numbers: Vec<i32> = argv[2..].iter().map(|s| s.parse().unwrap()).collect();
 
-        let python_sum = PyModule::import_bound(py, "builtins")?.getattr("sum")?;
+        let python_sum = PyModule::import(py, "builtins")?.getattr("sum")?;
         let total: i32 = python_sum.call1((numbers,))?.extract()?;
         println!("sum({}) = {:?}", argv[2..].join(", "), total);
         Ok(())
