@@ -351,7 +351,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
-      - uses: pypa/cibuildwheel@v3.0.0
+      - uses: pypa/cibuildwheel@v3.1.2
         env:
           CIBW_BUILD: cp39-*
           CIBW_BEFORE_BUILD: >
