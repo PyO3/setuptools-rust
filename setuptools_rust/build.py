@@ -147,7 +147,7 @@ class build_rust(RustCommand):
         target_triple = self._detect_rust_target(forced_target_triple, ext.env)
         rustc_cfgs = get_rustc_cfgs(target_triple, ext.env)
 
-        env = _prepare_build_environment(ext.env)
+        env = _prepare_build_environment(ext.env, ext)
 
         if not os.path.exists(ext.path):
             raise FileError(
@@ -609,7 +609,7 @@ def _replace_vendor_with_unknown(target: str) -> Optional[str]:
     return "-".join(components)
 
 
-def _prepare_build_environment(env: Env) -> Dict[str, str]:
+def _prepare_build_environment(env: Env, ext: RustExtension) -> Dict[str, str]:
     """Prepares environment variables to use when executing cargo build."""
 
     base_executable = None
@@ -636,6 +636,10 @@ def _prepare_build_environment(env: Env) -> Dict[str, str]:
             "PYO3_PYTHON": env_vars.get("PYO3_PYTHON", executable),
         }
     )
+
+    if ext.binding == Binding.PyO3:
+        env_vars.setdefault("PYO3_BUILD_EXTENSION_MODULE", "1")
+
     return env_vars
 
 
