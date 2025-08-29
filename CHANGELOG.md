@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.12.0 (2025-08-29)
+- Set `PYO3_BUILD_EXTENSION_MODULE` environment variable when building PyO3 extensions. [#540](https://github.com/PyO3/setuptools-rust/pull/540)
+
 ## 1.11.1 (2025-04-04)
 ### Fixed
 - Fix finding cargo artifacts when filenames are empty. [#521](https://github.com/PyO3/setuptools-rust/pull/521)
