@@ -73,9 +73,8 @@ rustup target add {rust_target}
 git config --global --add safe.directory /io
 
 cd examples/rust_with_cffi/
-# Using crossenv master to workaround https://github.com/benfogle/crossenv/issues/108, will need 1.5.0 when released
-python3.11 -m pip install https://github.com/benfogle/crossenv/archive/refs/heads/master.zip
-python3.11 -m crossenv "/opt/python/cp311-cp311/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 /venv
+python3.13 -m pip install crossenv
+python3.13 -m crossenv "/opt/python/cp313-cp313/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 /venv
 . /venv/bin/activate
 
 build-pip install -U 'pip>=23.2.1' 'setuptools>=70.1' 'build>=1'
@@ -128,7 +127,7 @@ python3 -c "from rust_with_cffi.cffi import lib; assert lib.cffi_func() == 15"
         "/io",
         "--platform",
         docker_platform,
-        "python:3.11",
+        "python:3.13",
         "bash",
         "-c",
         script_check,
