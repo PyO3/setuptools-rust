@@ -2,6 +2,8 @@ import os
 from inspect import cleandoc as heredoc
 from glob import glob
 from pathlib import Path
+import shutil
+import sys
 
 import nox
 import nox.command
@@ -73,9 +75,8 @@ rustup target add {rust_target}
 git config --global --add safe.directory /io
 
 cd examples/rust_with_cffi/
-# Using crossenv master to workaround https://github.com/benfogle/crossenv/issues/108, will need 1.5.0 when released
-python3.11 -m pip install https://github.com/benfogle/crossenv/archive/refs/heads/master.zip
-python3.11 -m crossenv "/opt/python/cp311-cp311/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 /venv
+python3.13 -m pip install crossenv
+python3.13 -m crossenv "/opt/python/cp313-cp313/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 /venv
 . /venv/bin/activate
 
 build-pip install -U 'pip>=23.2.1' 'setuptools>=70.1' 'build>=1'
@@ -128,7 +129,78 @@ python3 -c "from rust_with_cffi.cffi import lib; assert lib.cffi_func() == 15"
         "/io",
         "--platform",
         docker_platform,
-        "python:3.11",
+        "python:3.13",
+        "bash",
+        "-c",
+        script_check,
+        external=True,
+    )
+
+
+@nox.session(name="test-cross")
+def test_cross(session: nox.Session):
+    session.install(".")
+    session.install("-U", "setuptools", "build")
+
+    shutil.rmtree("examples/namespace_package/dist", ignore_errors=True)
+
+    namespace_package = Path(__file__).parent / "examples" / "namespace_package"
+    os.chdir(namespace_package)
+    session.run(
+        "docker",
+        "build",
+        "-t",
+        "cross-pyo3:aarch64-unknown-linux-gnu",
+        ".",
+        external=True,
+    )
+
+    major_version = sys.version_info[0]
+    minor_version = sys.version_info[1]
+
+    cpXY = f"cp{major_version}{minor_version}"
+
+    tmp = Path(session.create_tmp())
+    extra_config = tmp / "build-opts.cfg"
+    build_config = """
+        [bdist_wheel]
+        plat_name = manylinux2014_aarch64
+        """
+    extra_config.write_text(heredoc(build_config), encoding="utf-8")
+
+    build_env = os.environ.copy()
+    build_env["DIST_EXTRA_CONFIG"] = str(extra_config.absolute())
+    build_env["CARGO"] = "cross"
+    build_env["CARGO_BUILD_TARGET"] = "aarch64-unknown-linux-gnu"
+    build_env["PYO3_CROSS_LIB_DIR"] = f"/opt/python/{cpXY}-{cpXY}/lib"
+
+    # build wheel using cross
+    #
+    # if this step fails, you may need to install cross:
+    # cargo install cross --git https://github.com/cross-rs/cross
+    session.run("python", "-m", "build", "--no-isolation", env=build_env)
+
+    script_check = """
+set -eux
+python3 --version
+python3 -m venv .venv
+source .venv/bin/activate
+pip install namespace_package --no-index --find-links /io/dist/ --force-reinstall
+python -c "from namespace_package import rust; assert rust.rust_func() == 14"
+python -c "from namespace_package import python; assert python.python_func() == 15"
+"""
+
+    session.run(
+        "docker",
+        "run",
+        "--rm",
+        "-v",
+        f"{namespace_package}:/io",
+        "-w",
+        "/io",
+        "--platform",
+        "aarch64",
+        f"python:3.{minor_version}",
         "bash",
         "-c",
         script_check,
