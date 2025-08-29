@@ -1,7 +1,16 @@
 [target.aarch64-unknown-linux-gnu]
 image = "cross-pyo3:aarch64-unknown-linux-gnu"
 env.passthrough = [
+    "PYO3_PRINT_CONFIG",
     "RUST_BACKTRACE",
     "RUST_LOG",
     "PYO3_CROSS_LIB_DIR",
+]
+
+# This avoids cross picking up custom linker from host ~/.cargo/config.toml
+# See: https://github.com/cross-rs/cross/issues/621
+[build.env]
+passthrough = [
+    "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=x86_64-linux-gnu-gcc",
+    "RUSTFLAGS",
 ]

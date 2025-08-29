@@ -250,50 +250,14 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10" # must match the ubuntu version in the install, and also the STANDALONE_PYTHON_VERSION below
+          python-version: "3.x"
       - uses: dtolnay/rust-toolchain@stable
       - name: Install cross
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cross
-      - name: Build package
-        run: pip install -e .
-      - name: Build wheel using cross
-        shell: bash
-        env:
-          CARGO: cross
-          CARGO_BUILD_TARGET: aarch64-unknown-linux-gnu
-          PYO3_CROSS_LIB_DIR: /opt/python/cp310-cp310/lib
-          DIST_EXTRA_CONFIG: /tmp/build-opts.cfg
-        run: |
-          cd examples/namespace_package
-          docker build \
-            --build-arg STANDALONE_PYTHON_VERSION=3.10.15 \
-            --build-arg STANDALONE_PYTHON_RELEASE=20241016 \
-            -t cross-pyo3:aarch64-unknown-linux-gnu \
-            .
-          python -m pip install build wheel
-          echo -e "[bdist_wheel]\nplat_name=manylinux2014_aarch64" > $DIST_EXTRA_CONFIG
-          python -m build --no-isolation
-          ls -la dist/
-          unzip -l dist/*.whl  # debug all files inside wheel file
-      - uses: uraimo/run-on-arch-action@v3.0.1
-        name: Install built wheel
-        with:
-          arch: aarch64
-          distro: ubuntu22.04
-          dockerRunArgs: |
-            --volume "${PWD}/examples/namespace_package:/io"
-          install: |
-            apt-get update
-            apt-get install -y --no-install-recommends python3 python3-venv python3-pip
-            pip3 install -U pip
-          run: |
-            python3 -m venv .venv
-            source .venv/bin/activate
-            pip install namespace_package --no-index --find-links /io/dist/ --force-reinstall
-            python -c "from namespace_package import rust; assert rust.rust_func() == 14"
-            python -c "from namespace_package import python; assert python.python_func() == 15"
+        # need cross HEAD for https://github.com/cross-rs/cross/issues/1645
+        # will probably be ok to use released cross from 0.3
+        run: cargo install cross --git https://github.com/cross-rs/cross
+      - run: pip instal nox
+      - run: nox -s test-cross
 
   test-zigbuild:
     runs-on: ubuntu-latest
