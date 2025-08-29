@@ -256,7 +256,7 @@ jobs:
         # need cross HEAD for https://github.com/cross-rs/cross/issues/1645
         # will probably be ok to use released cross from 0.3
         run: cargo install cross --git https://github.com/cross-rs/cross
-      - run: pip instal nox
+      - run: pip install nox
       - run: nox -s test-cross
 
   test-zigbuild:
