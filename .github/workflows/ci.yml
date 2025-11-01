@@ -139,6 +139,14 @@ jobs:
                 python-architecture: "arm64",
                 rust-target: "aarch64-apple-darwin",
               }
+          # no graalpy available on Windows
+          - python-version: graalpy25.0
+            platform:
+              {
+                os: "windows-latest",
+                python-architecture: "x64",
+                rust-target: "x86_64-pc-windows-msvc",
+              }
 
     env:
       SETUPTOOLS_RUST_CARGO_PROFILE: dev
