@@ -67,7 +67,18 @@ jobs:
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
         python-version:
-          ["3.9", "3.10", "3.11", "3.12", "3.13", "3.13t", pypy-3.10, pypy-3.11]
+          [
+            "3.9",
+            "3.10",
+            "3.11",
+            "3.14",
+            "3.13",
+            "3.13t",
+            "3.14",
+            "3.14t",
+            "pypy-3.11",
+            "graalpy25.0",
+          ]
         platform:
           [
             {
@@ -88,22 +99,37 @@ jobs:
           ]
         include:
           # Just test one x86 Windows Python for simplicity
-          - python-version: 3.12
+          - python-version: "3.x"
             platform:
               {
                 os: "windows-latest",
                 python-architecture: "x86",
                 rust-target: "i686-pc-windows-msvc",
               }
-          # Just test one x64 macOS Python for simplicity
-          - python-version: 3.12
+          # Just test one arm64 Windows Python for simplicity
+          - python-version: "3.x"
             platform:
               {
-                os: "macos-13",
+                os: "windows-11-arm",
+                python-architecture: "arm64",
+                rust-target: "aarch64-pc-windows-msvc",
+              }
+          # Just test one x64 macOS Python for simplicity
+          - python-version: "3.x"
+            platform:
+              {
+                os: "macos-15-intel",
                 python-architecture: "x64",
                 rust-target: "x86_64-apple-darwin",
               }
-          # Just test one x64 macOS Python for simplicity
+          # Just test one arm64 Ubuntu Python for simplicity
+          - python-version: "3.x"
+            platform:
+              {
+                os: "ubuntu-24.04-arm",
+                python-architecture: "arm64",
+                rust-target: "aarch64-unknown-linux-gnu",
+              }
         exclude:
           # macOS arm doesn't have Python builds before 3.10
           - python-version: 3.9
@@ -112,6 +138,14 @@ jobs:
                 os: "macos-latest",
                 python-architecture: "arm64",
                 rust-target: "aarch64-apple-darwin",
+              }
+          # no graalpy available on Windows
+          - python-version: graalpy25.0
+            platform:
+              {
+                os: "windows-latest",
+                python-architecture: "x64",
+                rust-target: "x86_64-pc-windows-msvc",
               }
 
     env:
@@ -144,10 +178,9 @@ jobs:
         run: nox -s test-examples
 
       - name: Test macOS universal2
-        if: ${{ startsWith(matrix.platform.os, 'macos') && !startsWith(matrix.python-version, 'pypy') }}
+        if: ${{ startsWith(matrix.platform.os, 'macos') && !startsWith(matrix.python-version, 'pypy') && !startsWith(matrix.python-version, 'graalpy') }}
         shell: bash
         env:
-          MACOSX_DEPLOYMENT_TARGET: "10.9"
           ARCHFLAGS: -arch x86_64 -arch arm64
         run: |
           rustup target add aarch64-apple-darwin
@@ -173,13 +206,21 @@ jobs:
       # If one platform fails, allow the rest to keep testing if `CI-no-fail-fast` label is present
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os:
+          [
+            ubuntu-latest,
+            macos-latest,
+            windows-latest,
+            windows-11-arm,
+            macos-15-intel,
+            ubuntu-24.04-arm,
+          ]
     steps:
       - uses: actions/checkout@v5
       - name: Setup python
         uses: actions/setup-python@v6
         with:
-          python-version: 3.9
+          python-version: "3.x"
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -189,8 +230,6 @@ jobs:
       - name: Build an abi3 wheel
         shell: bash
         env:
-          # https://github.com/actions/setup-python/issues/26
-          MACOSX_DEPLOYMENT_TARGET: 10.9
           DIST_EXTRA_CONFIG: /tmp/build-opts.cfg
         run: |
           set -e
@@ -201,12 +240,12 @@ jobs:
           python -m build --no-isolation
           ls -la dist/
 
-      # Now we switch to a differnet Python version and ensure we can install
+      # Now we switch to a different Python version and ensure we can install
       # the wheel we just built.
       - name: Setup python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.10"
+          python-version: "3.11"
 
       - name: Install abi3 wheel and run tests
         shell: bash
