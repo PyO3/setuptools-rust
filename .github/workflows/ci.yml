@@ -170,10 +170,9 @@ jobs:
         run: nox -s test-examples
 
       - name: Test macOS universal2
-        if: ${{ startsWith(matrix.platform.os, 'macos') && !startsWith(matrix.python-version, 'pypy') }} && !{ startsWith(matrix.python-version, 'graalpy') }
+        if: ${{ startsWith(matrix.platform.os, 'macos') && !startsWith(matrix.python-version, 'pypy') && !startsWith(matrix.python-version, 'graalpy') }}
         shell: bash
         env:
-          MACOSX_DEPLOYMENT_TARGET: "10.9"
           ARCHFLAGS: -arch x86_64 -arch arm64
         run: |
           rustup target add aarch64-apple-darwin
@@ -223,8 +222,6 @@ jobs:
       - name: Build an abi3 wheel
         shell: bash
         env:
-          # https://github.com/actions/setup-python/issues/26
-          MACOSX_DEPLOYMENT_TARGET: 10.9
           DIST_EXTRA_CONFIG: /tmp/build-opts.cfg
         run: |
           set -e
@@ -240,7 +237,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.9"
+          python-version: "3.11"
 
       - name: Install abi3 wheel and run tests
         shell: bash
