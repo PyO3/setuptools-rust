@@ -54,7 +54,7 @@ def get_rustc_cfgs(target_triple: Optional[str], env: Env) -> RustCfgs:
 def get_rust_target_info(target_triple: Optional[str], env: Env) -> List[str]:
     cmd = ["rustc", "--print", "cfg"]
     if target_triple:
-        cmd.extend(["--target", target_triple])
+        cmd.extend(["--target", target_triple.split('.')[0]])
     output = check_subprocess_output(cmd, env=env, text=True)
     return output.splitlines()
 
