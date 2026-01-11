@@ -6,6 +6,7 @@ from pathlib import Path
 import shutil
 import sys
 import json
+import tempfile
 
 import nox
 import nox.command
@@ -272,25 +273,35 @@ def test_examples_emscripten(session: nox.Session):
         examples_dir / "html-py-ever",
         examples_dir / "namespace_package",
     ]
-    for example in test_crates:
-        env = os.environ.copy()
-        env.update(
-            RUSTUP_TOOLCHAIN="nightly",
-            PYTHONPATH=str(EMSCRIPTEN_DIR),
-            _PYTHON_SYSCONFIGDATA_NAME="_sysconfigdata__emscripten_wasm32-emscripten",
-            _PYTHON_HOST_PLATFORM="emscripten_3_1_14_wasm32",
-            CARGO_BUILD_TARGET="wasm32-unknown-emscripten",
-            CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=str(
-                EMSCRIPTEN_DIR / "emcc_wrapper.py"
-            ),
-            PYO3_CONFIG_FILE=str(EMSCRIPTEN_DIR / "pyo3_config.ini"),
-        )
-        with session.chdir(example):
-            cmd = ["python", "-m", "build", "--wheel", "--no-isolation"]
-            session.run(*cmd, env=env, external=True)
 
-        with session.chdir(EMSCRIPTEN_DIR):
-            session.run("node", "runner.js", str(example), external=True)
+    with tempfile.NamedTemporaryFile() as pyo3_config:
+        pyo3_config.write(f"""\
+implementation=CPython
+version={PYTHON_VERSION}
+shared=true
+abi3=false
+pointer_width=32
+""")
+
+        for example in test_crates:
+            env = os.environ.copy()
+            env.update(
+                RUSTUP_TOOLCHAIN="nightly",
+                PYTHONPATH=str(EMSCRIPTEN_DIR),
+                _PYTHON_SYSCONFIGDATA_NAME="_sysconfigdata__emscripten_wasm32-emscripten",
+                _PYTHON_HOST_PLATFORM="emscripten_3_1_14_wasm32",
+                CARGO_BUILD_TARGET="wasm32-unknown-emscripten",
+                CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=str(
+                    EMSCRIPTEN_DIR / "emcc_wrapper.py"
+                ),
+                PYO3_CONFIG_FILE=pyo3_config.name,
+            )
+            with session.chdir(example):
+                cmd = ["python", "-m", "build", "--wheel", "--no-isolation"]
+                session.run(*cmd, env=env, external=True)
+
+            with session.chdir(EMSCRIPTEN_DIR):
+                session.run("node", "runner.js", str(example), external=True)
 
 
 @nox.session(name="bump-version")
