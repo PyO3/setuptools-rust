@@ -451,5 +451,5 @@ jobs:
         run: |
           export PATH=$ORIG_PATH:$PATH
           uvx nox -s test-examples-emscripten
-        with:
+        env:
           UV_PYTHON: ${{ env.PYTHON_VERSION }}
