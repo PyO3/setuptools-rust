@@ -1,0 +1,6 @@
+{
+  "type": "module",
+  "dependencies": {
+    "pyodide": "^0.29.1"
+  }
+}
