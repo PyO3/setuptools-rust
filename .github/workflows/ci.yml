@@ -422,6 +422,8 @@ jobs:
         shell: msys2 {0}
         run: PATH="$PATH:/c/Users/runneradmin/.cargo/bin" nox -s test-examples
 
+  test-emscripten:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
