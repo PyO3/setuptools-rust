@@ -274,6 +274,9 @@ def test_examples_emscripten(session: nox.Session):
         examples_dir / "namespace_package",
     ]
 
+    python_version = os.environ["PYTHON_VERSION"]
+    emscripten_version = os.environ["EMSCRIPTEN_VERSION"]
+
     with tempfile.NamedTemporaryFile() as pyo3_config:
         pyo3_config.write(f"""\
 implementation=CPython
@@ -283,13 +286,15 @@ abi3=false
 pointer_width=32
 """)
 
+        emscripten_version_joined = emscripten_version.replace('.', '_')
+
         for example in test_crates:
             env = os.environ.copy()
             env.update(
                 RUSTUP_TOOLCHAIN="nightly",
                 PYTHONPATH=str(EMSCRIPTEN_DIR),
                 _PYTHON_SYSCONFIGDATA_NAME="_sysconfigdata__emscripten_wasm32-emscripten",
-                _PYTHON_HOST_PLATFORM="emscripten_3_1_14_wasm32",
+                _PYTHON_HOST_PLATFORM=f"emscripten_{emscripten_version_joined}_wasm32",
                 CARGO_BUILD_TARGET="wasm32-unknown-emscripten",
                 CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=str(
                     EMSCRIPTEN_DIR / "emcc_wrapper.py"
