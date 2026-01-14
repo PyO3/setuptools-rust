@@ -238,8 +238,12 @@ EMSCRIPTEN_DIR = Path("./emscripten").resolve()
 def install_pyodide_emscripten(session: nox.Session):
     with session.chdir(EMSCRIPTEN_DIR):
         session.run("npm", "install", f"pyodide@{PYODIDE_VERSION}", external=True)
-        emscripten_version = session.run("node", "get_emscripten_version.js", external=True, silent=True).strip()
-        python_version = session.run("node", "get_python_version.js", external=True, silent=True).strip()
+        emscripten_version = session.run(
+            "node", "get_emscripten_version.js", external=True, silent=True
+        ).strip()
+        python_version = session.run(
+            "node", "get_python_version.js", external=True, silent=True
+        ).strip()
 
     with ExitStack() as stack:
         if "GITHUB_ENV" in os.environ:
@@ -252,7 +256,9 @@ def install_pyodide_emscripten(session: nox.Session):
         print(f"PYTHON_VERSION={python_version}", file=out)
 
         if "GITHUB_ENV" not in os.environ:
-            print("You will need to install emscripten yourself to match the target version.")
+            print(
+                "You will need to install emscripten yourself to match the target version."
+            )
 
 
 @nox.session(name="test-examples-emscripten")
@@ -286,7 +292,7 @@ abi3=false
 pointer_width=32
 """)
 
-        emscripten_version_joined = emscripten_version.replace('.', '_')
+        emscripten_version_joined = emscripten_version.replace(".", "_")
 
         for example in test_crates:
             env = os.environ.copy()
