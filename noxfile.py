@@ -286,7 +286,7 @@ def test_examples_emscripten(session: nox.Session):
     with tempfile.NamedTemporaryFile() as pyo3_config:
         pyo3_config.write(f"""\
 implementation=CPython
-version={PYTHON_VERSION}
+version={python_version}
 shared=true
 abi3=false
 pointer_width=32
