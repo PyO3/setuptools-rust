@@ -5,7 +5,6 @@ from glob import glob
 from pathlib import Path
 import shutil
 import sys
-import json
 import tempfile
 
 import nox
