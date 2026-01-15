@@ -291,6 +291,7 @@ shared=true
 abi3=false
 pointer_width=32
 """)
+        pyo3_config.flush()
 
         emscripten_version_joined = emscripten_version.replace(".", "_")
 
