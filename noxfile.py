@@ -283,7 +283,7 @@ def test_examples_emscripten(session: nox.Session):
     python_version = os.environ["PYTHON_VERSION"]
     emscripten_version = os.environ["EMSCRIPTEN_VERSION"]
 
-    with tempfile.NamedTemporaryFile() as pyo3_config:
+    with tempfile.NamedTemporaryFile('w') as pyo3_config:
         pyo3_config.write(f"""\
 implementation=CPython
 version={python_version}
