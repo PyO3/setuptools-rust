@@ -50,6 +50,7 @@ function make_tty_ops(stream) {
       stream.write(Buffer.from(tty.output));
       tty.output = [];
     },
+    fsync(tty) {},
   };
 }
 
@@ -86,7 +87,7 @@ async function main() {
   try {
     const pyodide = await loadPyodide();
     const FS = pyodide.FS;
-    setupStreams(FS, pyodide._module.TTY);
+    // setupStreams(FS, pyodide._module.TTY);
     const NODEFS = FS.filesystems.NODEFS;
     FS.mkdir("/test_dir");
     FS.mount(NODEFS, { root: testDir }, "/test_dir");
