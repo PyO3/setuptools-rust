@@ -84,7 +84,7 @@ async function main() {
   let errcode = 1;
 
   try {
-    pyodide = await loadPyodide();
+    const pyodide = await loadPyodide();
     const FS = pyodide.FS;
     setupStreams(FS, pyodide._module.TTY);
     const NODEFS = FS.filesystems.NODEFS;
