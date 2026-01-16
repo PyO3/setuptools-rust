@@ -1,9 +1,11 @@
 import os
+from contextlib import ExitStack
 from inspect import cleandoc as heredoc
 from glob import glob
 from pathlib import Path
 import shutil
 import sys
+import tempfile
 
 import nox
 import nox.command
@@ -227,10 +229,40 @@ def test(session: nox.Session):
     session.run("pytest", "setuptools_rust", "tests", *session.posargs)
 
 
+PYODIDE_VERSION = "0.29.1"
+EMSCRIPTEN_DIR = Path("./emscripten").resolve()
+
+
+@nox.session(name="install-pyodide-emscripten")
+def install_pyodide_emscripten(session: nox.Session):
+    with session.chdir(EMSCRIPTEN_DIR):
+        session.run("npm", "install", f"pyodide@{PYODIDE_VERSION}", external=True)
+        emscripten_version = session.run(
+            "node", "get_emscripten_version.js", external=True, silent=True
+        ).strip()
+        python_version = session.run(
+            "node", "get_python_version.js", external=True, silent=True
+        ).strip()
+
+    with ExitStack() as stack:
+        if "GITHUB_ENV" in os.environ:
+            out = stack.enter_context(open(os.environ["GITHUB_ENV"], "a"))
+        else:
+            out = sys.stdout
+
+        print(f"PYODIDE_VERSION={PYODIDE_VERSION}", file=out)
+        print(f"EMSCRIPTEN_VERSION={emscripten_version}", file=out)
+        print(f"PYTHON_VERSION={python_version}", file=out)
+
+        if "GITHUB_ENV" not in os.environ:
+            print(
+                "You will need to install emscripten yourself to match the target version."
+            )
+
+
 @nox.session(name="test-examples-emscripten")
 def test_examples_emscripten(session: nox.Session):
     session.install(".", "build")
-    emscripten_dir = Path("./emscripten").resolve()
 
     session.run(
         "rustup",
@@ -246,25 +278,41 @@ def test_examples_emscripten(session: nox.Session):
         examples_dir / "html-py-ever",
         examples_dir / "namespace_package",
     ]
-    for example in test_crates:
-        env = os.environ.copy()
-        env.update(
-            RUSTUP_TOOLCHAIN="nightly",
-            PYTHONPATH=str(emscripten_dir),
-            _PYTHON_SYSCONFIGDATA_NAME="_sysconfigdata__emscripten_wasm32-emscripten",
-            _PYTHON_HOST_PLATFORM="emscripten_3_1_14_wasm32",
-            CARGO_BUILD_TARGET="wasm32-unknown-emscripten",
-            CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=str(
-                emscripten_dir / "emcc_wrapper.py"
-            ),
-            PYO3_CONFIG_FILE=str(emscripten_dir / "pyo3_config.ini"),
-        )
-        with session.chdir(example):
-            cmd = ["python", "-m", "build", "--wheel", "--no-isolation"]
-            session.run(*cmd, env=env, external=True)
 
-        with session.chdir(emscripten_dir):
-            session.run("node", "runner.js", str(example), external=True)
+    python_version = os.environ["PYTHON_VERSION"]
+    emscripten_version = os.environ["EMSCRIPTEN_VERSION"]
+
+    with tempfile.NamedTemporaryFile("w") as pyo3_config:
+        pyo3_config.write(f"""\
+implementation=CPython
+version={python_version}
+shared=true
+abi3=false
+pointer_width=32
+""")
+        pyo3_config.flush()
+
+        emscripten_version_joined = emscripten_version.replace(".", "_")
+
+        for example in test_crates:
+            env = os.environ.copy()
+            env.update(
+                RUSTUP_TOOLCHAIN="nightly",
+                PYTHONPATH=str(EMSCRIPTEN_DIR),
+                _PYTHON_SYSCONFIGDATA_NAME="_sysconfigdata__emscripten_wasm32-emscripten",
+                _PYTHON_HOST_PLATFORM=f"emscripten_{emscripten_version_joined}_wasm32",
+                CARGO_BUILD_TARGET="wasm32-unknown-emscripten",
+                CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=str(
+                    EMSCRIPTEN_DIR / "emcc_wrapper.py"
+                ),
+                PYO3_CONFIG_FILE=pyo3_config.name,
+            )
+            with session.chdir(example):
+                cmd = ["python", "-m", "build", "--wheel", "--no-isolation"]
+                session.run(*cmd, env=env, external=True)
+
+            with session.chdir(EMSCRIPTEN_DIR):
+                session.run("node", "runner.js", str(example), external=True)
 
 
 @nox.session(name="bump-version")

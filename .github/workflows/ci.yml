@@ -423,26 +423,15 @@ jobs:
         run: PATH="$PATH:/c/Users/runneradmin/.cargo/bin" nox -s test-examples
 
   test-emscripten:
-    name: Test Emscripten
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
       - uses: actions/setup-node@v6
         with:
-          node-version: 18
+          node-version: 22
       - run: |
-          PYODIDE_VERSION=0.21.0
-
-          cd emscripten
-          npm i pyodide@0.21.0
-          cd node_modules/pyodide/
-          npx -y prettier -w pyodide.asm.js
-          EMSCRIPTEN_VERSION=$(node -p "require('./repodata.json').info.platform.split('_').slice(1).join('.')")
-          PYTHON_VERSION=3.10
-
-          echo "PYODIDE_VERSION=$PYODIDE_VERSION" >> $GITHUB_ENV
-          echo "EMSCRIPTEN_VERSION=$EMSCRIPTEN_VERSION" >> $GITHUB_ENV
-          echo "PYTHON_VERSION=$PYTHON_VERSION" >> $GITHUB_ENV
+          uvx nox -s install-pyodide-emscripten
           echo "ORIG_PATH=$PATH" >> $GITHUB_ENV
       - uses: dtolnay/rust-toolchain@nightly
         with:
@@ -452,11 +441,6 @@ jobs:
         with:
           version: ${{env.EMSCRIPTEN_VERSION}}
           actions-cache-folder: emsdk-cache
-      - uses: actions/setup-python@v6
-        id: setup-python
-        with:
-          python-version: ${{env.PYTHON_VERSION}}
-      - run: pip install nox
       - uses: actions/cache@v5
         with:
           path: |
@@ -466,4 +450,6 @@ jobs:
       - name: Test
         run: |
           export PATH=$ORIG_PATH:$PATH
-          nox -s test-examples-emscripten
+          uvx nox -s test-examples-emscripten
+        env:
+          UV_PYTHON: ${{ env.PYTHON_VERSION }}
