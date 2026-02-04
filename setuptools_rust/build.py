@@ -212,12 +212,6 @@ class build_rust(RustCommand):
                 # the cdylib, see https://github.com/rust-lang/cargo/issues/10143
                 rustflags.append("-Ctarget-feature=-crt-static")
 
-            elif (rustc_cfgs.get("target_arch"), rustc_cfgs.get("target_os")) == (
-                "wasm32",
-                "emscripten",
-            ):
-                rustc_args.extend(["-C", "link-args=-sSIDE_MODULE=2 -sWASM_BIGINT"])
-
             if use_cargo_crate_type and "--crate-type" not in cargo_args:
                 cargo_args.extend(["--crate-type", "cdylib"])
 
