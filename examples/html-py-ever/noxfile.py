@@ -12,3 +12,12 @@ def test(session: nox.Session):
     session.install("--no-build-isolation", ".")
     # Test Python package
     session.run("pytest", *session.posargs)
+
+
+@nox.session()
+def bench(session: nox.Session):
+    session.install(SETUPTOOLS_RUST, "pytest", "pytest-benchmark", "beautifulsoup4")
+    # Ensure build uses version of setuptools-rust under development
+    session.install("--no-build-isolation", ".")
+    # Test Python package
+    session.run("pytest", "--benchmark-enable", *session.posargs)

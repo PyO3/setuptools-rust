@@ -3,37 +3,43 @@ use pyo3::prelude::*;
 #[pymodule]
 mod html_py_ever {
     use pyo3::prelude::*;
+    use scraper::{Html, Selector};
+    use std::fs;
     use std::io::Read;
     use std::path::Path;
-    use tendril::stream::TendrilSink;
 
     /// A parsed html document
     #[pyclass(unsendable)]
     struct Document {
-        node: kuchiki::NodeRef,
+        html: Html,
     }
 
     #[pymethods]
     impl Document {
         /// Returns the selected elements as strings
-        fn select(&self, selector: &str) -> Vec<String> {
-            self.node
-                .select(selector)
-                .unwrap()
-                .map(|css_match| css_match.text_contents())
-                .collect()
+        fn select(&self, selector: &str) -> PyResult<Vec<String>> {
+            let selector = Selector::parse(selector)
+                .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("{e:?}")))?;
+            Ok(self
+                .html
+                .select(&selector)
+                .map(|element| element.html())
+                .collect())
         }
     }
 
     impl Document {
         fn from_reader(reader: &mut impl Read) -> PyResult<Document> {
-            let node = kuchiki::parse_html().from_utf8().read_from(reader)?;
-            Ok(Document { node })
+            let mut html_string = String::new();
+            reader.read_to_string(&mut html_string)?;
+            let html = Html::parse_document(&html_string);
+            Ok(Document { html })
         }
 
         fn from_file(path: &Path) -> PyResult<Document> {
-            let node = kuchiki::parse_html().from_utf8().from_file(path)?;
-            Ok(Document { node })
+            let html_string = fs::read_to_string(path)?;
+            let html = Html::parse_document(&html_string);
+            Ok(Document { html })
         }
     }
 
