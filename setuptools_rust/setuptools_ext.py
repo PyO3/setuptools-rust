@@ -1,13 +1,11 @@
+import logging
 import os
 import sys
 import sysconfig
-import logging
-
-from typing import List, Literal, Optional, Set, Tuple, Type, TypeVar, cast
 from functools import partial
+from typing import List, Literal, Optional, Set, Tuple, Type, TypeVar, cast
 
 from setuptools.command.build_ext import build_ext
-
 from setuptools.command.install import install
 from setuptools.command.install_lib import install_lib
 from setuptools.command.install_scripts import install_scripts
@@ -310,7 +308,7 @@ def rust_extensions(
 
     # Monkey patch has_ext_modules to include Rust extensions.
     orig_has_ext_modules = dist.has_ext_modules
-    dist.has_ext_modules = lambda: (orig_has_ext_modules() or has_rust_extensions)  # type: ignore[method-assign]
+    dist.has_ext_modules = lambda: orig_has_ext_modules() or has_rust_extensions  # type: ignore[method-assign]
 
     if has_rust_extensions:
         add_rust_extension(dist)
