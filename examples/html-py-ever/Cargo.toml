@@ -5,8 +5,8 @@ authors = ["konstin <konstin@mailbox.org>"]
 edition = "2021"
 
 [dependencies]
-scraper = "0.22"
-pyo3 = "0.27"
+scraper = "0.25"
+pyo3 = "0.28"
 
 [lib]
 name = "html_py_ever"
