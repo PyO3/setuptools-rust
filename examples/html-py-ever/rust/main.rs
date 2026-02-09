@@ -1,11 +1,11 @@
 //! Pure rust version for comparing with python based calls
 
-use kuchiki;
+use scraper::{Html, Selector};
 
 use std::env;
+use std::fs;
 use std::path::PathBuf;
 use std::time::Instant;
-use tendril::stream::TendrilSink;
 
 fn main() {
     let path = PathBuf::from(
@@ -15,13 +15,15 @@ fn main() {
     );
 
     let now = Instant::now();
-    let document = kuchiki::parse_html().from_utf8().from_file(&path).unwrap();
+    let html_string = fs::read_to_string(&path).unwrap();
+    let document = Html::parse_document(&html_string);
     println!("{:?}", now.elapsed());
+
     let now2 = Instant::now();
+    let selector = Selector::parse("a[href]").unwrap();
     let links: Vec<String> = document
-        .select("a[href]")
-        .unwrap()
-        .map(|css_match| css_match.text_contents())
+        .select(&selector)
+        .map(|element| element.text().collect())
         .collect();
     println!("{} {:?}", links.len(), now2.elapsed());
 }
