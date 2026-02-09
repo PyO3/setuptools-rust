@@ -66,87 +66,28 @@ jobs:
       # If one platform fails, allow the rest to keep testing if `CI-no-fail-fast` label is present
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
-        python-version:
-          [
-            "3.9",
-            "3.10",
-            "3.11",
-            "3.14",
-            "3.13",
-            "3.13t",
-            "3.14",
-            "3.14t",
-            "pypy-3.11",
-            "graalpy25.0",
-          ]
-        platform:
-          [
-            {
-              os: "macos-latest",
-              python-architecture: "arm64",
-              rust-target: "aarch64-apple-darwin",
-            },
-            {
-              os: "ubuntu-latest",
-              python-architecture: "x64",
-              rust-target: "x86_64-unknown-linux-gnu",
-            },
-            {
-              os: "windows-latest",
-              python-architecture: "x64",
-              rust-target: "x86_64-pc-windows-msvc",
-            },
-          ]
+        python-version: ["3.9", "3.10", "3.11", "3.14", "3.13", "3.13t", "3.14", "3.14t", "pypy-3.11", "graalpy25.0"]
+        platform: [{os: "macos-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin"}, {os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu"}, {os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc"}]
         include:
           # Just test one x86 Windows Python for simplicity
           - python-version: "3.x"
-            platform:
-              {
-                os: "windows-latest",
-                python-architecture: "x86",
-                rust-target: "i686-pc-windows-msvc",
-              }
+            platform: {os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc"}
           # Just test one arm64 Windows Python for simplicity
           - python-version: "3.x"
-            platform:
-              {
-                os: "windows-11-arm",
-                python-architecture: "arm64",
-                rust-target: "aarch64-pc-windows-msvc",
-              }
+            platform: {os: "windows-11-arm", python-architecture: "arm64", rust-target: "aarch64-pc-windows-msvc"}
           # Just test one x64 macOS Python for simplicity
           - python-version: "3.x"
-            platform:
-              {
-                os: "macos-15-intel",
-                python-architecture: "x64",
-                rust-target: "x86_64-apple-darwin",
-              }
+            platform: {os: "macos-15-intel", python-architecture: "x64", rust-target: "x86_64-apple-darwin"}
           # Just test one arm64 Ubuntu Python for simplicity
           - python-version: "3.x"
-            platform:
-              {
-                os: "ubuntu-24.04-arm",
-                python-architecture: "arm64",
-                rust-target: "aarch64-unknown-linux-gnu",
-              }
+            platform: {os: "ubuntu-24.04-arm", python-architecture: "arm64", rust-target: "aarch64-unknown-linux-gnu"}
         exclude:
           # macOS arm doesn't have Python builds before 3.10
           - python-version: 3.9
-            platform:
-              {
-                os: "macos-latest",
-                python-architecture: "arm64",
-                rust-target: "aarch64-apple-darwin",
-              }
+            platform: {os: "macos-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin"}
           # no graalpy available on Windows
           - python-version: graalpy25.0
-            platform:
-              {
-                os: "windows-latest",
-                python-architecture: "x64",
-                rust-target: "x86_64-pc-windows-msvc",
-              }
+            platform: {os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc"}
 
     env:
       SETUPTOOLS_RUST_CARGO_PROFILE: dev
@@ -206,15 +147,7 @@ jobs:
       # If one platform fails, allow the rest to keep testing if `CI-no-fail-fast` label is present
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
-        os:
-          [
-            ubuntu-latest,
-            macos-latest,
-            windows-latest,
-            windows-11-arm,
-            macos-15-intel,
-            ubuntu-24.04-arm,
-          ]
+        os: [ubuntu-latest, macos-latest, windows-latest, windows-11-arm, macos-15-intel, ubuntu-24.04-arm]
     steps:
       - uses: actions/checkout@v6
       - name: Setup python
@@ -271,7 +204,7 @@ jobs:
       # If one platform fails, allow the rest to keep testing if `CI-no-fail-fast` label is present
       fail-fast: ${{ !contains(github.event.pull_request.labels.*.name, 'CI-no-fail-fast') }}
       matrix:
-        platform: [{ arch: "aarch64" }, { arch: "armv7" }]
+        platform: [{arch: "aarch64"}, {arch: "armv7"}]
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python
@@ -359,9 +292,7 @@ jobs:
         env:
           CIBW_BUILD: cp39-*
           CIBW_BEFORE_BUILD: >
-            pip install -U 'pip>=23.2.1' 'setuptools>=70.1.0' 'auditwheel>=5.4.0'
-            && pip install -e .
-            && pip list
+            pip install -U 'pip>=23.2.1' 'setuptools>=70.1.0' 'auditwheel>=5.4.0' && pip install -e . && pip list
           CIBW_ARCHS_MACOS: "x86_64 universal2 arm64"
           CIBW_BUILD_VERBOSITY: 3
           CIBW_BUILD_FRONTEND: "build; args: --no-isolation"
@@ -375,21 +306,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          [
-            {
-              msystem: MINGW64,
-              arch: x86_64,
-              path: mingw64,
-              rust_target: x86_64-pc-windows-gnu,
-            },
-            {
-              msystem: MINGW32,
-              arch: i686,
-              path: mingw32,
-              rust_target: i686-pc-windows-gnu,
-            },
-          ]
+        include: [{msystem: MINGW64, arch: x86_64, path: mingw64, rust_target: x86_64-pc-windows-gnu}, {msystem: MINGW32, arch: i686, path: mingw32, rust_target: i686-pc-windows-gnu}]
     steps:
       - uses: actions/checkout@v6
       - name: Install MSys2 and dependencies
@@ -398,12 +315,7 @@ jobs:
           update: true
           msystem: ${{ matrix.msystem }}
           install: >-
-            git
-            mingw-w64-${{ matrix.arch }}-python
-            mingw-w64-${{ matrix.arch }}-python-pip
-            mingw-w64-${{ matrix.arch }}-openssl
-            mingw-w64-${{ matrix.arch }}-toolchain
-
+            git mingw-w64-${{ matrix.arch }}-python mingw-w64-${{ matrix.arch }}-python-pip mingw-w64-${{ matrix.arch }}-openssl mingw-w64-${{ matrix.arch }}-toolchain #magic___^_^___line
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable-${{ matrix.rust_target }}
@@ -423,7 +335,13 @@ jobs:
         run: PATH="$PATH:/c/Users/runneradmin/.cargo/bin" nox -s test-examples
 
   test-emscripten:
+    name: emscripten (${{ matrix.rust-version }} Rust)
+    strategy:
+      fail-fast: true
+      matrix:
+        rust-version: [stable, nightly]
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.rust-version == 'nightly' }}
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
@@ -433,8 +351,9 @@ jobs:
       - run: |
           uvx nox -s install-pyodide-emscripten
           echo "ORIG_PATH=$PATH" >> $GITHUB_ENV
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: ${{ matrix.rust-version }}
           components: rust-src
           targets: wasm32-unknown-emscripten
       - uses: mymindstorm/setup-emsdk@v14
