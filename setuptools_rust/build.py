@@ -1,30 +1,30 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import platform
 import shutil
 import subprocess
 import sys
 import sysconfig
-import logging
 import warnings
-from setuptools.errors import (
-    CompileError,
-    ExecError,
-    FileError,
-    PlatformError,
-)
-from sysconfig import get_config_var
 from pathlib import Path
+from sysconfig import get_config_var
 from typing import Dict, List, Literal, NamedTuple, Optional, Set, Tuple, cast
 
 from setuptools import Distribution
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
 from setuptools.command.install_scripts import install_scripts as CommandInstallScripts
+from setuptools.errors import (
+    CompileError,
+    ExecError,
+    FileError,
+    PlatformError,
+)
 
-from ._utils import check_subprocess_output, format_called_process_error, Env
+from ._utils import Env, check_subprocess_output, format_called_process_error
 from .command import RustCommand
 from .extension import Binding, RustBin, RustExtension, Strip
 from .rustc_info import (
@@ -40,7 +40,9 @@ try:
     from setuptools.command.bdist_wheel import bdist_wheel as CommandBdistWheel
 except ImportError:  # old version of setuptools
     try:
-        from wheel.bdist_wheel import bdist_wheel as CommandBdistWheel  # type: ignore[no-redef]
+        from wheel.bdist_wheel import (
+            bdist_wheel as CommandBdistWheel,  # type: ignore[no-redef]
+        )
     except ImportError:
         from setuptools import Command as CommandBdistWheel  # type: ignore[assignment]
 
@@ -52,6 +54,16 @@ def _check_cargo_supports_crate_type_option(env: Optional[Env]) -> bool:
         return False
 
     return version.major > 1 or (version.major == 1 and version.minor >= 64)  # type: ignore
+
+
+def _rustc_passes_side_module_automatically(env: Optional[Env]) -> bool:
+    version = get_rust_version(env)
+
+    if version is None:
+        return False
+
+    # Rust 1.95.0 and above automatically pass `-C link-args=-sSIDE_MODULE=2` for wasm32-emscripten targets when building cdylibs
+    return version.major > 1 or (version.major == 1 and version.minor >= 95)  # type: ignore
 
 
 class build_rust(RustCommand):
@@ -211,6 +223,13 @@ class build_rust(RustCommand):
                 # This must go in the env otherwise rustc will refuse to build
                 # the cdylib, see https://github.com/rust-lang/cargo/issues/10143
                 rustflags.append("-Ctarget-feature=-crt-static")
+
+            elif (
+                rustc_cfgs.get("target_arch") == "wasm32"
+                and rustc_cfgs.get("target_os") == "emscripten"
+                and not _rustc_passes_side_module_automatically(ext.env)
+            ):
+                rustc_args.extend(["-C", "link-args=-sSIDE_MODULE=2"])
 
             if use_cargo_crate_type and "--crate-type" not in cargo_args:
                 cargo_args.extend(["--crate-type", "cdylib"])
