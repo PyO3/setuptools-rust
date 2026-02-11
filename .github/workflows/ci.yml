@@ -423,7 +423,13 @@ jobs:
         run: PATH="$PATH:/c/Users/runneradmin/.cargo/bin" nox -s test-examples
 
   test-emscripten:
+    name: emscripten (${{ matrix.rust-version }} Rust)
+    strategy:
+      fail-fast: true
+      matrix:
+        rust-version: [stable, nightly]
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.rust-version == 'nightly' }}
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
@@ -433,8 +439,9 @@ jobs:
       - run: |
           uvx nox -s install-pyodide-emscripten
           echo "ORIG_PATH=$PATH" >> $GITHUB_ENV
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: ${{ matrix.rust-version }}
           components: rust-src
           targets: wasm32-unknown-emscripten
       - uses: mymindstorm/setup-emsdk@v14

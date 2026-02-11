@@ -1,11 +1,11 @@
 import os
-from contextlib import ExitStack
-from inspect import cleandoc as heredoc
-from glob import glob
-from pathlib import Path
 import shutil
 import sys
 import tempfile
+from contextlib import ExitStack
+from glob import glob
+from inspect import cleandoc as heredoc
+from pathlib import Path
 
 import nox
 import nox.command
@@ -264,15 +264,6 @@ def install_pyodide_emscripten(session: nox.Session):
 def test_examples_emscripten(session: nox.Session):
     session.install(".", "build")
 
-    session.run(
-        "rustup",
-        "component",
-        "add",
-        "rust-src",
-        "--toolchain",
-        "nightly",
-        external=True,
-    )
     examples_dir = Path("examples").absolute()
     test_crates = [
         examples_dir / "html-py-ever",
@@ -297,7 +288,6 @@ pointer_width=32
         for example in test_crates:
             env = os.environ.copy()
             env.update(
-                RUSTUP_TOOLCHAIN="nightly",
                 PYTHONPATH=str(EMSCRIPTEN_DIR),
                 _PYTHON_SYSCONFIGDATA_NAME="_sysconfigdata__emscripten_wasm32-emscripten",
                 _PYTHON_HOST_PLATFORM=f"emscripten_{emscripten_version_joined}_wasm32",
