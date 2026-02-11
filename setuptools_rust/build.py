@@ -227,9 +227,10 @@ class build_rust(RustCommand):
             elif (
                 rustc_cfgs.get("target_arch") == "wasm32"
                 and rustc_cfgs.get("target_os") == "emscripten"
-                and not _rustc_passes_side_module_automatically(ext.env)
             ):
-                rustc_args.extend(["-C", "link-args=-sSIDE_MODULE=2"])
+                rustc_args.extend(["-C", "symbol-mangling-version=v0"])
+                if not _rustc_passes_side_module_automatically(ext.env):
+                    rustc_args.extend(["-C", "link-args=-sSIDE_MODULE=2"])
 
             if use_cargo_crate_type and "--crate-type" not in cargo_args:
                 cargo_args.extend(["--crate-type", "cdylib"])
