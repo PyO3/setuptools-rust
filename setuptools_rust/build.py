@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import collections
+import enum
 import json
 import os
 import platform
@@ -17,7 +19,7 @@ from setuptools.errors import (
 )
 from sysconfig import get_config_var
 from pathlib import Path
-from typing import Dict, List, Literal, NamedTuple, Optional, Set, Tuple, cast
+from typing import Dict, List, Literal, NamedTuple, Optional, Set, Tuple, Union, cast
 
 from setuptools import Distribution
 from setuptools.command.build_ext import build_ext as CommandBuildExt
@@ -54,6 +56,9 @@ def _check_cargo_supports_crate_type_option(env: Optional[Env]) -> bool:
     return version.major > 1 or (version.major == 1 and version.minor >= 64)  # type: ignore
 
 
+_UNIVERSAL2_TARGETS = ("aarch64-apple-darwin", "x86_64-apple-darwin")
+
+
 class build_rust(RustCommand):
     """Command for building Rust crates via cargo."""
 
@@ -88,12 +93,13 @@ class build_rust(RustCommand):
 
     def initialize_options(self) -> None:
         super().initialize_options()
-        self.target = os.getenv("CARGO_BUILD_TARGET")
+        self.target = os.getenv("CARGO_BUILD_TARGET", _Platform.CARGO_DEFAULT)
         self.cargo = os.getenv("CARGO", "cargo")
 
     def finalize_options(self) -> None:
         super().finalize_options()
-
+        if self.target is None:
+            self.target = _Platform.CARGO_DEFAULT
         # Inherit settings from the `build` and `build_ext` commands
         self.set_undefined_options(
             "build",
@@ -116,37 +122,12 @@ class build_rust(RustCommand):
 
     def run_for_extension(self, ext: RustExtension) -> None:
         assert self.plat_name is not None
-
-        arch_flags = os.getenv("ARCHFLAGS")
-        universal2 = False
-        if self.plat_name.startswith("macosx-") and arch_flags:
-            universal2 = "x86_64" in arch_flags and "arm64" in arch_flags
-            if not universal2 and not self.target:
-                if "arm64" in arch_flags:
-                    self.target = "aarch64-apple-darwin"
-                elif "x86_64" in arch_flags:
-                    self.target = "x86_64-apple-darwin"
-
-        if universal2:
-            arm64_dylib_paths = self.build_extension(ext, "aarch64-apple-darwin")
-            x86_64_dylib_paths = self.build_extension(ext, "x86_64-apple-darwin")
-            dylib_paths = []
-            for (target_fname, arm64_dylib), (_, x86_64_dylib) in zip(
-                arm64_dylib_paths, x86_64_dylib_paths
-            ):
-                fat_dylib_path = arm64_dylib.replace("aarch64-apple-darwin/", "")
-                create_universal2_binary(fat_dylib_path, [arm64_dylib, x86_64_dylib])
-                dylib_paths.append(_BuiltModule(target_fname, fat_dylib_path))
-        else:
-            dylib_paths = self.build_extension(ext, self.target)
+        if self.target is _Platform.CARGO_DEFAULT:
+            self.target = _override_cargo_default_target(self.plat_name, ext.env)
+        dylib_paths = self.build_extension(ext)
         self.install_extension(ext, dylib_paths)
 
-    def build_extension(
-        self, ext: RustExtension, forced_target_triple: Optional[str] = None
-    ) -> List["_BuiltModule"]:
-        target_triple = self._detect_rust_target(forced_target_triple, ext.env)
-        rustc_cfgs = get_rustc_cfgs(target_triple, ext.env)
-
+    def build_extension(self, ext: RustExtension) -> List["_BuiltModule"]:
         env = _prepare_build_environment(ext.env, ext)
 
         if not os.path.exists(ext.path):
@@ -165,12 +146,9 @@ class build_rust(RustCommand):
                 "If you intended to build for a workspace member, set `path` for the extension to the member's Cargo.toml file."
             )
 
-        cargo_args = self._cargo_args(
-            ext=ext, target_triple=target_triple, release=not debug, quiet=quiet
-        )
+        cargo_args = self._cargo_args(ext=ext, release=not debug, quiet=quiet)
 
-        rustflags = []
-
+        rustflags: List[str] = []
         if ext._uses_exec_binding():
             command = [
                 self.cargo,
@@ -180,44 +158,20 @@ class build_rust(RustCommand):
                 "--message-format=json-render-diagnostics",
                 *cargo_args,
             ]
-
         else:
-            # If toolchain >= 1.64.0, use '--crate-type' option of cargo.
-            # See https://github.com/PyO3/setuptools-rust/issues/320
+            # If toolchain >= 1.64.0, use '--crate-type' option of cargo (instead of
+            # rustc). See https://github.com/PyO3/setuptools-rust/issues/320
             if use_cargo_crate_type:
-                rustc_args = [
-                    *ext.rustc_flags,
-                ]
+                rustc_args = list(ext.rustc_flags)
             else:
                 rustc_args = [
                     "--crate-type",
                     "cdylib",
                     *ext.rustc_flags,
                 ]
-
-            # Apple platforms require special linker arguments
-            if rustc_cfgs.get("target_os") in {"macos", "ios", "tvos", "watchos"}:
-                ext_basename = os.path.basename(self.get_dylib_ext_path(ext, ext.name))
-                rustc_args.extend(
-                    [
-                        "-C",
-                        f"link-args=-undefined dynamic_lookup -Wl,-install_name,@rpath/{ext_basename}",
-                    ]
-                )
-
-            # Tell musl targets not to statically link libc. See
-            # https://github.com/rust-lang/rust/issues/59302 for details.
-            if rustc_cfgs.get("target_env") == "musl":
-                # This must go in the env otherwise rustc will refuse to build
-                # the cdylib, see https://github.com/rust-lang/cargo/issues/10143
-                rustflags.append("-Ctarget-feature=-crt-static")
-
-            elif (rustc_cfgs.get("target_arch"), rustc_cfgs.get("target_os")) == (
-                "wasm32",
-                "emscripten",
-            ):
-                rustc_args.extend(["-C", "link-args=-sSIDE_MODULE=2 -sWASM_BIGINT"])
-
+            extra_rustc_args, extra_rustflags = self._config_specific_rust_args(ext)
+            rustc_args += extra_rustc_args
+            rustflags += extra_rustflags
             if use_cargo_crate_type and "--crate-type" not in cargo_args:
                 cargo_args.extend(["--crate-type", "cdylib"])
 
@@ -281,6 +235,8 @@ class build_rust(RustCommand):
                 package_id=package_id,
                 kinds={"bin"},
             )
+            if self.target is _Platform.UNIVERSAL2:
+                artifacts = _combine_universal2_artifacts(artifacts)
             for name, dest in ext.target.items():
                 if not name:
                     name = dest.split(".")[-1]
@@ -309,6 +265,8 @@ class build_rust(RustCommand):
                 package_id=package_id,
                 kinds={"cdylib", "dylib"},
             )
+            if self.target is _Platform.UNIVERSAL2:
+                artifacts = _combine_universal2_artifacts(artifacts)
             if len(artifacts) == 0:
                 raise ExecError(
                     "Rust build failed; unable to find any cdylib or dylib build artifacts"
@@ -476,29 +434,6 @@ class build_rust(RustCommand):
         else:
             return cast(_PyLimitedApi, bdist_wheel.py_limited_api)
 
-    def _detect_rust_target(
-        self, forced_target_triple: Optional[str], env: Env
-    ) -> Optional[str]:
-        assert self.plat_name is not None
-        if forced_target_triple is not None:
-            # Automatic target detection can be overridden via the CARGO_BUILD_TARGET
-            # environment variable or --target command line option
-            return forced_target_triple
-
-        # Determine local rust target which needs to be "forced" if necessary
-        local_rust_target = _adjusted_local_rust_target(self.plat_name, env)
-
-        # Match cargo's behaviour of not using an explicit target if the
-        # target we're compiling for is the host
-        if (
-            local_rust_target is not None
-            # check for None first to avoid calling to rustc if not needed
-            and local_rust_target != get_rust_host(env)
-        ):
-            return local_rust_target
-
-        return None
-
     def _is_debug_build(self, ext: RustExtension) -> bool:
         if self.release:
             return False
@@ -512,14 +447,17 @@ class build_rust(RustCommand):
     def _cargo_args(
         self,
         ext: RustExtension,
-        target_triple: Optional[str],
         release: bool,
         quiet: bool,
     ) -> List[str]:
-        args = []
-        if target_triple is not None:
-            args.extend(["--target", target_triple])
-
+        # Multi-target compilation through `cargo` requires Rust 1.61.
+        if self.target is _Platform.CARGO_DEFAULT:
+            targets = []
+        elif self.target is _Platform.UNIVERSAL2:
+            targets = list(_UNIVERSAL2_TARGETS)
+        else:
+            targets = [self.target]
+        args = [arg for target in targets for arg in ("--target", target)]
         ext_profile = ext.get_cargo_profile()
         env_profile = os.getenv("SETUPTOOLS_RUST_CARGO_PROFILE")
         if release and not ext_profile and not env_profile:
@@ -561,6 +499,79 @@ class build_rust(RustCommand):
 
         return args
 
+    def _config_specific_rust_args(
+        self, ext: RustExtension
+    ) -> Tuple[List[str], List[str]]:
+        """Get extra arguments for `rustc` and the `RUSTFLAGS` environment variable
+        that depend on the specific environmental configuration for the compilation
+        target."""
+
+        def apple_specific_rustc() -> List[str]:
+            # Apple platforms require special linker arguments
+            ext_basename = os.path.basename(self.get_dylib_ext_path(ext, ext.name))
+            # These are specified as multiple sets of `link-arg` instead of one set of
+            # `link-args` bceause passing the space-separated list through the
+            # `RUSTFLAGS` environment variable (as is needed in the case of a
+            # multi-target build) is rather tricky.
+            return [
+                "-Clink-arg=-undefined",
+                "-Clink-arg=dynamic_lookup",
+                f"-Clink-arg=-Wl,-install_name,@rpath/{ext_basename}",
+            ]
+
+        rustc_args: List[str] = []  # Command-line arguments for rustc.
+        rust_flags: List[str] = []  # Extras for the `RUSTFLAGS` environment variable.
+
+        if self.target is _Platform.UNIVERSAL2:
+            # In this case we're in a multi-target compilation, so there's no one single
+            # `target_triple` to get configurations for.  We also can't pass `rustc`
+            # arguments because we're multi-target, so we have to apply them via the
+            # flags.
+            rust_flags += apple_specific_rustc()
+            return rustc_args, rust_flags
+
+        target_triple = None if self.target is _Platform.CARGO_DEFAULT else self.target
+        rustc_cfgs = get_rustc_cfgs(target_triple, ext.env)
+        target_os = rustc_cfgs.get("target_os")
+        if target_os in ("macos", "ios", "tvos", "watchos"):
+            rustc_args += apple_specific_rustc()
+        if rustc_cfgs.get("target_env") == "musl":
+            # Tell musl targets not to statically link libc. See
+            # https://github.com/rust-lang/rust/issues/59302 for details.
+            # This must go in the env otherwise rustc will refuse to build
+            # the cdylib, see https://github.com/rust-lang/cargo/issues/10143
+            rust_flags += ["-Ctarget-feature=-crt-static"]
+        if (rustc_cfgs.get("target_arch"), target_os) == ("wasm32", "emscripten"):
+            rustc_args += ["-C", "link-args=-sSIDE_MODULE=2 -sWASM_BIGINT"]
+        return rustc_args, rust_flags
+
+
+def _combine_universal2_artifacts(artifacts: List[str]) -> List[str]:
+    """For a multi-target compilation corresponding to an intended universal2 build,
+    combine each set of corresponding separate-target artifacts into a single universal2
+    binary.
+
+    Returns the constructed paths to the new combined artifacts."""
+    to_combine = collections.defaultdict(list)
+    for artifact in artifacts:
+        target = next((t for t in _UNIVERSAL2_TARGETS if t in artifact), None)
+        if target is None:
+            raise ExecError(
+                f"Rust build failed; compiled artifact '{artifact}' does not appear to"
+                " be part of the expected universal2 build."
+            )
+        to_combine[artifact.replace(target + "/", "")].append(artifact)
+    combined = []
+    for output_path, input_paths in to_combine.items():
+        if len(set(input_paths)) != len(_UNIVERSAL2_TARGETS):
+            raise ExecError(
+                f"Rust build failed; {input_paths} is not a complete set of artifacts"
+                " for a universal2 build."
+            )
+        create_universal2_binary(output_path, input_paths)
+        combined.append(output_path)
+    return combined
+
 
 def create_universal2_binary(output_path: str, input_paths: List[str]) -> None:
     # Try lipo first
@@ -584,6 +595,18 @@ def create_universal2_binary(output_path: str, input_paths: List[str]) -> None:
             with open(input_path, "rb") as f:
                 fat.add(f.read())
         fat.write_to(output_path)
+
+
+class _Platform(enum.Enum):
+    """Special cases for the platform of the wheel we're targeting.
+
+    The alternative to this enum is a string containing a literal target triple."""
+
+    CARGO_DEFAULT = enum.auto()
+    """The default target triple you get with `cargo build` without specifying `--target`."""
+    UNIVERSAL2 = enum.auto()
+    """The special 'universal2' wheel format, which is the arm64 and x86_64 macOS builds squashed
+    together into one binary."""
 
 
 class _BuiltModule(NamedTuple):
@@ -694,27 +717,44 @@ def _binding_features(
 _PyLimitedApi = Literal["cp37", "cp38", "cp39", "cp310", "cp311", "cp312", True, False]
 
 
-def _adjusted_local_rust_target(plat_name: str, env: Env) -> Optional[str]:
-    """Returns the local rust target for the given `plat_name`, if it is
-    necessary to 'force' a specific target for correctness."""
+def _override_cargo_default_target(plat_name: str, env: Env) -> Union[str, _Platform]:
+    """Get a platform-specific override, if one is needed for correctness."""
+    override: Union[str, _Platform] = _Platform.CARGO_DEFAULT
+    if plat_name in ("win32", "win-amd64"):
+        toolchain = (
+            "gnu" if get_rustc_cfgs(None, env).get("target_env") == "gnu" else "msvc"
+        )
+        # If we've got a 32-bit Python, we need to make sure Rust will build for a 32-bit target,
+        # even though the host system may well be 64-bit.
+        arch = "i686" if plat_name == "win32" else "x86_64"
+        override = f"{arch}-pc-windows-{toolchain}"
+    elif plat_name.startswith("macosx-"):
+        override = _macos_target_from_arch_flags(os.environ.get("ARCHFLAGS"))
+        if override is _Platform.CARGO_DEFAULT and platform.machine() == "x86_64":
+            override = "x86_64-apple-darwin"
 
-    # If we are on a 64-bit machine, but running a 32-bit Python, then
-    # we'll target a 32-bit Rust build.
-    if plat_name == "win32":
-        if get_rustc_cfgs(None, env).get("target_env") == "gnu":
-            return "i686-pc-windows-gnu"
-        else:
-            return "i686-pc-windows-msvc"
-    elif plat_name == "win-amd64":
-        if get_rustc_cfgs(None, env).get("target_env") == "gnu":
-            return "x86_64-pc-windows-gnu"
-        else:
-            return "x86_64-pc-windows-msvc"
-    elif plat_name.startswith("macosx-") and platform.machine() == "x86_64":
-        # x86_64 or arm64 macOS targeting x86_64
+    if isinstance(override, str) and override == get_rust_host(env):
+        # If the override we asserted resolves to the same that `rustc` would do by default, we swap
+        # back to specifying the `CARGO_DEFAULT` to avoid creating spurious specific-target
+        # directories in the temporary build directory.
+        override = _Platform.CARGO_DEFAULT
+    return override
+
+
+def _macos_target_from_arch_flags(arch_flags: Optional[str]) -> Union[str, _Platform]:
+    """Detect the macOS target to compile for, based on what (if anything) is set in the
+    `ARCHFLAGS`."""
+    if arch_flags is None:
+        return _Platform.CARGO_DEFAULT
+    intel = "x86_64" in arch_flags
+    arm = "arm64" in arch_flags
+    if intel and arm:
+        return _Platform.UNIVERSAL2
+    if intel:
         return "x86_64-apple-darwin"
-
-    return None
+    if arm:
+        return "aarch64-apple-darwin"
+    return _Platform.CARGO_DEFAULT
 
 
 def _split_platform_and_extension(ext_path: str) -> Tuple[str, str, str]:

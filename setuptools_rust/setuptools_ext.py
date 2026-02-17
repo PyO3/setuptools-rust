@@ -13,7 +13,7 @@ from setuptools.command.sdist import sdist
 from setuptools.dist import Distribution
 
 from ._utils import Env, run_subprocess
-from .build import _get_bdist_wheel_cmd
+from .build import _get_bdist_wheel_cmd, _Platform
 from .extension import Binding, RustBin, RustExtension, Strip
 
 try:
@@ -171,7 +171,7 @@ def add_rust_extension(dist: Distribution) -> None:
 
         def initialize_options(self) -> None:
             super().initialize_options()
-            self.target = os.getenv("CARGO_BUILD_TARGET")
+            self.target = os.getenv("CARGO_BUILD_TARGET", _Platform.CARGO_DEFAULT)
 
         def run(self) -> None:
             super().run()
