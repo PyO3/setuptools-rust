@@ -172,7 +172,11 @@ class build_rust(RustCommand):
             extra_rustc_args, extra_rustflags = self._config_specific_rust_args(ext)
             rustc_args += extra_rustc_args
             rustflags += extra_rustflags
-            if use_cargo_crate_type and "--crate-type" not in cargo_args:
+            if (
+                use_cargo_crate_type
+                and "--crate-type" not in cargo_args
+                and self.target is not _Platform.UNIVERSAL2
+            ):
                 cargo_args.extend(["--crate-type", "cdylib"])
 
             command = [
