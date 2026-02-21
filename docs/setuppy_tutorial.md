@@ -121,6 +121,11 @@ python -c 'import hello_world; print(hello_world.sum_as_string(5, 7))'  # => 12
   to manually add an extra `build.rs` file, see [PyO3/setuptools-rust#351](https://github.com/PyO3/setuptools-rust/pull/351)
   for more information about the workaround.
 
+- If your Rust extension generates data files as part of its `build.rs` build script
+  that you want to be present in your Python wheel, you can use the `data_files`
+  argument of `RustExtension` to define which files should be copied across, and into
+  which locations in the Python package.
+
 - Since the adoption of {pep}`517`, running `python setup.py ...` directly as a CLI tool is
   [considered deprecated](https://blog.ganssle.io/articles/2021/10/setup-py-deprecated.html).
   Nevertheless, `setup.py` can be safely used as a configuration file

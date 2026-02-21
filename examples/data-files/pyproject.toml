@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools", "setuptools-rust"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "data-files"
+version = "1.0"
+
+[tool.setuptools.packages]
+# Pure Python packages/modules
+find = { where = ["python"] }
+
+[[tool.setuptools-rust.ext-modules]]
+target = "data_files._lib"
+[tool.setuptools-rust.ext-modules.data-files]
+# Keys correspond to files/directories in the Rust extension's build directory `OUT_DIR`.
+# Values are Python packages that the corresponding file or directory should be placed inside.
+"my_file.txt" = "data_files"
+"dir" = "data_files._data"
