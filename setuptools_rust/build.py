@@ -24,6 +24,7 @@ from typing import Dict, List, Literal, NamedTuple, Optional, Set, Tuple, Union,
 from setuptools import Distribution
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
+from setuptools.command.build_py import build_py as setuptools_build_py
 from setuptools.command.install_scripts import install_scripts as CommandInstallScripts
 
 from ._utils import check_subprocess_output, format_called_process_error, Env
@@ -124,10 +125,12 @@ class build_rust(RustCommand):
         assert self.plat_name is not None
         if self.target is _Platform.CARGO_DEFAULT:
             self.target = _override_cargo_default_target(self.plat_name, ext.env)
-        dylib_paths = self.build_extension(ext)
-        self.install_extension(ext, dylib_paths)
+        dylib_paths, artifact_dirs = self.build_extension(ext)
+        self.install_extension(ext, dylib_paths, artifact_dirs)
 
-    def build_extension(self, ext: RustExtension) -> List["_BuiltModule"]:
+    def build_extension(
+        self, ext: RustExtension
+    ) -> Tuple[List["_BuiltModule"], List[Path]]:
         env = _prepare_build_environment(ext.env, ext)
 
         if not os.path.exists(ext.path):
@@ -204,10 +207,14 @@ class build_rust(RustCommand):
         else:
             targets = [self.target]
 
-        cargo_messages = ""
+        cargo_messages: Dict[str, List[str]] = {}
         for target in targets:
             target_command = command.copy()
-            if target is not None:
+            if target is None:
+                # Normalize the entries in `cargo_messages` to always be in terms of the
+                # actual target triple.
+                target = get_rust_host(ext.env)
+            else:
                 target_command += ["--target", target]
             if rustc_args:
                 target_command += ["--"]
@@ -221,12 +228,12 @@ class build_rust(RustCommand):
                 # If quiet, capture all output and only show it in the exception
                 # If not quiet, forward all cargo output to stderr
                 stderr = subprocess.PIPE if quiet else None
-                cargo_messages += check_subprocess_output(
+                cargo_messages[target] = check_subprocess_output(
                     target_command,
                     env=env,
                     stderr=stderr,
                     text=True,
-                )
+                ).splitlines()
             except subprocess.CalledProcessError as e:
                 # Don't include stdout in the formatted error as it is a huge dump
                 # of cargo json lines which aren't helpful for the end user.
@@ -246,7 +253,7 @@ class build_rust(RustCommand):
         if ext._uses_exec_binding():
             # Find artifact from cargo messages
             artifacts = _find_cargo_artifacts(
-                cargo_messages.splitlines(),
+                [line for messages in cargo_messages.values() for line in messages],
                 package_id=package_id,
                 kinds={"bin"},
             )
@@ -276,7 +283,7 @@ class build_rust(RustCommand):
         else:
             # Find artifact from cargo messages
             artifacts = _find_cargo_artifacts(
-                cargo_messages.splitlines(),
+                [line for messages in cargo_messages.values() for line in messages],
                 package_id=package_id,
                 kinds={"cdylib", "dylib"},
             )
@@ -300,10 +307,33 @@ class build_rust(RustCommand):
 
             # guaranteed to be just one element after checks above
             dylib_paths.append(_BuiltModule(ext.name, artifact_path))
-        return dylib_paths
+
+        if not ext.data_files:
+            return dylib_paths, []
+
+        if self.target is _Platform.UNIVERSAL2:
+            search_targets = ext.universal2_data_files_from.targets()
+        else:
+            search_targets = list(cargo_messages)
+        out_dirs = [
+            out_dir
+            for target in search_targets
+            if (out_dir := _find_cargo_out_dir(cargo_messages[target], package_id))
+            is not None
+        ]
+        if not out_dirs:
+            raise ExecError(
+                f"extension {ext.name} requests data files, but no corresponding"
+                " build-script out directories could be found"
+            )
+
+        return dylib_paths, out_dirs
 
     def install_extension(
-        self, ext: RustExtension, dylib_paths: List["_BuiltModule"]
+        self,
+        ext: RustExtension,
+        dylib_paths: List["_BuiltModule"],
+        build_artifact_dirs: List[Path],
     ) -> None:
         debug_build = self._is_debug_build(ext)
 
@@ -399,6 +429,39 @@ class build_rust(RustCommand):
             mode = os.stat(ext_path).st_mode
             mode |= (mode & 0o444) >> 2  # copy R bits to X
             os.chmod(ext_path, mode)
+
+        if not ext.data_files:
+            return
+
+        # We'll delegate the finding of the package directories to Setuptools, so we
+        # can be sure we're handling editable installs and other complex situations
+        # correctly.
+        build_py = cast(setuptools_build_py, self.get_finalized_command("build_py"))
+
+        def get_package_dir(package: str) -> Path:
+            if self.inplace:
+                # If `inplace`, we have to ask `build_py` (like `build_ext` would).
+                return Path(build_py.get_package_dir(package))
+            # ... If not, `build_ext` knows where to put the package.
+            return Path(build_ext.build_lib) / Path(*package.split("."))
+
+        for source, package in ext.data_files.items():
+            dest = get_package_dir(package)
+            dest.mkdir(mode=0o755, parents=True, exist_ok=True)
+            for artifact_dir in build_artifact_dirs:
+                source_full = artifact_dir / source
+                dest_full = dest / source_full.name
+                if source_full.is_file():
+                    logger.info(
+                        "Copying data file from %s to %s", source_full, dest_full
+                    )
+                    shutil.copy2(source_full, dest_full)
+                elif source_full.is_dir():
+                    logger.info(
+                        "Copying data directory from %s to %s", source_full, dest_full
+                    )
+                    shutil.copytree(source_full, dest_full, dirs_exist_ok=True)
+                # This tacitly makes "no match" a silent non-error.
 
     def get_dylib_ext_path(self, ext: RustExtension, target_fname: str) -> str:
         assert self.plat_name is not None
@@ -833,6 +896,20 @@ def _find_cargo_artifacts(
                     if artifact_kind in kinds:
                         artifacts.append(filename)
     return artifacts
+
+
+def _find_cargo_out_dir(cargo_messages: List[str], package_id: str) -> Optional[Path]:
+    # Chances are that the line we're looking for will be the third laste line in the
+    # messages.  The last is the completion report, the penultimate is generally the
+    # build of the final artifact.
+    for messsage in reversed(cargo_messages):
+        if "build-script-executed" not in messsage or package_id not in messsage:
+            continue
+        parsed = json.loads(messsage)
+        if parsed.get("package_id") == package_id:
+            out_dir = parsed.get("out_dir")
+            return None if out_dir is None else Path(out_dir)
+    return None
 
 
 def _replace_cross_target_dir(path: str, ext: RustExtension, *, quiet: bool) -> str:

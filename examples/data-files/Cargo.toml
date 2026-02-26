@@ -1,0 +1,13 @@
+[package]
+name = "data-files"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[dependencies]
+pyo3 = "0.27"
+
+[lib]
+name = "_lib"  # private module to be nested into Python package
+crate-type = ["cdylib"]
+path = "rust/lib.rs"

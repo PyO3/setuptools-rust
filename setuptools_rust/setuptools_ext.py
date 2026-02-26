@@ -14,7 +14,7 @@ from setuptools.dist import Distribution
 
 from ._utils import Env, run_subprocess
 from .build import _get_bdist_wheel_cmd, _Platform
-from .extension import Binding, RustBin, RustExtension, Strip
+from .extension import Binding, RustBin, RustExtension, Strip, UniversalDataSource
 
 try:
     from setuptools.command.bdist_wheel import bdist_wheel
@@ -338,6 +338,8 @@ def _create(constructor: Type[T], config: dict) -> T:
         kwargs["binding"] = Binding[config["binding"]]
     if "strip" in config:
         kwargs["strip"] = Strip[config["strip"]]
+    if (key := kwargs.get("universal2_data_files_from", None)) is not None:
+        kwargs["universal2_data_files_from"] = UniversalDataSource(key)
     return constructor(**kwargs)
 
 
