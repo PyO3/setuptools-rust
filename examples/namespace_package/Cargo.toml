@@ -18,4 +18,4 @@ path = "rust/lib.rs"  # When omitted, the value of "src/lib.rs" is assumed
 # path = "src/lib.rs"
 
 [dependencies]
-pyo3 = "0.27"
+pyo3 = "0.28"
