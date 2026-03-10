@@ -27,11 +27,11 @@ def test_inplace(session: nox.Session):
 import os
 import shutil
 from pathlib import Path
-import data_files
+import generated_files
 
 try:
-    os.remove(Path(data_files.__file__).parent / "my_file.txt")
+    os.remove(Path(generated_files.__file__).parent / "my_file.txt")
 except FileNotFoundError:
     pass
-shutil.rmtree(Path(data_files.__file__).parent / "_data", ignore_errors=True)""",
+shutil.rmtree(Path(generated_files.__file__).parent / "_data", ignore_errors=True)""",
         )

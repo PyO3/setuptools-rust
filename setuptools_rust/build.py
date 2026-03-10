@@ -204,8 +204,8 @@ class build_rust(RustCommand):
             targets: List[Optional[str]] = [None]
         elif self.target is _Platform.UNIVERSAL2:
             targets = list(_UNIVERSAL2_TARGETS)
-            if ext.data_files:
-                raise PlatformError("'data-files' are not supported for universal2 wheels")
+            if ext.generated_files:
+                raise PlatformError("generated files are not supported for universal2 wheels")
         else:
             targets = [self.target]
 
@@ -306,7 +306,7 @@ class build_rust(RustCommand):
             # guaranteed to be just one element after checks above
             dylib_paths.append(_BuiltModule(ext.name, artifact_path))
 
-        if not ext.data_files:
+        if not ext.generated_files:
             return dylib_paths, []
 
         out_dirs = [
@@ -423,7 +423,7 @@ class build_rust(RustCommand):
             mode |= (mode & 0o444) >> 2  # copy R bits to X
             os.chmod(ext_path, mode)
 
-        if not ext.data_files:
+        if not ext.generated_files:
             return
 
         # We'll delegate the finding of the package directories to Setuptools, so we
@@ -438,7 +438,7 @@ class build_rust(RustCommand):
             # ... If not, `build_ext` knows where to put the package.
             return Path(build_ext.build_lib) / Path(*package.split("."))
 
-        for source, package in ext.data_files.items():
+        for source, package in ext.generated_files.items():
             dest = get_package_dir(package)
             dest.mkdir(mode=0o755, parents=True, exist_ok=True)
             for artifact_dir in build_artifact_dirs:

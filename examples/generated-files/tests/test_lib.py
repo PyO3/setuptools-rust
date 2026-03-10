@@ -1,9 +1,9 @@
 from pathlib import Path
-import data_files
+import generated_files
 
 
 def test_rust_extension():
-    assert data_files.library_ok()
+    assert generated_files.library_ok()
 
 
 def test_data_file_content():
@@ -12,4 +12,4 @@ def test_data_file_content():
         Path("_data") / "dir" / "a.txt": "This is file A.\n",
         Path("_data") / "dir" / "b.txt": "This is file B.\n",
     }
-    assert data_files.data_files_content() == expected
+    assert generated_files.data_files_content() == expected

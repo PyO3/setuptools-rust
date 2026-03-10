@@ -115,14 +115,14 @@ class RustExtension:
         env: Environment variables to use when calling cargo or rustc (``env=``
             in ``subprocess.Popen``). setuptools-rust may add additional
             variables or modify ``PATH``.
-        data_files: Mapping of paths inside the extension's compilation ``OUT_DIR`` to
-            Python (sub)packages that they should be copied into.  Each source path can
-            be either a file or a directory.  The source will be copied (recursively, in
-            the case of a directory) inside the mapped location.  This option is
-            incompatible with multiple targets.
+        generated_files: Mapping of paths inside the extension's compilation ``OUT_DIR``
+            to Python (sub)packages that they should be copied into.  Each source path
+            can be either a file or a directory.  The source will be copied
+            (recursively, in the case of a directory) inside the mapped location.  This
+            option is incompatible with multiple targets.
 
             If this is populated, the built extension must have a build script that
-            populates its ``OUT_DIR``.  Only the build script of the extension itself
+            populates its ``OUT_DIR``.  Only the output of the build script of the extension itself
             will be searched for data files.
     """
 
@@ -144,7 +144,7 @@ class RustExtension:
         optional: bool = False,
         py_limited_api: Literal["auto", True, False] = "auto",
         env: Optional[Dict[str, str]] = None,
-        data_files: Optional[Dict[str, str]] = None,
+        generated_files: Optional[Dict[str, str]] = None,
     ):
         if isinstance(target, dict):
             name = "; ".join("%s=%s" % (key, val) for key, val in target.items())
@@ -168,11 +168,11 @@ class RustExtension:
         self.optional = optional
         self.py_limited_api = py_limited_api
         self.env = Env(env)
-        self.data_files = data_files or {}
+        self.generated_files = generated_files or {}
 
-        if self.data_files and len(self.target) > 1:
+        if self.generated_files and len(self.target) > 1:
             raise ValueError(
-                "using 'data_files' with multiple targets is not supported"
+                "using 'generated_files' with multiple targets is not supported"
             )
 
         if native:
