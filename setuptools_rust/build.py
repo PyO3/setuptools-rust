@@ -205,7 +205,9 @@ class build_rust(RustCommand):
         elif self.target is _Platform.UNIVERSAL2:
             targets = list(_UNIVERSAL2_TARGETS)
             if ext.generated_files:
-                raise PlatformError("generated files are not supported for universal2 wheels")
+                raise PlatformError(
+                    "generated files are not supported for universal2 wheels"
+                )
         else:
             targets = [self.target]
 
@@ -259,6 +261,8 @@ class build_rust(RustCommand):
                 package_id=package_id,
                 kinds={"bin"},
             )
+            if self.target is _Platform.UNIVERSAL2:
+                artifacts = _combine_universal2_artifacts(artifacts)
             for name, dest in ext.target.items():
                 if not name:
                     name = dest.split(".")[-1]
@@ -287,6 +291,8 @@ class build_rust(RustCommand):
                 package_id=package_id,
                 kinds={"cdylib", "dylib"},
             )
+            if self.target is _Platform.UNIVERSAL2:
+                artifacts = _combine_universal2_artifacts(artifacts)
             if len(artifacts) == 0:
                 raise ExecError(
                     "Rust build failed; unable to find any cdylib or dylib build artifacts"
@@ -602,6 +608,33 @@ class build_rust(RustCommand):
         if (rustc_cfgs.get("target_arch"), target_os) == ("wasm32", "emscripten"):
             rustc_args += ["-C", "link-args=-sSIDE_MODULE=2 -sWASM_BIGINT"]
         return rustc_args, rust_flags
+
+
+def _combine_universal2_artifacts(artifacts: List[str]) -> List[str]:
+    """For a multi-target compilation corresponding to an intended universal2 build,
+    combine each set of corresponding separate-target artifacts into a single universal2
+    binary.
+
+    Returns the constructed paths to the new combined artifacts."""
+    to_combine = collections.defaultdict(list)
+    for artifact in artifacts:
+        target = next((t for t in _UNIVERSAL2_TARGETS if t in artifact), None)
+        if target is None:
+            raise ExecError(
+                f"Rust build failed; compiled artifact '{artifact}' does not appear to"
+                " be part of the expected universal2 build."
+            )
+        to_combine[artifact.replace(target + "/", "")].append(artifact)
+    combined = []
+    for output_path, input_paths in to_combine.items():
+        if len(set(input_paths)) != len(_UNIVERSAL2_TARGETS):
+            raise ExecError(
+                f"Rust build failed; {input_paths} is not a complete set of artifacts"
+                " for a universal2 build."
+            )
+        create_universal2_binary(output_path, input_paths)
+        combined.append(output_path)
+    return combined
 
 
 def create_universal2_binary(output_path: str, input_paths: List[str]) -> None:
