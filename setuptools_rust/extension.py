@@ -6,7 +6,7 @@ import re
 import subprocess
 import warnings
 from setuptools.errors import SetupError
-from enum import IntEnum, Enum, auto
+from enum import IntEnum, auto
 from functools import lru_cache
 from typing import (
     Any,
@@ -67,25 +67,6 @@ class Strip(IntEnum):
         return f"{self.__class__.__name__}.{self.name}"
 
 
-class UniversalDataSource(Enum):
-    """Which build to take ``data_files`` from for ``universal2`` targets."""
-
-    AArch64 = "aarch64"
-    """Take data files from the AArch64 build only."""
-    X86_64 = "x86_64"
-    """Take data files from the x86_64 build only."""
-    Both = "both"
-    """Take data files from both builds."""
-
-    def targets(self) -> List[str]:
-        """The targets we will search for data files."""
-        if self is self.AArch64:
-            return ["aarch64-apple-darwin"]
-        if self is self.X86_64:
-            return ["x86_64-apple-darwin"]
-        return ["aarch64-apple-darwin", "x86_64-apple-darwin"]
-
-
 class RustExtension:
     """Used to define a rust extension module and its build configuration.
 
@@ -143,9 +124,6 @@ class RustExtension:
             If this is populated, the built extension must have a build script that
             populates its ``OUT_DIR``.  Only the build script of the extension itself
             will be searched for data files.
-        universal2_data_files_from: If there are ``data_files`` to copy over during a
-            ``universal2`` build, take them from this location.  By default, this uses
-            only the AArch64 build.
     """
 
     def __init__(
@@ -167,7 +145,6 @@ class RustExtension:
         py_limited_api: Literal["auto", True, False] = "auto",
         env: Optional[Dict[str, str]] = None,
         data_files: Optional[Dict[str, str]] = None,
-        universal2_data_files_from: UniversalDataSource = UniversalDataSource.AArch64,
     ):
         if isinstance(target, dict):
             name = "; ".join("%s=%s" % (key, val) for key, val in target.items())
@@ -192,7 +169,6 @@ class RustExtension:
         self.py_limited_api = py_limited_api
         self.env = Env(env)
         self.data_files = data_files or {}
-        self.universal2_data_files_from = universal2_data_files_from
 
         if self.data_files and len(self.target) > 1:
             raise ValueError(

@@ -7,4 +7,3 @@ API Reference
 .. autoclass:: RustBin
 .. autoclass:: Binding
 .. autoclass:: Strip
-.. autoclass:: UniversalDataSource
