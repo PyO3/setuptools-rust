@@ -1,0 +1,27 @@
+name: Upload Python Package
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
+
+    steps:
+    - uses: actions/checkout@v6
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.x'
+    - name: Install dependencies
+      run: pip install -U pip build
+    - name: Build and publish
+      run: python -m build
+    - name: Upload package to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
