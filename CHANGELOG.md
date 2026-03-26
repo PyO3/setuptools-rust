@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.12.1 (2026-03-26)
+- Migrate to trusted publishing. [#581](https://github.com/PyO3/setuptools-rust/pull/581)
+- Strip target suffix for cargo-zigbuild compatibility. [#534](https://github.com/PyO3/setuptools-rust/pull/534)
+
 ## 1.12.0 (2025-08-29)
 - Set `PYO3_BUILD_EXTENSION_MODULE` environment variable when building PyO3 extensions. [#540](https://github.com/PyO3/setuptools-rust/pull/540)
 
