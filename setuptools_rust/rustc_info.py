@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 from setuptools.errors import PlatformError
 from functools import lru_cache
@@ -38,6 +39,19 @@ def get_rust_host(env: Optional[Env]) -> str:
 RustCfgs = NewType("RustCfgs", Dict[str, Optional[str]])
 
 
+def _is_custom_target(target: str) -> bool:
+    if target.endswith(".json"):
+        return True
+    paths = os.environ.get("RUST_TARGET_PATH")
+    if not paths:
+        return False
+    for p in paths.split(os.pathsep):
+        candidate = os.path.join(p, target + ".json")
+        if os.path.exists(candidate):
+            return True
+    return False
+
+
 def get_rustc_cfgs(target_triple: Optional[str], env: Env) -> RustCfgs:
     cfgs = RustCfgs({})
     for entry in get_rust_target_info(target_triple, env):
@@ -54,6 +68,8 @@ def get_rustc_cfgs(target_triple: Optional[str], env: Env) -> RustCfgs:
 def get_rust_target_info(target_triple: Optional[str], env: Env) -> List[str]:
     cmd = ["rustc", "--print", "cfg"]
     if target_triple:
+        if _is_custom_target(target_triple):
+            cmd.extend(["-Z", "unstable-options"])
         cmd.extend(["--target", target_triple.split(".")[0]])
     output = check_subprocess_output(cmd, env=env, text=True)
     return output.splitlines()
