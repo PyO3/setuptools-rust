@@ -15,6 +15,7 @@ from setuptools.errors import (
     CompileError,
     ExecError,
     FileError,
+    InternalError,
     PlatformError,
 )
 from sysconfig import get_config_var
@@ -125,12 +126,17 @@ class build_rust(RustCommand):
         assert self.plat_name is not None
         if self.target is _Platform.CARGO_DEFAULT:
             self.target = _override_cargo_default_target(self.plat_name, ext.env)
-        dylib_paths, artifact_dirs = self.build_extension(ext)
-        self.install_extension(ext, dylib_paths, artifact_dirs)
+        dylib_paths, artifact_dir = self.build_extension(ext)
+        self.install_extension(ext, dylib_paths, artifact_dir)
 
     def build_extension(
         self, ext: RustExtension
-    ) -> Tuple[List["_BuiltModule"], List[Path]]:
+    ) -> Tuple[List["_BuiltModule"], Optional[Path]]:
+        """
+        Build the Rust components, but don't install them anywhere.
+
+        Returns the built modules, and the location of the single-target ``OUT_DIR``, if needed
+        for copying generated files."""
         env = _prepare_build_environment(ext.env, ext)
 
         if not os.path.exists(ext.path):
@@ -313,7 +319,7 @@ class build_rust(RustCommand):
             dylib_paths.append(_BuiltModule(ext.name, artifact_path))
 
         if not ext.generated_files:
-            return dylib_paths, []
+            return dylib_paths, None
 
         out_dirs = [
             out_dir
@@ -321,18 +327,25 @@ class build_rust(RustCommand):
             if (out_dir := _find_cargo_out_dir(messages, package_id)) is not None
         ]
         if not out_dirs:
-            raise ExecError(
+            raise FileError(
                 f"extension {ext.name} requests data files, but no corresponding"
                 " build-script out directories could be found"
             )
+        if len(out_dirs) > 1:
+            # This is defensive - internal logic around target selection should already have
+            # prevented control from reaching here.
+            raise InternalError(
+                "generated-files support requires a single target and single out directory,"
+                f" but we found {out_dirs}"
+            )
 
-        return dylib_paths, out_dirs
+        return dylib_paths, out_dirs[0]
 
     def install_extension(
         self,
         ext: RustExtension,
         dylib_paths: List["_BuiltModule"],
-        build_artifact_dirs: List[Path],
+        build_artifact_dir: Optional[Path],
     ) -> None:
         debug_build = self._is_debug_build(ext)
 
@@ -431,6 +444,10 @@ class build_rust(RustCommand):
 
         if not ext.generated_files:
             return
+        if build_artifact_dir is None:
+            raise FileError(
+                "there are generated files to install but no build-artifact directory"
+            )
 
         # We'll delegate the finding of the package directories to Setuptools, so we
         # can be sure we're handling editable installs and other complex situations
@@ -444,23 +461,24 @@ class build_rust(RustCommand):
             # ... If not, `build_ext` knows where to put the package.
             return Path(build_ext.build_lib) / Path(*package.split("."))
 
+        missed_matches = []
         for source, package in ext.generated_files.items():
             dest = get_package_dir(package)
             dest.mkdir(mode=0o755, parents=True, exist_ok=True)
-            for artifact_dir in build_artifact_dirs:
-                source_full = artifact_dir / source
-                dest_full = dest / source_full.name
-                if source_full.is_file():
-                    logger.info(
-                        "Copying data file from %s to %s", source_full, dest_full
-                    )
-                    shutil.copy2(source_full, dest_full)
-                elif source_full.is_dir():
-                    logger.info(
-                        "Copying data directory from %s to %s", source_full, dest_full
-                    )
-                    shutil.copytree(source_full, dest_full, dirs_exist_ok=True)
-                # This tacitly makes "no match" a silent non-error.
+            source_full = build_artifact_dir / source
+            dest_full = dest / source_full.name
+            if source_full.is_file():
+                logger.info("Copying data file from %s to %s", source_full, dest_full)
+                shutil.copy2(source_full, dest_full)
+            elif source_full.is_dir():
+                logger.info(
+                    "Copying data directory from %s to %s", source_full, dest_full
+                )
+                shutil.copytree(source_full, dest_full, dirs_exist_ok=True)
+            else:
+                missed_matches.append(source)
+        if missed_matches:
+            raise FileError(f"failed to find build artifacts for {missed_matches}")
 
     def get_dylib_ext_path(self, ext: RustExtension, target_fname: str) -> str:
         assert self.plat_name is not None
