@@ -898,7 +898,7 @@ def _find_cargo_artifacts(
 
 
 def _find_cargo_out_dir(cargo_messages: List[str], package_id: str) -> Optional[Path]:
-    # Chances are that the line we're looking for will be the third laste line in the
+    # Chances are that the line we're looking for will be the third-last line in the
     # messages.  The last is the completion report, the penultimate is generally the
     # build of the final artifact.
     for messsage in reversed(cargo_messages):

@@ -115,15 +115,15 @@ class RustExtension:
         env: Environment variables to use when calling cargo or rustc (``env=``
             in ``subprocess.Popen``). setuptools-rust may add additional
             variables or modify ``PATH``.
-        generated_files: Mapping of paths inside the extension's compilation ``OUT_DIR``
-            to Python (sub)packages that they should be copied into.  Each source path
-            can be either a file or a directory.  The source will be copied
-            (recursively, in the case of a directory) inside the mapped location.  This
-            option is incompatible with multiple targets.
+        generated_files: Mapping of paths inside the extension's compilation
+            ``OUT_DIR`` to Python (sub)packages that they should be copied into.
+            Each source path can be either a file or a directory. The source
+            will be copied (recursively, in the case of a directory) inside the
+            mapped location. This option is incompatible with multiple targets.
 
-            If this is populated, the built extension must have a build script that
-            populates its ``OUT_DIR``.  Only the output of the build script of the extension itself
-            will be searched for data files.
+            If this is populated, the built extension must have a build script
+            that populates its ``OUT_DIR``. Only the output of the build script
+            of the extension itself will be searched for data files.
     """
 
     def __init__(
