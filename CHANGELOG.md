@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.13.0 (2026-06-26)
+### Added
+- Add `generated-files` option to `RustExtension` to copy files from the build script output directory to the wheel. [#574](https://github.com/PyO3/setuptools-rust/pull/574)
+
+### Fixed
+- Add `-Zunstable-options` when querying rustc for information about custom JSON targets. [#587](https://github.com/PyO3/setuptools-rust/pull/587)
+
 ## 1.12.1 (2026-03-26)
 - Migrate to trusted publishing. [#581](https://github.com/PyO3/setuptools-rust/pull/581)
 - Strip target suffix for cargo-zigbuild compatibility. [#534](https://github.com/PyO3/setuptools-rust/pull/534)
