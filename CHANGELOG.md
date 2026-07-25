@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+### Fixed
+- Pass `--filter-platform` to `cargo metadata` so offline builds don't require dependencies exclusive to foreign targets. [#610](https://github.com/PyO3/setuptools-rust/pull/610)
+
 ## 1.13.0 (2026-06-27)
 ### Added
 - Add `generated-files` option to `RustExtension` to copy files from the build script output directory to the wheel. [#574](https://github.com/PyO3/setuptools-rust/pull/574)

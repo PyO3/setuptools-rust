@@ -4,6 +4,7 @@ import pytest
 from pytest import CaptureFixture, MonkeyPatch
 
 from setuptools_rust.extension import RustBin, RustExtension
+from setuptools_rust.rustc_info import get_rust_host
 
 SETUPTOOLS_RUST_DIR = Path(__file__).parent.parent
 
@@ -31,6 +32,14 @@ def namespace_package_extension() -> RustExtension:
 def test_metadata_contents(hello_world_bin: RustBin) -> None:
     metadata = hello_world_bin.metadata(quiet=False)
     assert "target_directory" in metadata
+
+
+def test_metadata_filter_platforms(hello_world_bin: RustBin) -> None:
+    metadata = hello_world_bin.metadata(
+        quiet=False, filter_platforms=(get_rust_host(None),)
+    )
+    assert "target_directory" in metadata
+    assert metadata["resolve"]["root"] is not None
 
 
 def test_metadata_cargo_log(
