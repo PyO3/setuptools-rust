@@ -17,10 +17,10 @@ jobs:
   ruff:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.x"
 
@@ -31,10 +31,10 @@ jobs:
   mypy:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.x"
 
@@ -45,10 +45,10 @@ jobs:
   pytest:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.x"
 
@@ -151,10 +151,10 @@ jobs:
     env:
       SETUPTOOLS_RUST_CARGO_PROFILE: dev
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.platform.python-architecture }}
@@ -216,9 +216,9 @@ jobs:
             ubuntu-24.04-arm,
           ]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.x"
 
@@ -243,7 +243,7 @@ jobs:
       # Now we switch to a different Python version and ensure we can install
       # the wheel we just built.
       - name: Setup python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -273,9 +273,9 @@ jobs:
       matrix:
         platform: [{ arch: "aarch64" }, { arch: "armv7" }]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.x"
       - uses: docker/setup-qemu-action@v4
@@ -285,9 +285,9 @@ jobs:
   test-cross:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.x"
       - uses: dtolnay/rust-toolchain@stable
@@ -302,9 +302,9 @@ jobs:
   test-zigbuild:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.10" # must match the ubuntu version in the install, and also the version copied out of the docker image below
       - uses: dtolnay/rust-toolchain@stable
@@ -351,11 +351,11 @@ jobs:
   test-cibuildwheel:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
-      - uses: pypa/cibuildwheel@v3.4.1
+      - uses: pypa/cibuildwheel@v4.1.1
         env:
           CIBW_BUILD: cp39-*
           CIBW_BEFORE_BUILD: >
@@ -391,7 +391,7 @@ jobs:
             },
           ]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Install MSys2 and dependencies
         uses: msys2/setup-msys2@v2
         with:
@@ -425,9 +425,9 @@ jobs:
   test-emscripten:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - run: |
@@ -441,7 +441,7 @@ jobs:
         with:
           version: ${{env.EMSCRIPTEN_VERSION}}
           actions-cache-folder: emsdk-cache
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: |
             tests/pyodide
