@@ -78,7 +78,8 @@ jobs:
             "3.15",
             "3.15t",
             "pypy-3.11",
-            "graalpy25.0",
+            "graalpy3.12",
+            "graalpy3.13",
           ]
         platform:
           [
@@ -130,15 +131,6 @@ jobs:
                 os: "ubuntu-24.04-arm",
                 python-architecture: "arm64",
                 rust-target: "aarch64-unknown-linux-gnu",
-              }
-        exclude:
-          # no graalpy available on Windows
-          - python-version: graalpy25.0
-            platform:
-              {
-                os: "windows-latest",
-                python-architecture: "x64",
-                rust-target: "x86_64-pc-windows-msvc",
               }
 
     env:
