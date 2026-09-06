@@ -78,8 +78,8 @@ jobs:
             "3.15",
             "3.15t",
             "pypy-3.11",
-            "graalpy3.12",
-            "graalpy3.13",
+            "graalpy-25.2", # 3.12
+            "graalpy-25.3", # 3.13
           ]
         platform:
           [
