@@ -10,7 +10,7 @@ def test(session: nox.Session):
     session.install(SETUPTOOLS_RUST, "pytest")
 
     try:
-        session.install("cffi", "--only-binary=cffi")
+        session.install("cffi>=2.1", "--only-binary=cffi")
     except nox.command.CommandFailed:
         session.skip("cffi not available on this platform")
 
