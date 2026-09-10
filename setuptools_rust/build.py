@@ -32,6 +32,7 @@ from ._utils import check_subprocess_output, format_called_process_error, Env
 from .command import RustCommand
 from .extension import Binding, RustBin, RustExtension, Strip
 from .rustc_info import (
+    _is_custom_target,
     get_rust_host,
     get_rust_version,
     get_rustc_cfgs,
@@ -129,6 +130,17 @@ class build_rust(RustCommand):
         dylib_paths, artifact_dir = self.build_extension(ext)
         self.install_extension(ext, dylib_paths, artifact_dir)
 
+    def _metadata_filter_platforms(self, ext: RustExtension) -> Tuple[str, ...]:
+        """Target triples of the platforms being built."""
+        target = self.target
+        if target is _Platform.CARGO_DEFAULT:
+            return (get_rust_host(ext.env),)
+        elif target is _Platform.UNIVERSAL2:
+            return _UNIVERSAL2_TARGETS
+        elif _is_custom_target(target):
+            return ()  # Custom target specs cannot be passed to --filter-platform
+        return target
+
     def build_extension(
         self, ext: RustExtension
     ) -> Tuple[List["_BuiltModule"], Optional[Path]]:
@@ -148,7 +160,10 @@ class build_rust(RustCommand):
         debug = self._is_debug_build(ext)
         use_cargo_crate_type = _check_cargo_supports_crate_type_option(ext.env)
 
-        package_id = ext.metadata(quiet=quiet)["resolve"]["root"]
+        package_id = ext.metadata(
+            quiet=quiet,
+            filter_platforms=self._metadata_filter_platforms(ext),
+        )["resolve"]["root"]
         if package_id is None:
             raise FileError(
                 f"manifest for Rust extention `{ext.name}` at path `{ext.path}` is a virtual manifest (a workspace root without a package).\n\n"

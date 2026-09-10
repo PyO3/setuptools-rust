@@ -256,16 +256,31 @@ class RustExtension:
             with open(file, "w") as f:
                 f.write(_SCRIPT_TEMPLATE.format(executable=repr(executable)))
 
-    def metadata(self, *, quiet: bool) -> "CargoMetadata":
+    def metadata(
+        self,
+        *,
+        quiet: bool,
+        filter_platforms: Sequence[str] = (),
+    ) -> "CargoMetadata":
         """Returns cargo metadata for this extension package.
+
+        ``filter_platforms`` restricts the dependency resolution to the given
+        target triples (``cargo metadata --filter-platform``).
 
         Cached - will only execute cargo on first invocation.
         """
 
-        return self._metadata(os.environ.get("CARGO", "cargo"), quiet)
+        return self._metadata(
+            os.environ.get("CARGO", "cargo"), quiet, tuple(filter_platforms)
+        )
 
     @lru_cache()
-    def _metadata(self, cargo: str, quiet: bool) -> "CargoMetadata":
+    def _metadata(
+        self,
+        cargo: str,
+        quiet: bool,
+        filter_platforms: "tuple[str, ...]" = (),
+    ) -> "CargoMetadata":
         metadata_command = [
             cargo,
             "metadata",
@@ -274,6 +289,8 @@ class RustExtension:
             "--format-version",
             "1",
         ]
+        for platform in filter_platforms:
+            metadata_command.append(f"--filter-platform={platform}")
         if self.cargo_manifest_args:
             metadata_command.extend(self.cargo_manifest_args)
 
