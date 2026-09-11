@@ -1,6 +1,7 @@
-__all__ = ["library_ok", "data_files_content"]
+__all__ = ["data_files_content", "library_ok"]
 
 from pathlib import Path
+
 from ._lib import library_ok
 
 

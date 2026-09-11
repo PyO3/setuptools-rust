@@ -1,8 +1,7 @@
 from unittest import mock
 
-from setuptools_rust.build import _override_cargo_default_target
 from setuptools_rust._utils import Env
-
+from setuptools_rust.build import _override_cargo_default_target
 
 NO_ENV = Env(None)
 

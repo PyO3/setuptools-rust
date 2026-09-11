@@ -68,16 +68,17 @@ jobs:
       matrix:
         python-version:
           [
-            "3.9",
             "3.10",
             "3.11",
             "3.14",
             "3.13",
-            "3.13t",
             "3.14",
             "3.14t",
+            "3.15",
+            "3.15t",
             "pypy-3.11",
-            "graalpy25.0",
+            "graalpy-25.2", # 3.12
+            "graalpy-25.3", # 3.13
           ]
         platform:
           [
@@ -129,23 +130,6 @@ jobs:
                 os: "ubuntu-24.04-arm",
                 python-architecture: "arm64",
                 rust-target: "aarch64-unknown-linux-gnu",
-              }
-        exclude:
-          # macOS arm doesn't have Python builds before 3.10
-          - python-version: 3.9
-            platform:
-              {
-                os: "macos-latest",
-                python-architecture: "arm64",
-                rust-target: "aarch64-apple-darwin",
-              }
-          # no graalpy available on Windows
-          - python-version: graalpy25.0
-            platform:
-              {
-                os: "windows-latest",
-                python-architecture: "x64",
-                rust-target: "x86_64-pc-windows-msvc",
               }
 
     env:
@@ -357,7 +341,7 @@ jobs:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
       - uses: pypa/cibuildwheel@v3.4.1
         env:
-          CIBW_BUILD: cp39-*
+          CIBW_BUILD: cp310-*
           CIBW_BEFORE_BUILD: >
             pip install -U 'pip>=23.2.1' 'setuptools>=70.1.0' 'auditwheel>=5.4.0'
             && pip install -e .
@@ -390,6 +374,8 @@ jobs:
               rust_target: i686-pc-windows-gnu,
             },
           ]
+    env:
+      CARGO_BUILD_TARGET: ${{ matrix.rust_target }}
     steps:
       - uses: actions/checkout@v6
       - name: Install MSys2 and dependencies
@@ -404,9 +390,9 @@ jobs:
             mingw-w64-${{ matrix.arch }}-openssl
             mingw-w64-${{ matrix.arch }}-toolchain
 
-      - uses: dtolnay/rust-toolchain@master
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable-${{ matrix.rust_target }}
+          targets: ${{ matrix.rust_target }}
 
       - name: Install test dependencies
         shell: msys2 {0}

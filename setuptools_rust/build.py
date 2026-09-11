@@ -3,14 +3,24 @@ from __future__ import annotations
 import collections
 import enum
 import json
+import logging
 import os
 import platform
 import shutil
 import subprocess
 import sys
 import sysconfig
-import logging
 import warnings
+from pathlib import Path
+from sysconfig import get_config_var
+from typing import Literal, NamedTuple, cast
+
+from setuptools import Distribution
+from setuptools.command.bdist_wheel import bdist_wheel as CommandBdistWheel
+from setuptools.command.build_ext import build_ext as CommandBuildExt
+from setuptools.command.build_ext import get_abi3_suffix
+from setuptools.command.build_py import build_py as setuptools_build_py
+from setuptools.command.install_scripts import install_scripts as CommandInstallScripts
 from setuptools.errors import (
     CompileError,
     ExecError,
@@ -18,17 +28,8 @@ from setuptools.errors import (
     InternalError,
     PlatformError,
 )
-from sysconfig import get_config_var
-from pathlib import Path
-from typing import Dict, List, Literal, NamedTuple, Optional, Set, Tuple, Union, cast
 
-from setuptools import Distribution
-from setuptools.command.build_ext import build_ext as CommandBuildExt
-from setuptools.command.build_ext import get_abi3_suffix
-from setuptools.command.build_py import build_py as setuptools_build_py
-from setuptools.command.install_scripts import install_scripts as CommandInstallScripts
-
-from ._utils import check_subprocess_output, format_called_process_error, Env
+from ._utils import Env, check_subprocess_output, format_called_process_error
 from .command import RustCommand
 from .extension import Binding, RustBin, RustExtension, Strip
 from .rustc_info import (
@@ -40,16 +41,7 @@ from .rustc_info import (
 logger = logging.getLogger(__name__)
 
 
-try:
-    from setuptools.command.bdist_wheel import bdist_wheel as CommandBdistWheel
-except ImportError:  # old version of setuptools
-    try:
-        from wheel.bdist_wheel import bdist_wheel as CommandBdistWheel  # type: ignore[no-redef]
-    except ImportError:
-        from setuptools import Command as CommandBdistWheel  # type: ignore[assignment]
-
-
-def _check_cargo_supports_crate_type_option(env: Optional[Env]) -> bool:
+def _check_cargo_supports_crate_type_option(env: Env | None) -> bool:
     version = get_rust_version(env)
 
     if version is None:
@@ -66,7 +58,7 @@ class build_rust(RustCommand):
 
     description = "build Rust extensions (compile/link to build directory)"
 
-    user_options = [
+    user_options = [  # noqa: RUF012
         (
             "inplace",
             "i",
@@ -83,15 +75,15 @@ class build_rust(RustCommand):
         ),
         ("target=", None, "Build for the target triple"),
     ]
-    boolean_options = ["inplace", "debug", "release", "qbuild"]
+    boolean_options = ("inplace", "debug", "release", "qbuild")
 
     inplace: bool = False
     debug: bool = False
     release: bool = False
     qbuild: bool = False
 
-    plat_name: Optional[str] = None
-    build_temp: Optional[str] = None
+    plat_name: str | None = None
+    build_temp: str | None = None
 
     def initialize_options(self) -> None:
         super().initialize_options()
@@ -131,7 +123,7 @@ class build_rust(RustCommand):
 
     def build_extension(
         self, ext: RustExtension
-    ) -> Tuple[List["_BuiltModule"], Optional[Path]]:
+    ) -> tuple[list[_BuiltModule], Path | None]:
         """
         Build the Rust components, but don't install them anywhere.
 
@@ -157,8 +149,8 @@ class build_rust(RustCommand):
 
         cargo_args = self._cargo_args(ext=ext, release=not debug, quiet=quiet)
 
-        rustc_args: List[str] = []
-        rustflags: List[str] = []
+        rustc_args: list[str] = []
+        rustflags: list[str] = []
         if ext._uses_exec_binding():
             command = [
                 self.cargo,
@@ -207,7 +199,7 @@ class build_rust(RustCommand):
                 print(f"[RUSTFLAGS={new_rustflags}]", end=" ", file=sys.stderr)
 
         if self.target is _Platform.CARGO_DEFAULT:
-            targets: List[Optional[str]] = [None]
+            targets: list[str | None] = [None]
         elif self.target is _Platform.UNIVERSAL2:
             targets = list(_UNIVERSAL2_TARGETS)
             if ext.generated_files:
@@ -217,7 +209,7 @@ class build_rust(RustCommand):
         else:
             targets = [self.target]
 
-        cargo_messages: Dict[str, List[str]] = {}
+        cargo_messages: dict[str, list[str]] = {}
         for target in targets:
             target_command = command.copy()
             if target is None:
@@ -344,8 +336,8 @@ class build_rust(RustCommand):
     def install_extension(
         self,
         ext: RustExtension,
-        dylib_paths: List["_BuiltModule"],
-        build_artifact_dir: Optional[Path],
+        dylib_paths: list[_BuiltModule],
+        build_artifact_dir: Path | None,
     ) -> None:
         debug_build = self._is_debug_build(ext)
 
@@ -544,7 +536,7 @@ class build_rust(RustCommand):
         ext: RustExtension,
         release: bool,
         quiet: bool,
-    ) -> List[str]:
+    ) -> list[str]:
         args = []
         ext_profile = ext.get_cargo_profile()
         env_profile = os.getenv("SETUPTOOLS_RUST_CARGO_PROFILE")
@@ -589,12 +581,12 @@ class build_rust(RustCommand):
 
     def _config_specific_rust_args(
         self, ext: RustExtension
-    ) -> Tuple[List[str], List[str]]:
+    ) -> tuple[list[str], list[str]]:
         """Get extra arguments for `rustc` and the `RUSTFLAGS` environment variable
         that depend on the specific environmental configuration for the compilation
         target."""
 
-        def apple_specific_rustc() -> List[str]:
+        def apple_specific_rustc() -> list[str]:
             # Apple platforms require special linker arguments
             ext_basename = os.path.basename(self.get_dylib_ext_path(ext, ext.name))
             return [
@@ -603,8 +595,8 @@ class build_rust(RustCommand):
                 f"-Clink-arg=-Wl,-install_name,@rpath/{ext_basename}",
             ]
 
-        rustc_args: List[str] = []  # Command-line arguments for rustc.
-        rust_flags: List[str] = []  # Extras for the `RUSTFLAGS` environment variable.
+        rustc_args: list[str] = []  # Command-line arguments for rustc.
+        rust_flags: list[str] = []  # Extras for the `RUSTFLAGS` environment variable.
 
         if self.target is _Platform.UNIVERSAL2:
             # In this case we're in a multi-target compilation, so there's no one single
@@ -628,7 +620,7 @@ class build_rust(RustCommand):
         return rustc_args, rust_flags
 
 
-def _combine_universal2_artifacts(artifacts: List[str]) -> List[str]:
+def _combine_universal2_artifacts(artifacts: list[str]) -> list[str]:
     """For a multi-target compilation corresponding to an intended universal2 build,
     combine each set of corresponding separate-target artifacts into a single universal2
     binary.
@@ -655,14 +647,14 @@ def _combine_universal2_artifacts(artifacts: List[str]) -> List[str]:
     return combined
 
 
-def create_universal2_binary(output_path: str, input_paths: List[str]) -> None:
+def create_universal2_binary(output_path: str, input_paths: list[str]) -> None:
     # Try lipo first
     command = ["lipo", "-create", "-output", output_path, *input_paths]
     try:
         check_subprocess_output(command, env=None, text=True)
     except subprocess.CalledProcessError as e:
         output = e.output
-        raise CompileError("lipo failed with code: %d\n%s" % (e.returncode, output))
+        raise CompileError(f"lipo failed with code: {e.returncode}\n{output}")
     except OSError:
         # lipo not found, try using the fat-macho library
         try:
@@ -702,7 +694,7 @@ class _BuiltModule(NamedTuple):
     path: str
 
 
-def _replace_vendor_with_unknown(target: str) -> Optional[str]:
+def _replace_vendor_with_unknown(target: str) -> str | None:
     """Replaces vendor in the target triple with unknown.
 
     Returns None if the target is not made of 4 parts.
@@ -714,12 +706,12 @@ def _replace_vendor_with_unknown(target: str) -> Optional[str]:
     return "-".join(components)
 
 
-def _prepare_build_environment(env: Env, ext: RustExtension) -> Dict[str, str]:
+def _prepare_build_environment(env: Env, ext: RustExtension) -> dict[str, str]:
     """Prepares environment variables to use when executing cargo build."""
 
     base_executable = None
     if os.getenv("SETUPTOOLS_RUST_PEP517_USE_BASE_PYTHON"):
-        base_executable = getattr(sys, "_base_executable")
+        base_executable = sys._base_executable  # type: ignore[attr-defined]
 
     if base_executable and os.path.exists(base_executable):
         executable = os.path.realpath(base_executable)
@@ -750,7 +742,7 @@ def _prepare_build_environment(env: Env, ext: RustExtension) -> Dict[str, str]:
 
 def _is_py_limited_api(
     ext_setting: Literal["auto", True, False],
-    wheel_setting: Optional[_PyLimitedApi],
+    wheel_setting: _PyLimitedApi | None,
 ) -> bool:
     """Returns whether this extension is being built for the limited api.
 
@@ -778,7 +770,7 @@ def _is_py_limited_api(
 def _binding_features(
     ext: RustExtension,
     py_limited_api: _PyLimitedApi,
-) -> Set[str]:
+) -> set[str]:
     if ext.binding in (Binding.NoBinding, Binding.Exec):
         return set()
     elif ext.binding is Binding.PyO3:
@@ -799,9 +791,9 @@ def _binding_features(
 _PyLimitedApi = Literal["cp37", "cp38", "cp39", "cp310", "cp311", "cp312", True, False]
 
 
-def _override_cargo_default_target(plat_name: str, env: Env) -> Union[str, _Platform]:
+def _override_cargo_default_target(plat_name: str, env: Env) -> str | _Platform:
     """Get a platform-specific override, if one is needed for correctness."""
-    override: Union[str, _Platform] = _Platform.CARGO_DEFAULT
+    override: str | _Platform = _Platform.CARGO_DEFAULT
     if plat_name in ("win32", "win-amd64"):
         toolchain = (
             "gnu" if get_rustc_cfgs(None, env).get("target_env") == "gnu" else "msvc"
@@ -823,7 +815,7 @@ def _override_cargo_default_target(plat_name: str, env: Env) -> Union[str, _Plat
     return override
 
 
-def _macos_target_from_arch_flags(arch_flags: Optional[str]) -> Union[str, _Platform]:
+def _macos_target_from_arch_flags(arch_flags: str | None) -> str | _Platform:
     """Detect the macOS target to compile for, based on what (if anything) is set in the
     `ARCHFLAGS`."""
     if arch_flags is None:
@@ -839,7 +831,7 @@ def _macos_target_from_arch_flags(arch_flags: Optional[str]) -> Union[str, _Plat
     return _Platform.CARGO_DEFAULT
 
 
-def _split_platform_and_extension(ext_path: str) -> Tuple[str, str, str]:
+def _split_platform_and_extension(ext_path: str) -> tuple[str, str, str]:
     """Splits an extension path into a tuple (ext_path, plat_tag, extension).
 
     >>> _split_platform_and_extension("foo/bar.platform.so")
@@ -854,11 +846,11 @@ def _split_platform_and_extension(ext_path: str) -> Tuple[str, str, str]:
 
 
 def _find_cargo_artifacts(
-    cargo_messages: List[str],
+    cargo_messages: list[str],
     *,
     package_id: str,
-    kinds: Set[str],
-) -> List[str]:
+    kinds: set[str],
+) -> list[str]:
     """Identifies cargo artifacts built for the given `package_id` from the
     provided cargo_messages.
 
@@ -915,7 +907,7 @@ def _find_cargo_artifacts(
     return artifacts
 
 
-def _find_cargo_out_dir(cargo_messages: List[str], package_id: str) -> Optional[Path]:
+def _find_cargo_out_dir(cargo_messages: list[str], package_id: str) -> Path | None:
     # Chances are that the line we're looking for will be the third-last line in the
     # messages.  The last is the completion report, the penultimate is generally the
     # build of the final artifact.
@@ -944,10 +936,10 @@ def _replace_cross_target_dir(path: str, ext: RustExtension, *, quiet: bool) -> 
 
 def _get_bdist_wheel_cmd(
     dist: Distribution, create: Literal[True, False] = True
-) -> Optional[CommandBdistWheel]:
+) -> CommandBdistWheel | None:
     try:
         cmd_obj = dist.get_command_obj("bdist_wheel", create=create)
         cmd_obj.ensure_finalized()  # type: ignore[union-attr]
         return cast(CommandBdistWheel, cmd_obj)
-    except Exception:
+    except Exception:  # noqa: BLE001
         return None

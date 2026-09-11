@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+### Packaging
+- Drop support for Python 3.9.
+- Bump `setuptools` minimum version to 83.0.
+
 ## 1.13.0 (2026-06-27)
 ### Added
 - Add `generated-files` option to `RustExtension` to copy files from the build script output directory to the wheel. [#574](https://github.com/PyO3/setuptools-rust/pull/574)

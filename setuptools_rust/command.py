@@ -1,8 +1,8 @@
-from abc import ABC, abstractmethod
 import logging
-from setuptools import Command, Distribution
+from abc import ABC, abstractmethod
+
+from setuptools import Command
 from setuptools.errors import PlatformError
-from typing import List, Optional
 
 from .extension import RustExtension
 from .rustc_info import get_rust_version
@@ -13,16 +13,11 @@ logger = logging.getLogger(__name__)
 class RustCommand(Command, ABC):
     """Abstract base class for commands which interact with Rust Extensions."""
 
-    # Types for distutils variables which exist on all commands but seem to be
-    # missing from https://github.com/python/typeshed/blob/master/stdlib/distutils/cmd.pyi
-    distribution: Distribution
-    verbose: int
-
     def initialize_options(self) -> None:
-        self.extensions: List[RustExtension] = []
+        self.extensions: list[RustExtension] = []
 
     def finalize_options(self) -> None:
-        extensions: Optional[List[RustExtension]] = getattr(
+        extensions: list[RustExtension] | None = getattr(
             self.distribution, "rust_extensions", None
         )
         if extensions is None:
@@ -32,14 +27,14 @@ class RustCommand(Command, ABC):
 
         if not isinstance(extensions, list):
             ty = type(extensions)
-            raise ValueError(
+            raise TypeError(
                 "expected list of RustExtension objects for rust_extensions "
                 f"argument to setup(), got `{ty}`"
             )
         for i, extension in enumerate(extensions):
             if not isinstance(extension, RustExtension):
                 ty = type(extension)
-                raise ValueError(
+                raise TypeError(
                     "expected RustExtension object for rust_extensions "
                     f"argument to setup(), got `{ty}` at position {i}"
                 )

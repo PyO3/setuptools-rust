@@ -1,4 +1,4 @@
-from namespace_package import rust, python
+from namespace_package import python, rust
 
 
 def test_rust():

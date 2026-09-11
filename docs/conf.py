@@ -80,7 +80,6 @@ class RelativeDocLinks(SphinxTransform):
             for t in node.traverse(basetext):
                 t1 = Text(t.replace(DOCS_URL, "", 1), t.rawsource)
                 t.parent.replace(t, t1)
-        return
 
 
 # end of class
@@ -88,4 +87,3 @@ class RelativeDocLinks(SphinxTransform):
 
 def setup(app):
     app.add_transform(RelativeDocLinks)
-    return

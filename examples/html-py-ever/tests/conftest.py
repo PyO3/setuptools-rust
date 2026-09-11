@@ -1,4 +1,5 @@
 import sys
+
 import pytest
 
 if sys.platform == "emscripten":

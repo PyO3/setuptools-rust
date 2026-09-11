@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-from glob import glob
 import os
+from glob import glob
 
 import html_py_ever
 import pytest
 from bs4 import BeautifulSoup
 from html_py_ever import Document
-
 
 HTML_FILES = glob(os.path.join(os.path.dirname(__file__), "*.html"))
 

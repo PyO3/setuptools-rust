@@ -1,11 +1,11 @@
 import os
-from contextlib import ExitStack
-from inspect import cleandoc as heredoc
-from glob import glob
-from pathlib import Path
 import shutil
 import sys
 import tempfile
+from contextlib import ExitStack
+from glob import glob
+from inspect import cleandoc as heredoc
+from pathlib import Path
 
 import nox
 import nox.command
@@ -80,6 +80,7 @@ cd examples/rust_with_cffi/
 python3.13 -m pip install crossenv
 python3.13 -m crossenv "/opt/python/cp313-cp313/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 /venv
 . /venv/bin/activate
+export PYO3_CROSS_PYTHON_VERSION=3.13
 
 build-pip install -U 'pip>=23.2.1' 'setuptools>=70.1' 'build>=1'
 cross-pip install -U 'pip>=23.2.1' 'setuptools>=70.1' 'build>=1'
@@ -87,9 +88,6 @@ build-pip install cffi
 cross-expose cffi
 cross-pip install -e ../../
 cross-pip list
-
-export DIST_EXTRA_CONFIG=/tmp/build-opts.cfg
-echo -e "[bdist_wheel]\npy_limited_api=cp37" > $DIST_EXTRA_CONFIG
 
 rm -rf dist/*
 cross-python -m build --no-isolation
