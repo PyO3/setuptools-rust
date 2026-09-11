@@ -88,9 +88,6 @@ cross-expose cffi
 cross-pip install -e ../../
 cross-pip list
 
-export DIST_EXTRA_CONFIG=/tmp/build-opts.cfg
-echo -e "[bdist_wheel]\npy_limited_api=cp37" > $DIST_EXTRA_CONFIG
-
 rm -rf dist/*
 cross-python -m build --no-isolation
 ls -la dist/
