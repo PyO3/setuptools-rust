@@ -80,6 +80,7 @@ cd examples/rust_with_cffi/
 python3.13 -m pip install crossenv
 python3.13 -m crossenv "/opt/python/cp313-cp313/bin/python3" --cc $TARGET_CC --cxx $TARGET_CXX --sysroot $TARGET_SYSROOT --env LIBRARY_PATH= --manylinux manylinux1 /venv
 . /venv/bin/activate
+export PYO3_CROSS_PYTHON_VERSION=3.13
 
 build-pip install -U 'pip>=23.2.1' 'setuptools>=70.1' 'build>=1'
 cross-pip install -U 'pip>=23.2.1' 'setuptools>=70.1' 'build>=1'

@@ -72,7 +72,6 @@ jobs:
             "3.11",
             "3.14",
             "3.13",
-            "3.13t",
             "3.14",
             "3.14t",
             "3.15",
@@ -375,6 +374,8 @@ jobs:
               rust_target: i686-pc-windows-gnu,
             },
           ]
+    env:
+      CARGO_BUILD_TARGET: ${{ matrix.rust_target }}
     steps:
       - uses: actions/checkout@v6
       - name: Install MSys2 and dependencies
