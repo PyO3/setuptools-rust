@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import collections
+import enum
 import json
 import logging
 import os
@@ -11,16 +13,19 @@ import sysconfig
 import warnings
 from pathlib import Path
 from sysconfig import get_config_var
-from typing import Dict, List, Literal, NamedTuple, Optional, Set, Tuple, cast
+from typing import Literal, NamedTuple, cast
 
 from setuptools import Distribution
+from setuptools.command.bdist_wheel import bdist_wheel as CommandBdistWheel
 from setuptools.command.build_ext import build_ext as CommandBuildExt
 from setuptools.command.build_ext import get_abi3_suffix
+from setuptools.command.build_py import build_py as setuptools_build_py
 from setuptools.command.install_scripts import install_scripts as CommandInstallScripts
 from setuptools.errors import (
     CompileError,
     ExecError,
     FileError,
+    InternalError,
     PlatformError,
 )
 
@@ -36,18 +41,7 @@ from .rustc_info import (
 logger = logging.getLogger(__name__)
 
 
-try:
-    from setuptools.command.bdist_wheel import bdist_wheel as CommandBdistWheel
-except ImportError:  # old version of setuptools
-    try:
-        from wheel.bdist_wheel import (
-            bdist_wheel as CommandBdistWheel,  # type: ignore[no-redef]
-        )
-    except ImportError:
-        from setuptools import Command as CommandBdistWheel  # type: ignore[assignment]
-
-
-def _check_cargo_supports_crate_type_option(env: Optional[Env]) -> bool:
+def _check_cargo_supports_crate_type_option(env: Env | None) -> bool:
     version = get_rust_version(env)
 
     if version is None:
@@ -56,7 +50,7 @@ def _check_cargo_supports_crate_type_option(env: Optional[Env]) -> bool:
     return version.major > 1 or (version.major == 1 and version.minor >= 64)  # type: ignore
 
 
-def _rustc_passes_side_module_automatically(env: Optional[Env]) -> bool:
+def _rustc_passes_side_module_automatically(env: Env | None) -> bool:
     version = get_rust_version(env)
 
     if version is None:
@@ -66,12 +60,15 @@ def _rustc_passes_side_module_automatically(env: Optional[Env]) -> bool:
     return version.major > 1 or (version.major == 1 and version.minor >= 95)  # type: ignore
 
 
+_UNIVERSAL2_TARGETS = ("aarch64-apple-darwin", "x86_64-apple-darwin")
+
+
 class build_rust(RustCommand):
     """Command for building Rust crates via cargo."""
 
     description = "build Rust extensions (compile/link to build directory)"
 
-    user_options = [
+    user_options = [  # noqa: RUF012
         (
             "inplace",
             "i",
@@ -88,24 +85,25 @@ class build_rust(RustCommand):
         ),
         ("target=", None, "Build for the target triple"),
     ]
-    boolean_options = ["inplace", "debug", "release", "qbuild"]
+    boolean_options = ("inplace", "debug", "release", "qbuild")
 
     inplace: bool = False
     debug: bool = False
     release: bool = False
     qbuild: bool = False
 
-    plat_name: Optional[str] = None
-    build_temp: Optional[str] = None
+    plat_name: str | None = None
+    build_temp: str | None = None
 
     def initialize_options(self) -> None:
         super().initialize_options()
-        self.target = os.getenv("CARGO_BUILD_TARGET")
+        self.target = os.getenv("CARGO_BUILD_TARGET", _Platform.CARGO_DEFAULT)
         self.cargo = os.getenv("CARGO", "cargo")
 
     def finalize_options(self) -> None:
         super().finalize_options()
-
+        if self.target is None:
+            self.target = _Platform.CARGO_DEFAULT
         # Inherit settings from the `build` and `build_ext` commands
         self.set_undefined_options(
             "build",
@@ -128,37 +126,19 @@ class build_rust(RustCommand):
 
     def run_for_extension(self, ext: RustExtension) -> None:
         assert self.plat_name is not None
-
-        arch_flags = os.getenv("ARCHFLAGS")
-        universal2 = False
-        if self.plat_name.startswith("macosx-") and arch_flags:
-            universal2 = "x86_64" in arch_flags and "arm64" in arch_flags
-            if not universal2 and not self.target:
-                if "arm64" in arch_flags:
-                    self.target = "aarch64-apple-darwin"
-                elif "x86_64" in arch_flags:
-                    self.target = "x86_64-apple-darwin"
-
-        if universal2:
-            arm64_dylib_paths = self.build_extension(ext, "aarch64-apple-darwin")
-            x86_64_dylib_paths = self.build_extension(ext, "x86_64-apple-darwin")
-            dylib_paths = []
-            for (target_fname, arm64_dylib), (_, x86_64_dylib) in zip(
-                arm64_dylib_paths, x86_64_dylib_paths
-            ):
-                fat_dylib_path = arm64_dylib.replace("aarch64-apple-darwin/", "")
-                create_universal2_binary(fat_dylib_path, [arm64_dylib, x86_64_dylib])
-                dylib_paths.append(_BuiltModule(target_fname, fat_dylib_path))
-        else:
-            dylib_paths = self.build_extension(ext, self.target)
-        self.install_extension(ext, dylib_paths)
+        if self.target is _Platform.CARGO_DEFAULT:
+            self.target = _override_cargo_default_target(self.plat_name, ext.env)
+        dylib_paths, artifact_dir = self.build_extension(ext)
+        self.install_extension(ext, dylib_paths, artifact_dir)
 
     def build_extension(
-        self, ext: RustExtension, forced_target_triple: Optional[str] = None
-    ) -> List["_BuiltModule"]:
-        target_triple = self._detect_rust_target(forced_target_triple, ext.env)
-        rustc_cfgs = get_rustc_cfgs(target_triple, ext.env)
+        self, ext: RustExtension
+    ) -> tuple[list[_BuiltModule], Path | None]:
+        """
+        Build the Rust components, but don't install them anywhere.
 
+        Returns the built modules, and the location of the single-target ``OUT_DIR``, if needed
+        for copying generated files."""
         env = _prepare_build_environment(ext.env, ext)
 
         if not os.path.exists(ext.path):
@@ -177,12 +157,10 @@ class build_rust(RustCommand):
                 "If you intended to build for a workspace member, set `path` for the extension to the member's Cargo.toml file."
             )
 
-        cargo_args = self._cargo_args(
-            ext=ext, target_triple=target_triple, release=not debug, quiet=quiet
-        )
+        cargo_args = self._cargo_args(ext=ext, release=not debug, quiet=quiet)
 
-        rustflags = []
-
+        rustc_args: list[str] = []
+        rustflags: list[str] = []
         if ext._uses_exec_binding():
             command = [
                 self.cargo,
@@ -192,46 +170,20 @@ class build_rust(RustCommand):
                 "--message-format=json-render-diagnostics",
                 *cargo_args,
             ]
-
         else:
-            # If toolchain >= 1.64.0, use '--crate-type' option of cargo.
-            # See https://github.com/PyO3/setuptools-rust/issues/320
+            # If toolchain >= 1.64.0, use '--crate-type' option of cargo (instead of
+            # rustc). See https://github.com/PyO3/setuptools-rust/issues/320
             if use_cargo_crate_type:
-                rustc_args = [
-                    *ext.rustc_flags,
-                ]
+                rustc_args.extend(ext.rustc_flags)
             else:
-                rustc_args = [
+                rustc_args += [
                     "--crate-type",
                     "cdylib",
                     *ext.rustc_flags,
                 ]
-
-            # Apple platforms require special linker arguments
-            if rustc_cfgs.get("target_os") in {"macos", "ios", "tvos", "watchos"}:
-                ext_basename = os.path.basename(self.get_dylib_ext_path(ext, ext.name))
-                rustc_args.extend(
-                    [
-                        "-C",
-                        f"link-args=-undefined dynamic_lookup -Wl,-install_name,@rpath/{ext_basename}",
-                    ]
-                )
-
-            # Tell musl targets not to statically link libc. See
-            # https://github.com/rust-lang/rust/issues/59302 for details.
-            if rustc_cfgs.get("target_env") == "musl":
-                # This must go in the env otherwise rustc will refuse to build
-                # the cdylib, see https://github.com/rust-lang/cargo/issues/10143
-                rustflags.append("-Ctarget-feature=-crt-static")
-
-            elif (
-                rustc_cfgs.get("target_arch") == "wasm32"
-                and rustc_cfgs.get("target_os") == "emscripten"
-            ):
-                rustc_args.extend(["-C", "symbol-mangling-version=v0"])
-                if not _rustc_passes_side_module_automatically(ext.env):
-                    rustc_args.extend(["-C", "link-args=-sSIDE_MODULE=2"])
-
+            extra_rustc_args, extra_rustflags = self._config_specific_rust_args(ext)
+            rustc_args += extra_rustc_args
+            rustflags += extra_rustflags
             if use_cargo_crate_type and "--crate-type" not in cargo_args:
                 cargo_args.extend(["--crate-type", "cdylib"])
 
@@ -243,8 +195,6 @@ class build_rust(RustCommand):
                 "--manifest-path",
                 ext.path,
                 *cargo_args,
-                "--",
-                *rustc_args,
             ]
 
         if rustflags:
@@ -258,30 +208,54 @@ class build_rust(RustCommand):
             if not quiet:
                 print(f"[RUSTFLAGS={new_rustflags}]", end=" ", file=sys.stderr)
 
-        if not quiet:
-            print(" ".join(command), file=sys.stderr)
+        if self.target is _Platform.CARGO_DEFAULT:
+            targets: list[str | None] = [None]
+        elif self.target is _Platform.UNIVERSAL2:
+            targets = list(_UNIVERSAL2_TARGETS)
+            if ext.generated_files:
+                raise PlatformError(
+                    "generated files are not supported for universal2 wheels"
+                )
+        else:
+            targets = [self.target]
 
-        # Execute cargo
-        try:
-            # If quiet, capture all output and only show it in the exception
-            # If not quiet, forward all cargo output to stderr
-            stderr = subprocess.PIPE if quiet else None
-            cargo_messages = check_subprocess_output(
-                command,
-                env=env,
-                stderr=stderr,
-                text=True,
-            )
-        except subprocess.CalledProcessError as e:
-            # Don't include stdout in the formatted error as it is a huge dump
-            # of cargo json lines which aren't helpful for the end user.
-            raise CompileError(format_called_process_error(e, include_stdout=False))
+        cargo_messages: dict[str, list[str]] = {}
+        for target in targets:
+            target_command = command.copy()
+            if target is None:
+                # Normalize the entries in `cargo_messages` to always be in terms of the
+                # actual target triple.
+                target = get_rust_host(ext.env)
+            else:
+                target_command += ["--target", target]
+            if rustc_args:
+                target_command += ["--"]
+                target_command += rustc_args
 
-        except OSError:
-            raise ExecError(
-                "Unable to execute 'cargo' - this package "
-                "requires Rust to be installed and cargo to be on the PATH"
-            )
+            if not quiet:
+                print(" ".join(target_command), file=sys.stderr)
+
+            # Execute cargo
+            try:
+                # If quiet, capture all output and only show it in the exception
+                # If not quiet, forward all cargo output to stderr
+                stderr = subprocess.PIPE if quiet else None
+                cargo_messages[target] = check_subprocess_output(
+                    target_command,
+                    env=env,
+                    stderr=stderr,
+                    text=True,
+                ).splitlines()
+            except subprocess.CalledProcessError as e:
+                # Don't include stdout in the formatted error as it is a huge dump
+                # of cargo json lines which aren't helpful for the end user.
+                raise CompileError(format_called_process_error(e, include_stdout=False))
+
+            except OSError:
+                raise ExecError(
+                    "Unable to execute 'cargo' - this package "
+                    "requires Rust to be installed and cargo to be on the PATH"
+                )
 
         # Find the shared library that cargo hopefully produced and copy
         # it into the build directory as if it were produced by build_ext.
@@ -291,10 +265,12 @@ class build_rust(RustCommand):
         if ext._uses_exec_binding():
             # Find artifact from cargo messages
             artifacts = _find_cargo_artifacts(
-                cargo_messages.splitlines(),
+                [line for messages in cargo_messages.values() for line in messages],
                 package_id=package_id,
                 kinds={"bin"},
             )
+            if self.target is _Platform.UNIVERSAL2:
+                artifacts = _combine_universal2_artifacts(artifacts)
             for name, dest in ext.target.items():
                 if not name:
                     name = dest.split(".")[-1]
@@ -319,10 +295,12 @@ class build_rust(RustCommand):
         else:
             # Find artifact from cargo messages
             artifacts = _find_cargo_artifacts(
-                cargo_messages.splitlines(),
+                [line for messages in cargo_messages.values() for line in messages],
                 package_id=package_id,
                 kinds={"cdylib", "dylib"},
             )
+            if self.target is _Platform.UNIVERSAL2:
+                artifacts = _combine_universal2_artifacts(artifacts)
             if len(artifacts) == 0:
                 raise ExecError(
                     "Rust build failed; unable to find any cdylib or dylib build artifacts"
@@ -341,10 +319,35 @@ class build_rust(RustCommand):
 
             # guaranteed to be just one element after checks above
             dylib_paths.append(_BuiltModule(ext.name, artifact_path))
-        return dylib_paths
+
+        if not ext.generated_files:
+            return dylib_paths, None
+
+        out_dirs = [
+            out_dir
+            for target, messages in cargo_messages.items()
+            if (out_dir := _find_cargo_out_dir(messages, package_id)) is not None
+        ]
+        if not out_dirs:
+            raise FileError(
+                f"extension {ext.name} requests data files, but no corresponding"
+                " build-script out directories could be found"
+            )
+        if len(out_dirs) > 1:
+            # This is defensive - internal logic around target selection should already have
+            # prevented control from reaching here.
+            raise InternalError(
+                "generated-files support requires a single target and single out directory,"
+                f" but we found {out_dirs}"
+            )
+
+        return dylib_paths, out_dirs[0]
 
     def install_extension(
-        self, ext: RustExtension, dylib_paths: List["_BuiltModule"]
+        self,
+        ext: RustExtension,
+        dylib_paths: list[_BuiltModule],
+        build_artifact_dir: Path | None,
     ) -> None:
         debug_build = self._is_debug_build(ext)
 
@@ -441,6 +444,44 @@ class build_rust(RustCommand):
             mode |= (mode & 0o444) >> 2  # copy R bits to X
             os.chmod(ext_path, mode)
 
+        if not ext.generated_files:
+            return
+        if build_artifact_dir is None:
+            raise FileError(
+                "there are generated files to install but no build-artifact directory"
+            )
+
+        # We'll delegate the finding of the package directories to Setuptools, so we
+        # can be sure we're handling editable installs and other complex situations
+        # correctly.
+        build_py = cast(setuptools_build_py, self.get_finalized_command("build_py"))
+
+        def get_package_dir(package: str) -> Path:
+            if self.inplace:
+                # If `inplace`, we have to ask `build_py` (like `build_ext` would).
+                return Path(build_py.get_package_dir(package))
+            # ... If not, `build_ext` knows where to put the package.
+            return Path(build_ext.build_lib) / Path(*package.split("."))
+
+        missed_matches = []
+        for source, package in ext.generated_files.items():
+            dest = get_package_dir(package)
+            dest.mkdir(mode=0o755, parents=True, exist_ok=True)
+            source_full = build_artifact_dir / source
+            dest_full = dest / source_full.name
+            if source_full.is_file():
+                logger.info("Copying data file from %s to %s", source_full, dest_full)
+                shutil.copy2(source_full, dest_full)
+            elif source_full.is_dir():
+                logger.info(
+                    "Copying data directory from %s to %s", source_full, dest_full
+                )
+                shutil.copytree(source_full, dest_full, dirs_exist_ok=True)
+            else:
+                missed_matches.append(source)
+        if missed_matches:
+            raise FileError(f"failed to find build artifacts for {missed_matches}")
+
     def get_dylib_ext_path(self, ext: RustExtension, target_fname: str) -> str:
         assert self.plat_name is not None
         build_ext = cast(CommandBuildExt, self.get_finalized_command("build_ext"))
@@ -490,29 +531,6 @@ class build_rust(RustCommand):
         else:
             return cast(_PyLimitedApi, bdist_wheel.py_limited_api)
 
-    def _detect_rust_target(
-        self, forced_target_triple: Optional[str], env: Env
-    ) -> Optional[str]:
-        assert self.plat_name is not None
-        if forced_target_triple is not None:
-            # Automatic target detection can be overridden via the CARGO_BUILD_TARGET
-            # environment variable or --target command line option
-            return forced_target_triple
-
-        # Determine local rust target which needs to be "forced" if necessary
-        local_rust_target = _adjusted_local_rust_target(self.plat_name, env)
-
-        # Match cargo's behaviour of not using an explicit target if the
-        # target we're compiling for is the host
-        if (
-            local_rust_target is not None
-            # check for None first to avoid calling to rustc if not needed
-            and local_rust_target != get_rust_host(env)
-        ):
-            return local_rust_target
-
-        return None
-
     def _is_debug_build(self, ext: RustExtension) -> bool:
         if self.release:
             return False
@@ -526,14 +544,10 @@ class build_rust(RustCommand):
     def _cargo_args(
         self,
         ext: RustExtension,
-        target_triple: Optional[str],
         release: bool,
         quiet: bool,
-    ) -> List[str]:
+    ) -> list[str]:
         args = []
-        if target_triple is not None:
-            args.extend(["--target", target_triple])
-
         ext_profile = ext.get_cargo_profile()
         env_profile = os.getenv("SETUPTOOLS_RUST_CARGO_PROFILE")
         if release and not ext_profile and not env_profile:
@@ -575,15 +589,84 @@ class build_rust(RustCommand):
 
         return args
 
+    def _config_specific_rust_args(
+        self, ext: RustExtension
+    ) -> tuple[list[str], list[str]]:
+        """Get extra arguments for `rustc` and the `RUSTFLAGS` environment variable
+        that depend on the specific environmental configuration for the compilation
+        target."""
 
-def create_universal2_binary(output_path: str, input_paths: List[str]) -> None:
+        def apple_specific_rustc() -> list[str]:
+            # Apple platforms require special linker arguments
+            ext_basename = os.path.basename(self.get_dylib_ext_path(ext, ext.name))
+            return [
+                "-Clink-arg=-undefined",
+                "-Clink-arg=dynamic_lookup",
+                f"-Clink-arg=-Wl,-install_name,@rpath/{ext_basename}",
+            ]
+
+        rustc_args: list[str] = []  # Command-line arguments for rustc.
+        rust_flags: list[str] = []  # Extras for the `RUSTFLAGS` environment variable.
+
+        if self.target is _Platform.UNIVERSAL2:
+            # In this case we're in a multi-target compilation, so there's no one single
+            # `target_triple` to get configurations for.
+            rustc_args += apple_specific_rustc()
+            return rustc_args, rust_flags
+
+        target_triple = None if self.target is _Platform.CARGO_DEFAULT else self.target
+        rustc_cfgs = get_rustc_cfgs(target_triple, ext.env)
+        target_os = rustc_cfgs.get("target_os")
+        if target_os in ("macos", "ios", "tvos", "watchos"):
+            rustc_args += apple_specific_rustc()
+        if rustc_cfgs.get("target_env") == "musl":
+            # Tell musl targets not to statically link libc. See
+            # https://github.com/rust-lang/rust/issues/59302 for details.
+            # This must go in the env otherwise rustc will refuse to build
+            # the cdylib, see https://github.com/rust-lang/cargo/issues/10143
+            rust_flags += ["-Ctarget-feature=-crt-static"]
+        if (rustc_cfgs.get("target_arch"), target_os) == ("wasm32", "emscripten"):
+            rustc_args += ["-C", "symbol-mangling-version=v0"]
+            if not _rustc_passes_side_module_automatically(ext.env):
+                rustc_args += ["-C", "link-args=-sSIDE_MODULE=2"]
+        return rustc_args, rust_flags
+
+
+def _combine_universal2_artifacts(artifacts: list[str]) -> list[str]:
+    """For a multi-target compilation corresponding to an intended universal2 build,
+    combine each set of corresponding separate-target artifacts into a single universal2
+    binary.
+
+    Returns the constructed paths to the new combined artifacts."""
+    to_combine = collections.defaultdict(list)
+    for artifact in artifacts:
+        target = next((t for t in _UNIVERSAL2_TARGETS if t in artifact), None)
+        if target is None:
+            raise ExecError(
+                f"Rust build failed; compiled artifact '{artifact}' does not appear to"
+                " be part of the expected universal2 build."
+            )
+        to_combine[artifact.replace(target + "/", "")].append(artifact)
+    combined = []
+    for output_path, input_paths in to_combine.items():
+        if len(set(input_paths)) != len(_UNIVERSAL2_TARGETS):
+            raise ExecError(
+                f"Rust build failed; {input_paths} is not a complete set of artifacts"
+                " for a universal2 build."
+            )
+        create_universal2_binary(output_path, input_paths)
+        combined.append(output_path)
+    return combined
+
+
+def create_universal2_binary(output_path: str, input_paths: list[str]) -> None:
     # Try lipo first
     command = ["lipo", "-create", "-output", output_path, *input_paths]
     try:
         check_subprocess_output(command, env=None, text=True)
     except subprocess.CalledProcessError as e:
         output = e.output
-        raise CompileError("lipo failed with code: %d\n%s" % (e.returncode, output))
+        raise CompileError(f"lipo failed with code: {e.returncode}\n{output}")
     except OSError:
         # lipo not found, try using the fat-macho library
         try:
@@ -600,6 +683,18 @@ def create_universal2_binary(output_path: str, input_paths: List[str]) -> None:
         fat.write_to(output_path)
 
 
+class _Platform(enum.Enum):
+    """Special cases for the platform of the wheel we're targeting.
+
+    The alternative to this enum is a string containing a literal target triple."""
+
+    CARGO_DEFAULT = enum.auto()
+    """The default target triple you get with `cargo build` without specifying `--target`."""
+    UNIVERSAL2 = enum.auto()
+    """The special 'universal2' wheel format, which is the arm64 and x86_64 macOS builds squashed
+    together into one binary."""
+
+
 class _BuiltModule(NamedTuple):
     """
     Attributes:
@@ -611,7 +706,7 @@ class _BuiltModule(NamedTuple):
     path: str
 
 
-def _replace_vendor_with_unknown(target: str) -> Optional[str]:
+def _replace_vendor_with_unknown(target: str) -> str | None:
     """Replaces vendor in the target triple with unknown.
 
     Returns None if the target is not made of 4 parts.
@@ -623,12 +718,12 @@ def _replace_vendor_with_unknown(target: str) -> Optional[str]:
     return "-".join(components)
 
 
-def _prepare_build_environment(env: Env, ext: RustExtension) -> Dict[str, str]:
+def _prepare_build_environment(env: Env, ext: RustExtension) -> dict[str, str]:
     """Prepares environment variables to use when executing cargo build."""
 
     base_executable = None
     if os.getenv("SETUPTOOLS_RUST_PEP517_USE_BASE_PYTHON"):
-        base_executable = getattr(sys, "_base_executable")
+        base_executable = sys._base_executable  # type: ignore[attr-defined]
 
     if base_executable and os.path.exists(base_executable):
         executable = os.path.realpath(base_executable)
@@ -659,7 +754,7 @@ def _prepare_build_environment(env: Env, ext: RustExtension) -> Dict[str, str]:
 
 def _is_py_limited_api(
     ext_setting: Literal["auto", True, False],
-    wheel_setting: Optional[_PyLimitedApi],
+    wheel_setting: _PyLimitedApi | None,
 ) -> bool:
     """Returns whether this extension is being built for the limited api.
 
@@ -687,7 +782,7 @@ def _is_py_limited_api(
 def _binding_features(
     ext: RustExtension,
     py_limited_api: _PyLimitedApi,
-) -> Set[str]:
+) -> set[str]:
     if ext.binding in (Binding.NoBinding, Binding.Exec):
         return set()
     elif ext.binding is Binding.PyO3:
@@ -708,30 +803,47 @@ def _binding_features(
 _PyLimitedApi = Literal["cp37", "cp38", "cp39", "cp310", "cp311", "cp312", True, False]
 
 
-def _adjusted_local_rust_target(plat_name: str, env: Env) -> Optional[str]:
-    """Returns the local rust target for the given `plat_name`, if it is
-    necessary to 'force' a specific target for correctness."""
+def _override_cargo_default_target(plat_name: str, env: Env) -> str | _Platform:
+    """Get a platform-specific override, if one is needed for correctness."""
+    override: str | _Platform = _Platform.CARGO_DEFAULT
+    if plat_name in ("win32", "win-amd64"):
+        toolchain = (
+            "gnu" if get_rustc_cfgs(None, env).get("target_env") == "gnu" else "msvc"
+        )
+        # If we've got a 32-bit Python, we need to make sure Rust will build for a 32-bit target,
+        # even though the host system may well be 64-bit.
+        arch = "i686" if plat_name == "win32" else "x86_64"
+        override = f"{arch}-pc-windows-{toolchain}"
+    elif plat_name.startswith("macosx-"):
+        override = _macos_target_from_arch_flags(os.environ.get("ARCHFLAGS"))
+        if override is _Platform.CARGO_DEFAULT and platform.machine() == "x86_64":
+            override = "x86_64-apple-darwin"
 
-    # If we are on a 64-bit machine, but running a 32-bit Python, then
-    # we'll target a 32-bit Rust build.
-    if plat_name == "win32":
-        if get_rustc_cfgs(None, env).get("target_env") == "gnu":
-            return "i686-pc-windows-gnu"
-        else:
-            return "i686-pc-windows-msvc"
-    elif plat_name == "win-amd64":
-        if get_rustc_cfgs(None, env).get("target_env") == "gnu":
-            return "x86_64-pc-windows-gnu"
-        else:
-            return "x86_64-pc-windows-msvc"
-    elif plat_name.startswith("macosx-") and platform.machine() == "x86_64":
-        # x86_64 or arm64 macOS targeting x86_64
+    if isinstance(override, str) and override == get_rust_host(env):
+        # If the override we asserted resolves to the same that `rustc` would do by default, we swap
+        # back to specifying the `CARGO_DEFAULT` to avoid creating spurious specific-target
+        # directories in the temporary build directory.
+        override = _Platform.CARGO_DEFAULT
+    return override
+
+
+def _macos_target_from_arch_flags(arch_flags: str | None) -> str | _Platform:
+    """Detect the macOS target to compile for, based on what (if anything) is set in the
+    `ARCHFLAGS`."""
+    if arch_flags is None:
+        return _Platform.CARGO_DEFAULT
+    intel = "x86_64" in arch_flags
+    arm = "arm64" in arch_flags
+    if intel and arm:
+        return _Platform.UNIVERSAL2
+    if intel:
         return "x86_64-apple-darwin"
+    if arm:
+        return "aarch64-apple-darwin"
+    return _Platform.CARGO_DEFAULT
 
-    return None
 
-
-def _split_platform_and_extension(ext_path: str) -> Tuple[str, str, str]:
+def _split_platform_and_extension(ext_path: str) -> tuple[str, str, str]:
     """Splits an extension path into a tuple (ext_path, plat_tag, extension).
 
     >>> _split_platform_and_extension("foo/bar.platform.so")
@@ -746,11 +858,11 @@ def _split_platform_and_extension(ext_path: str) -> Tuple[str, str, str]:
 
 
 def _find_cargo_artifacts(
-    cargo_messages: List[str],
+    cargo_messages: list[str],
     *,
     package_id: str,
-    kinds: Set[str],
-) -> List[str]:
+    kinds: set[str],
+) -> list[str]:
     """Identifies cargo artifacts built for the given `package_id` from the
     provided cargo_messages.
 
@@ -807,6 +919,20 @@ def _find_cargo_artifacts(
     return artifacts
 
 
+def _find_cargo_out_dir(cargo_messages: list[str], package_id: str) -> Path | None:
+    # Chances are that the line we're looking for will be the third-last line in the
+    # messages.  The last is the completion report, the penultimate is generally the
+    # build of the final artifact.
+    for messsage in reversed(cargo_messages):
+        if "build-script-executed" not in messsage or package_id not in messsage:
+            continue
+        parsed = json.loads(messsage)
+        if parsed.get("package_id") == package_id:
+            out_dir = parsed.get("out_dir")
+            return None if out_dir is None else Path(out_dir)
+    return None
+
+
 def _replace_cross_target_dir(path: str, ext: RustExtension, *, quiet: bool) -> str:
     """Replaces target director from `cross` docker build with the correct
     local path.
@@ -822,10 +948,10 @@ def _replace_cross_target_dir(path: str, ext: RustExtension, *, quiet: bool) -> 
 
 def _get_bdist_wheel_cmd(
     dist: Distribution, create: Literal[True, False] = True
-) -> Optional[CommandBdistWheel]:
+) -> CommandBdistWheel | None:
     try:
         cmd_obj = dist.get_command_obj("bdist_wheel", create=create)
         cmd_obj.ensure_finalized()  # type: ignore[union-attr]
         return cast(CommandBdistWheel, cmd_obj)
-    except Exception:
+    except Exception:  # noqa: BLE001
         return None

@@ -1,3 +1,34 @@
 [build-system]
-requires = ["setuptools", "setuptools-rust", "cffi"]
-build-backend = "setuptools.build_meta"
+requires = ["setuptools>=74.1", "setuptools-rust", "cffi>=2.1"]
+build-backend = "build_backend"
+backend-path = ["."]
+
+[project]
+name = "rust-with-cffi"
+version = "0.1.0"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python",
+    "Programming Language :: Rust",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS :: MacOS X",
+]
+dependencies = ["cffi"]
+
+[tool.setuptools]
+package-dir = { "" = "python" }
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+where = ["python"]
+
+[[tool.setuptools.ext-modules]]
+name = "rust_with_cffi.cffi"
+sources = ["cffi_module.c"]
+py-limited-api = true
+
+[[tool.setuptools-rust.ext-modules]]
+target = "rust_with_cffi.rust"

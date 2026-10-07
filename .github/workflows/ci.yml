@@ -9,18 +9,18 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
-# Setting a fixed target dir ensures that all builds of examples re-use the same common dependencies
 env:
+  # Setting a fixed target dir ensures that all builds of examples re-use the same common dependencies
   CARGO_TARGET_DIR: ${{ github.workspace }}/target
 
 jobs:
   ruff:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.x"
 
@@ -31,10 +31,10 @@ jobs:
   mypy:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.x"
 
@@ -45,10 +45,10 @@ jobs:
   pytest:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.x"
 
@@ -68,16 +68,17 @@ jobs:
       matrix:
         python-version:
           [
-            "3.9",
             "3.10",
             "3.11",
             "3.14",
             "3.13",
-            "3.13t",
             "3.14",
             "3.14t",
+            "3.15",
+            "3.15t",
             "pypy-3.11",
-            "graalpy25.0",
+            "graalpy-25.2", # 3.12
+            "graalpy-25.3", # 3.13
           ]
         platform:
           [
@@ -130,31 +131,14 @@ jobs:
                 python-architecture: "arm64",
                 rust-target: "aarch64-unknown-linux-gnu",
               }
-        exclude:
-          # macOS arm doesn't have Python builds before 3.10
-          - python-version: 3.9
-            platform:
-              {
-                os: "macos-latest",
-                python-architecture: "arm64",
-                rust-target: "aarch64-apple-darwin",
-              }
-          # no graalpy available on Windows
-          - python-version: graalpy25.0
-            platform:
-              {
-                os: "windows-latest",
-                python-architecture: "x64",
-                rust-target: "x86_64-pc-windows-msvc",
-              }
 
     env:
       SETUPTOOLS_RUST_CARGO_PROFILE: dev
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.platform.python-architecture }}
@@ -197,6 +181,9 @@ jobs:
       - name: Test sdist vendor Rust crates
         shell: bash
         run: nox -s test-sdist-vendor
+        # FIXME: graalpy on windows appears to have issues with the sdist process, needs investigation and
+        # reporting upstream.
+        continue-on-error: ${{ matrix.platform.os == 'windows-latest' && startsWith(matrix.python-version, 'graalpy') }}
         env:
           CARGO_BUILD_TARGET: ${{ matrix.platform.rust-target }}
 
@@ -216,9 +203,9 @@ jobs:
             ubuntu-24.04-arm,
           ]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.x"
 
@@ -243,7 +230,7 @@ jobs:
       # Now we switch to a different Python version and ensure we can install
       # the wheel we just built.
       - name: Setup python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -273,21 +260,21 @@ jobs:
       matrix:
         platform: [{ arch: "aarch64" }, { arch: "armv7" }]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.x"
-      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-qemu-action@v4
       - run: pip install nox
       - run: nox -s test-crossenv -- ${{ matrix.platform.arch }}
 
   test-cross:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.x"
       - uses: dtolnay/rust-toolchain@stable
@@ -295,16 +282,16 @@ jobs:
         # need cross HEAD for https://github.com/cross-rs/cross/issues/1645
         # will probably be ok to use released cross from 0.3
         run: cargo install cross --git https://github.com/cross-rs/cross
-      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-qemu-action@v4
       - run: pip install nox
       - run: nox -s test-cross
 
   test-zigbuild:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.10" # must match the ubuntu version in the install, and also the version copied out of the docker image below
       - uses: dtolnay/rust-toolchain@stable
@@ -331,7 +318,7 @@ jobs:
           python -m build --no-isolation
           ls -la dist/
           unzip -l dist/*.whl  # debug all files inside wheel file
-      - uses: uraimo/run-on-arch-action@v3.0.1
+      - uses: uraimo/run-on-arch-action@v3.2.1
         name: Install built wheel
         with:
           arch: aarch64
@@ -351,13 +338,13 @@ jobs:
   test-cibuildwheel:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
-      - uses: pypa/cibuildwheel@v3.3.1
+      - uses: pypa/cibuildwheel@v4.2.1
         env:
-          CIBW_BUILD: cp39-*
+          CIBW_BUILD: cp310-*
           CIBW_BEFORE_BUILD: >
             pip install -U 'pip>=23.2.1' 'setuptools>=70.1.0' 'auditwheel>=5.4.0'
             && pip install -e .
@@ -390,8 +377,10 @@ jobs:
               rust_target: i686-pc-windows-gnu,
             },
           ]
+    env:
+      CARGO_BUILD_TARGET: ${{ matrix.rust_target }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Install MSys2 and dependencies
         uses: msys2/setup-msys2@v2
         with:
@@ -404,9 +393,9 @@ jobs:
             mingw-w64-${{ matrix.arch }}-openssl
             mingw-w64-${{ matrix.arch }}-toolchain
 
-      - uses: dtolnay/rust-toolchain@master
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable-${{ matrix.rust_target }}
+          targets: ${{ matrix.rust_target }}
 
       - name: Install test dependencies
         shell: msys2 {0}
@@ -431,9 +420,9 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.rust-version == 'nightly' }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - run: |
@@ -444,11 +433,11 @@ jobs:
           toolchain: ${{ matrix.rust-version }}
           components: rust-src
           targets: wasm32-unknown-emscripten
-      - uses: mymindstorm/setup-emsdk@v14
+      - uses: mymindstorm/setup-emsdk@v16
         with:
           version: ${{env.EMSCRIPTEN_VERSION}}
           actions-cache-folder: emsdk-cache
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: |
             tests/pyodide

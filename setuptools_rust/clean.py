@@ -27,5 +27,5 @@ class clean_rust(RustCommand):
         # Execute cargo command
         try:
             check_subprocess_output(args, env=ext.env)
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass

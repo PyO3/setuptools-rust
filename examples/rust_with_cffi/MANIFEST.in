@@ -1,4 +1,5 @@
 include Cargo.toml
+include build_backend.py
 include cffi_module.py
 recursive-include rust *
 recursive-include python *

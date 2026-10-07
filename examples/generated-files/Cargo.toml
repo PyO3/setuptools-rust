@@ -1,13 +1,13 @@
 [package]
-name = "rust_with_cffi"
+name = "generated-files"
 version = "0.1.0"
-authors = ["Alex Gaynor <alex.gaynor@gmail.com>"]
 edition = "2021"
+build = "build.rs"
 
 [dependencies]
 pyo3 = "0.29.3"
 
 [lib]
-name = "rust_with_cffi"
+name = "_lib"  # private module to be nested into Python package
 crate-type = ["cdylib"]
 path = "rust/lib.rs"

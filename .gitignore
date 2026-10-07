@@ -11,5 +11,4 @@ target
 *.egg-info
 pyo3
 docs/_build
-
-Cargo.lock
+examples/rust_with_cffi/cffi_module.c
