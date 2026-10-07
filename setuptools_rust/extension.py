@@ -7,7 +7,7 @@ import subprocess
 import warnings
 from collections.abc import Sequence
 from enum import IntEnum, auto
-from functools import lru_cache
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -194,11 +194,17 @@ class RustExtension:
                 DeprecationWarning,
             )
 
+        self._metadata_cache: dict[tuple[str, ...], CargoMetadata] = {}
+
     def get_lib_name(self, *, quiet: bool) -> str:
         """Parse Cargo.toml to get the name of the shared library."""
-        metadata = self.metadata(quiet=quiet)
-        root_key = metadata["resolve"]["root"]
-        [pkg] = [p for p in metadata["packages"] if p["id"] == root_key]
+        metadata = self.metadata("--no-deps", quiet=quiet)
+        manifest_path = Path(self.path).resolve()
+        (pkg,) = (
+            p
+            for p in metadata["packages"]
+            if Path(p["manifest_path"]).resolve() == manifest_path
+        )
         name = pkg["targets"][0]["name"]
         assert isinstance(name, str)
         return re.sub(r"[./\\-]", "_", name)
@@ -253,16 +259,16 @@ class RustExtension:
             with open(file, "w") as f:
                 f.write(_SCRIPT_TEMPLATE.format(executable=repr(executable)))
 
-    def metadata(self, *, quiet: bool) -> CargoMetadata:
+    def metadata(self, *args: str, quiet: bool) -> CargoMetadata:
         """Returns cargo metadata for this extension package.
 
-        Cached - will only execute cargo on first invocation.
+        Cached - will only execute cargo on first invocation for each
+        combination of *args.
         """
 
-        return self._metadata(os.environ.get("CARGO", "cargo"), quiet)
+        return self._metadata(os.environ.get("CARGO", "cargo"), *args, quiet=quiet)
 
-    @lru_cache  # noqa: B019
-    def _metadata(self, cargo: str, quiet: bool) -> CargoMetadata:
+    def _metadata(self, cargo: str, *args: str, quiet: bool) -> CargoMetadata:
         metadata_command = [
             cargo,
             "metadata",
@@ -270,9 +276,15 @@ class RustExtension:
             self.path,
             "--format-version",
             "1",
+            *args,
         ]
         if self.cargo_manifest_args:
             metadata_command.extend(self.cargo_manifest_args)
+
+        command = tuple(metadata_command)
+
+        if (cached := self._metadata_cache.get(command)) is not None:
+            return cached
 
         try:
             # If quiet, capture stderr and only show it on exceptions
@@ -284,7 +296,9 @@ class RustExtension:
         except subprocess.CalledProcessError as e:
             raise SetupError(format_called_process_error(e))
         try:
-            return cast(CargoMetadata, json.loads(payload))
+            metadata = cast(CargoMetadata, json.loads(payload))
+            self._metadata_cache[command] = metadata
+            return metadata
         except json.decoder.JSONDecodeError as e:
             raise SetupError(
                 f"""
