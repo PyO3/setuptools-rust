@@ -140,7 +140,16 @@ class build_rust(RustCommand):
         debug = self._is_debug_build(ext)
         use_cargo_crate_type = _check_cargo_supports_crate_type_option(ext.env)
 
-        package_id = ext.metadata(quiet=quiet)["resolve"]["root"]
+        metadata = ext.metadata("--no-deps", quiet=quiet)
+        manifest_path = Path(ext.path).resolve()
+        package_id = next(
+            (
+                package["id"]
+                for package in metadata["packages"]
+                if Path(package["manifest_path"]).resolve() == manifest_path
+            ),
+            None,
+        )
         if package_id is None:
             raise FileError(
                 f"manifest for Rust extention `{ext.name}` at path `{ext.path}` is a virtual manifest (a workspace root without a package).\n\n"
@@ -929,8 +938,12 @@ def _replace_cross_target_dir(path: str, ext: RustExtension, *, quiet: bool) -> 
     dockerfile; invoking `cargo metadata` we can work out the correct local
     target directory.
     """
-    cross_target_dir = ext._metadata(cargo="cross", quiet=quiet)["target_directory"]
-    local_target_dir = ext._metadata(cargo="cargo", quiet=quiet)["target_directory"]
+    cross_target_dir = ext._metadata("cross", "--no-deps", quiet=quiet)[
+        "target_directory"
+    ]
+    local_target_dir = ext._metadata("cargo", "--no-deps", quiet=quiet)[
+        "target_directory"
+    ]
     return path.replace(cross_target_dir, local_target_dir)
 
 
