@@ -9,9 +9,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
-# Setting a fixed target dir ensures that all builds of examples re-use the same common dependencies
 env:
+  # Setting a fixed target dir ensures that all builds of examples re-use the same common dependencies
   CARGO_TARGET_DIR: ${{ github.workspace }}/target
+  # GraalPy attempts to patch PyO3 to workaround known bugs, which is not desirable when testing PyO3 itself
+  PIP_GRAALPY_DISABLE_PATCHING: "1"
 
 jobs:
   ruff:
