@@ -625,10 +625,11 @@ class build_rust(RustCommand):
             # This must go in the env otherwise rustc will refuse to build
             # the cdylib, see https://github.com/rust-lang/cargo/issues/10143
             rust_flags += ["-Ctarget-feature=-crt-static"]
-        if (rustc_cfgs.get("target_arch"), target_os) == ("wasm32", "emscripten"):
-            rustc_args += ["-C", "symbol-mangling-version=v0"]
-            if not _rustc_passes_side_module_automatically(ext.env):
-                rustc_args += ["-C", "link-args=-sSIDE_MODULE=2"]
+        if (rustc_cfgs.get("target_arch"), target_os) == (
+            "wasm32",
+            "emscripten",
+        ) and not _rustc_passes_side_module_automatically(ext.env):
+            rustc_args += ["-C", "link-args=-sSIDE_MODULE=2"]
         return rustc_args, rust_flags
 
 
