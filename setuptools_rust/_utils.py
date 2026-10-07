@@ -1,5 +1,5 @@
 import subprocess
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 
 class Env:
@@ -8,9 +8,9 @@ class Env:
     Dictionaries are unhashable, but ``functools.lru_cache`` needs all parameters to
     be hashable, which we solve which a custom ``__hash__``."""
 
-    env: Optional[dict[str, str]]
+    env: dict[str, str] | None
 
-    def __init__(self, env: Optional[dict[str, str]]):
+    def __init__(self, env: dict[str, str] | None):
         self.env = env
 
     def __eq__(self, other: object) -> bool:
@@ -26,17 +26,17 @@ class Env:
 
 
 def run_subprocess(
-    *args: Any, env: Union[Env, dict[str, str], None], **kwargs: Any
+    *args: Any, env: Env | dict[str, str] | None, **kwargs: Any
 ) -> subprocess.CompletedProcess:
     """Wrapper around subprocess.run that requires a decision to pass env."""
     if isinstance(env, Env):
         env = env.env
     kwargs["env"] = env
-    return subprocess.run(*args, **kwargs)  # noqa: TID251 # this is a wrapper to implement the rule
+    return subprocess.run(*args, **kwargs)  # noqa: PLW1510, TID251 # this is a wrapper to implement the rule
 
 
 def check_subprocess_output(
-    *args: Any, env: Union[Env, dict[str, str], None], **kwargs: Any
+    *args: Any, env: Env | dict[str, str] | None, **kwargs: Any
 ) -> str:
     """Wrapper around subprocess.run that requires a decision to pass env."""
     if isinstance(env, Env):

@@ -1,6 +1,5 @@
 import cffi
 
-
 ffi = cffi.FFI()
 ffi.cdef(
     """

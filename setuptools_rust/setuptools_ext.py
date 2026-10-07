@@ -3,7 +3,7 @@ import os
 import sys
 import sysconfig
 from functools import partial
-from typing import List, Literal, Optional, Set, Tuple, Type, TypeVar, cast
+from typing import Literal, TypeVar, cast
 
 from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
@@ -39,7 +39,7 @@ T = TypeVar("T", bound=RustExtension)
 
 
 def add_rust_extension(dist: Distribution) -> None:
-    sdist_base_class = cast(Type[sdist], dist.cmdclass.get("sdist", sdist))
+    sdist_base_class = cast(type[sdist], dist.cmdclass.get("sdist", sdist))
     sdist_options = sdist_base_class.user_options.copy()
     sdist_boolean_options = sdist_base_class.boolean_options.copy()
     sdist_negative_opt = sdist_base_class.negative_opt.copy()
@@ -93,9 +93,9 @@ def add_rust_extension(dist: Distribution) -> None:
                 # --frozen, --locked, or --offline.
                 #
                 # https://doc.rust-lang.org/cargo/commands/cargo-build.html#manifest-options
-                cargo_manifest_args: Set[str] = set()
-                env: Optional[Env] = None
-                env_source: Optional[str] = None
+                cargo_manifest_args: set[str] = set()
+                env: Env | None = None
+                env_source: str | None = None
                 for ext in self.distribution.rust_extensions:
                     if env is not None:
                         if ext.env != env:
@@ -161,7 +161,7 @@ def add_rust_extension(dist: Distribution) -> None:
     dist.cmdclass["sdist"] = sdist_rust_extension
 
     build_ext_base_class = cast(
-        Type[build_ext], dist.cmdclass.get("build_ext", build_ext)
+        type[build_ext], dist.cmdclass.get("build_ext", build_ext)
     )
     build_ext_options = build_ext_base_class.user_options.copy()
     build_ext_options.append(("target", None, "Build for the target triple"))
@@ -184,9 +184,9 @@ def add_rust_extension(dist: Distribution) -> None:
                 build_rust.plat_name = self._get_wheel_plat_name() or self.plat_name
                 build_rust.run()
 
-        def _get_wheel_plat_name(self) -> Optional[str]:
+        def _get_wheel_plat_name(self) -> str | None:
             cmd = _get_bdist_wheel_cmd(self.distribution)
-            return cast(Optional[str], getattr(cmd, "plat_name", None))
+            return cast(str | None, getattr(cmd, "plat_name", None))
 
     dist.cmdclass["build_ext"] = build_ext_rust_extension
 
@@ -202,7 +202,7 @@ def add_rust_extension(dist: Distribution) -> None:
 
         dist.cmdclass["clean"] = clean_rust_extension
 
-    install_base_class = cast(Type[install], dist.cmdclass.get("install", install))
+    install_base_class = cast(type[install], dist.cmdclass.get("install", install))
 
     # this is required to make install_scripts compatible with RustBin
     class install_rust_extension(install_base_class):  # type: ignore[misc,valid-type]
@@ -220,13 +220,13 @@ def add_rust_extension(dist: Distribution) -> None:
     dist.cmdclass["install"] = install_rust_extension
 
     install_lib_base_class = cast(
-        Type[install_lib], dist.cmdclass.get("install_lib", install_lib)
+        type[install_lib], dist.cmdclass.get("install_lib", install_lib)
     )
 
     # prevent RustBin from being installed to data_dir
     class install_lib_rust_extension(install_lib_base_class):  # type: ignore[misc,valid-type]
-        def get_exclusions(self) -> Set[str]:
-            exclusions: Set[str] = super().get_exclusions()
+        def get_exclusions(self) -> set[str]:
+            exclusions: set[str] = super().get_exclusions()
             install_scripts_obj = cast(
                 install_scripts, self.get_finalized_command("install_scripts")
             )
@@ -244,7 +244,7 @@ def add_rust_extension(dist: Distribution) -> None:
     dist.cmdclass["install_lib"] = install_lib_rust_extension
 
     install_scripts_base_class = cast(
-        Type[install_scripts], dist.cmdclass.get("install_scripts", install_scripts)
+        type[install_scripts], dist.cmdclass.get("install_scripts", install_scripts)
     )
 
     # this is required to make install_scripts compatible with RustBin
@@ -266,7 +266,7 @@ def add_rust_extension(dist: Distribution) -> None:
 
     if bdist_wheel is not None:
         bdist_wheel_base_class = cast(
-            Type[bdist_wheel], dist.cmdclass.get("bdist_wheel", bdist_wheel)
+            type[bdist_wheel], dist.cmdclass.get("bdist_wheel", bdist_wheel)
         )
         bdist_wheel_options = bdist_wheel_base_class.user_options.copy()
         bdist_wheel_options.append(("target", None, "Build for the target triple"))
@@ -279,7 +279,7 @@ def add_rust_extension(dist: Distribution) -> None:
                 super().initialize_options()
                 self.target = os.getenv("CARGO_BUILD_TARGET")
 
-            def get_tag(self) -> Tuple[str, str, str]:
+            def get_tag(self) -> tuple[str, str, str]:
                 python, abi, plat = super().get_tag()
                 arch_flags = os.getenv("ARCHFLAGS")
                 universal2 = False
@@ -293,7 +293,7 @@ def add_rust_extension(dist: Distribution) -> None:
                         # Example: macosx_11_0_arm64
                         macos_target = ".".join(plat.split("_")[1:3])
                     plat = calculate_macosx_platform_tag(
-                        self.bdist_dir, "macosx-{}-universal2".format(macos_target)
+                        self.bdist_dir, f"macosx-{macos_target}-universal2"
                     )
                 return python, abi, plat
 
@@ -301,7 +301,7 @@ def add_rust_extension(dist: Distribution) -> None:
 
 
 def rust_extensions(
-    dist: Distribution, attr: Literal["rust_extensions"], value: List[RustExtension]
+    dist: Distribution, attr: Literal["rust_extensions"], value: list[RustExtension]
 ) -> None:
     assert attr == "rust_extensions"
     has_rust_extensions = len(value) > 0
@@ -319,7 +319,7 @@ def pyprojecttoml_config(dist: Distribution) -> None:
         with open("pyproject.toml", "rb") as f:
             cfg = toml_load(f).get("tool", {}).get("setuptools-rust")
     except FileNotFoundError:
-        return None
+        return
 
     if cfg:
         modules = map(partial(_create, RustExtension), cfg.get("ext-modules", []))
@@ -328,7 +328,7 @@ def pyprojecttoml_config(dist: Distribution) -> None:
         rust_extensions(dist, "rust_extensions", dist.rust_extensions)  # type: ignore[attr-defined]
 
 
-def _create(constructor: Type[T], config: dict) -> T:
+def _create(constructor: type[T], config: dict) -> T:
     kwargs = {
         # PEP 517/621 convention: pyproject.toml uses dashes
         k.replace("-", "_"): v

@@ -2,7 +2,6 @@
 import os
 from glob import glob
 from time import perf_counter
-from typing import Tuple
 
 import html_py_ever
 from bs4 import BeautifulSoup
@@ -13,7 +12,7 @@ except ImportError:
     lxml = None
 
 
-def rust(filename: str) -> Tuple[int, float, float]:
+def rust(filename: str) -> tuple[int, float, float]:
     start_load = perf_counter()
     doc = html_py_ever.parse_file(filename)
     end_load = perf_counter()
@@ -25,7 +24,7 @@ def rust(filename: str) -> Tuple[int, float, float]:
     return len(links), end_load - start_load, end_search - start_search
 
 
-def python(filename: str, parser: str) -> Tuple[int, float, float]:
+def python(filename: str, parser: str) -> tuple[int, float, float]:
     start_load = perf_counter()
     with open(filename, encoding="utf8") as fp:
         soup = BeautifulSoup(fp, parser)

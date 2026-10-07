@@ -5,26 +5,23 @@ import os
 import re
 import subprocess
 import warnings
-from setuptools.errors import SetupError
+from collections.abc import Sequence
 from enum import IntEnum, auto
 from functools import lru_cache
 from typing import (
+    TYPE_CHECKING,
     Any,
-    Dict,
-    List,
     Literal,
     NewType,
-    Optional,
-    Sequence,
-    TYPE_CHECKING,
-    Union,
     cast,
 )
+
+from setuptools.errors import SetupError
 
 if TYPE_CHECKING:
     from semantic_version import SimpleSpec
 
-from ._utils import check_subprocess_output, format_called_process_error, Env
+from ._utils import Env, check_subprocess_output, format_called_process_error
 
 
 class Binding(IntEnum):
@@ -128,26 +125,26 @@ class RustExtension:
 
     def __init__(
         self,
-        target: Union[str, Dict[str, str]],
+        target: str | dict[str, str],
         path: str = "Cargo.toml",
-        args: Optional[Sequence[str]] = (),
-        cargo_manifest_args: Optional[Sequence[str]] = (),
-        features: Optional[Sequence[str]] = (),
-        rustc_flags: Optional[Sequence[str]] = (),
-        rust_version: Optional[str] = None,
+        args: Sequence[str] | None = (),
+        cargo_manifest_args: Sequence[str] | None = (),
+        features: Sequence[str] | None = (),
+        rustc_flags: Sequence[str] | None = (),
+        rust_version: str | None = None,
         quiet: bool = False,
-        debug: Optional[bool] = None,
+        debug: bool | None = None,
         binding: Binding = Binding.PyO3,
         strip: Strip = Strip.No,
         script: bool = False,
         native: bool = False,
         optional: bool = False,
         py_limited_api: Literal["auto", True, False] = "auto",
-        env: Optional[Dict[str, str]] = None,
-        generated_files: Optional[Dict[str, str]] = None,
+        env: dict[str, str] | None = None,
+        generated_files: dict[str, str] | None = None,
     ):
         if isinstance(target, dict):
-            name = "; ".join("%s=%s" % (key, val) for key, val in target.items())
+            name = "; ".join(f"{key}={val}" for key, val in target.items())
         else:
             name = target
             target = {"": target}
@@ -206,7 +203,7 @@ class RustExtension:
         assert isinstance(name, str)
         return re.sub(r"[./\\-]", "_", name)
 
-    def get_rust_version(self) -> Optional[SimpleSpec]:  # type: ignore[no-any-unimported]
+    def get_rust_version(self) -> SimpleSpec | None:  # type: ignore[no-any-unimported]
         if self.rust_version is None:
             return None
         try:
@@ -218,7 +215,7 @@ class RustExtension:
                 "Can not parse rust compiler version: %s", self.rust_version
             )
 
-    def get_cargo_profile(self) -> Optional[str]:
+    def get_cargo_profile(self) -> str | None:
         try:
             index = self.args.index("--profile")
             return self.args[index + 1]
@@ -237,12 +234,12 @@ class RustExtension:
         else:
             return None
 
-    def entry_points(self) -> List[str]:
+    def entry_points(self) -> list[str]:
         entry_points = []
         if self.script and self.binding == Binding.Exec:
             for executable, mod in self.target.items():
                 base_mod, name = mod.rsplit(".")
-                script = "%s=%s.%s:run" % (name, base_mod, _script_name(executable))
+                script = f"{name}={base_mod}.{_script_name(executable)}:run"
                 entry_points.append(script)
 
         return entry_points
@@ -256,7 +253,7 @@ class RustExtension:
             with open(file, "w") as f:
                 f.write(_SCRIPT_TEMPLATE.format(executable=repr(executable)))
 
-    def metadata(self, *, quiet: bool) -> "CargoMetadata":
+    def metadata(self, *, quiet: bool) -> CargoMetadata:
         """Returns cargo metadata for this extension package.
 
         Cached - will only execute cargo on first invocation.
@@ -264,8 +261,8 @@ class RustExtension:
 
         return self._metadata(os.environ.get("CARGO", "cargo"), quiet)
 
-    @lru_cache()
-    def _metadata(self, cargo: str, quiet: bool) -> "CargoMetadata":
+    @lru_cache  # noqa: B019
+    def _metadata(self, cargo: str, quiet: bool) -> CargoMetadata:
         metadata_command = [
             cargo,
             "metadata",
@@ -330,17 +327,17 @@ class RustBin(RustExtension):
 
     def __init__(
         self,
-        target: Union[str, Dict[str, str]],
+        target: str | dict[str, str],
         path: str = "Cargo.toml",
-        args: Optional[Sequence[str]] = (),
-        cargo_manifest_args: Optional[Sequence[str]] = (),
-        features: Optional[Sequence[str]] = (),
-        rust_version: Optional[str] = None,
+        args: Sequence[str] | None = (),
+        cargo_manifest_args: Sequence[str] | None = (),
+        features: Sequence[str] | None = (),
+        rust_version: str | None = None,
         quiet: bool = False,
-        debug: Optional[bool] = None,
+        debug: bool | None = None,
         strip: Strip = Strip.No,
         optional: bool = False,
-        env: Optional[dict[str, str]] = None,
+        env: dict[str, str] | None = None,
     ):
         super().__init__(
             target=target,
@@ -358,11 +355,11 @@ class RustBin(RustExtension):
             env=env,
         )
 
-    def entry_points(self) -> List[str]:
+    def entry_points(self) -> list[str]:
         return []
 
 
-CargoMetadata = NewType("CargoMetadata", Dict[str, Any])
+CargoMetadata = NewType("CargoMetadata", dict[str, Any])
 
 
 def _script_name(executable: str) -> str:
