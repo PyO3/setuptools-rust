@@ -50,6 +50,16 @@ def _check_cargo_supports_crate_type_option(env: Env | None) -> bool:
     return version.major > 1 or (version.major == 1 and version.minor >= 64)  # type: ignore
 
 
+def _rustc_passes_side_module_automatically(env: Env | None) -> bool:
+    version = get_rust_version(env)
+
+    if version is None:
+        return False
+
+    # Rust 1.95.0 and above automatically pass `-C link-args=-sSIDE_MODULE=2` for wasm32-emscripten targets when building cdylibs
+    return version.major > 1 or (version.major == 1 and version.minor >= 95)  # type: ignore
+
+
 _UNIVERSAL2_TARGETS = ("aarch64-apple-darwin", "x86_64-apple-darwin")
 
 
@@ -615,8 +625,11 @@ class build_rust(RustCommand):
             # This must go in the env otherwise rustc will refuse to build
             # the cdylib, see https://github.com/rust-lang/cargo/issues/10143
             rust_flags += ["-Ctarget-feature=-crt-static"]
-        if (rustc_cfgs.get("target_arch"), target_os) == ("wasm32", "emscripten"):
-            rustc_args += ["-C", "link-args=-sSIDE_MODULE=2 -sWASM_BIGINT"]
+        if (rustc_cfgs.get("target_arch"), target_os) == (
+            "wasm32",
+            "emscripten",
+        ) and not _rustc_passes_side_module_automatically(ext.env):
+            rustc_args += ["-C", "link-args=-sSIDE_MODULE=2"]
         return rustc_args, rust_flags
 
 
