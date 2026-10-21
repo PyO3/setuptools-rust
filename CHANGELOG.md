@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+### Fixed
+- Honor `SETUPTOOLS_EXT_SUFFIX` when replacing extension suffixes for limited-API builds.
+
 ### Packaging
 - Drop support for Python 3.9.
 - Bump `setuptools` minimum version to 83.0.

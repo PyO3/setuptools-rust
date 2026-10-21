@@ -491,7 +491,9 @@ class build_rust(RustCommand):
         if _is_py_limited_api(ext.py_limited_api, self._py_limited_api()):
             abi3_suffix = get_abi3_suffix()
             if abi3_suffix is not None:
-                so_ext = get_config_var("EXT_SUFFIX")
+                so_ext = os.getenv("SETUPTOOLS_EXT_SUFFIX") or get_config_var(
+                    "EXT_SUFFIX"
+                )
                 assert isinstance(so_ext, str)
                 ext_path = ext_path[: -len(so_ext)] + get_abi3_suffix()
 
