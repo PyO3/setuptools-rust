@@ -134,6 +134,7 @@ jobs:
 
     env:
       SETUPTOOLS_RUST_CARGO_PROFILE: dev
+      NOX_DEFAULT_VENV_BACKEND: ${{ matrix.platform.os == 'windows-latest' && startsWith(matrix.python-version, 'graalpy') && 'venv' || 'virtualenv' }}
     steps:
       - uses: actions/checkout@v7
 
@@ -207,7 +208,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.x"
+          python-version: "3.11"
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -232,7 +233,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version: "3.x"
 
       - name: Install abi3 wheel and run tests
         shell: bash
@@ -293,7 +294,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.10" # must match the ubuntu version in the install, and also the version copied out of the docker image below
+          python-version: "3.10" # must match the build and test containers below
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-unknown-linux-gnu
@@ -318,22 +319,16 @@ jobs:
           python -m build --no-isolation
           ls -la dist/
           unzip -l dist/*.whl  # debug all files inside wheel file
-      - uses: uraimo/run-on-arch-action@v3.2.1
-        name: Install built wheel
-        with:
-          arch: aarch64
-          distro: ubuntu22.04
-          dockerRunArgs: |
-            --volume "${PWD}/examples/namespace_package:/io"
-          install: |
-            apt-get update
-            apt-get install -y --no-install-recommends python3 python3-venv python3-pip
-          run: |
-            python3 -m venv .venv
-            source .venv/bin/activate
+      - uses: docker/setup-qemu-action@v4
+      - name: Install built wheel
+        run: |
+          docker run --rm --platform linux/arm64 \
+            -v "$PWD/examples/namespace_package:/io" \
+            python:3.10 bash -euxc '
             pip install namespace_package --no-index --find-links /io/dist/ --force-reinstall
             python -c "from namespace_package import rust; assert rust.rust_func() == 14"
             python -c "from namespace_package import python; assert python.python_func() == 15"
+          '
 
   test-cibuildwheel:
     runs-on: macos-latest

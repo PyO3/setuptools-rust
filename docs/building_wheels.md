@@ -8,7 +8,7 @@ A key choice to make is whether to upload [PEP 384](https://www.python.org/dev/p
 
 This chapter covers each of these options below.
 
-## Building for ABI3
+## Building for ABI3 and ABI3T
 
 `setuptools-rust` will automatically configure for the limited API when this is set in the `[bdist_wheel]` configuration section of [`setup.cfg`](https://setuptools.pypa.io/en/latest/deprecated/distutils/configfile.html#writing-the-setup-configuration-file):
 
@@ -16,6 +16,10 @@ This chapter covers each of these options below.
 [bdist_wheel]
 py_limited_api=cp37  # replace with desired minimum Python version
 ```
+
+When targeting free-threaded Python 3.15 or newer, this selects PyO3's ABI3T
+features instead of ABI3. Set `py_limited_api=cp315` or newer for these builds,
+as PyO3's ABI3T support requires Python 3.15 or newer.
 
 If using a `pyproject.toml`-based build, then save the above in a file and use the `DIST_EXTRA_CONFIG` environment variable to instruct `setuptools` to pick up this extra configuration. (`DIST_EXTRA_CONFIG` is documented [on this page](https://setuptools.pypa.io/en/latest/deprecated/distutils/configfile.html#writing-the-setup-configuration-file) of the `setuptools` docs.)
 

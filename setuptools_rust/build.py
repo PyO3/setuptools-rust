@@ -789,11 +789,12 @@ def _binding_features(
     elif ext.binding is Binding.PyO3:
         features = {"pyo3/extension-module"}
         if ext.py_limited_api == "auto":
+            abi = "abi3t" if get_config_var("Py_GIL_DISABLED") else "abi3"
             if isinstance(py_limited_api, str):
                 python_version = py_limited_api[2:]
-                features.add(f"pyo3/abi3-py{python_version}")
+                features.add(f"pyo3/{abi}-py{python_version}")
             elif py_limited_api:
-                features.add("pyo3/abi3")
+                features.add(f"pyo3/{abi}")
         return features
     elif ext.binding is Binding.RustCPython:
         return {"cpython/python3-sys", "cpython/extension-module"}
@@ -801,7 +802,7 @@ def _binding_features(
         raise PlatformError(f"unknown Rust binding: '{ext.binding}'")
 
 
-_PyLimitedApi = Literal["cp37", "cp38", "cp39", "cp310", "cp311", "cp312", True, False]
+_PyLimitedApi = str | bool
 
 
 def _override_cargo_default_target(plat_name: str, env: Env) -> str | _Platform:

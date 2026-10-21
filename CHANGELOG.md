@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+### Fixed
+- Select PyO3's ABI3T features for limited-API builds targeting free-threaded Python.
+
 ### Packaging
 - Drop support for Python 3.9.
 - Bump `setuptools` minimum version to 83.0.
